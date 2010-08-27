@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Settings.
+ * Extension settings.
  *
  * @author			: Stephen Lewis
  * @copyright		: Experience Internet
- * @package			: Example Add-on
+ * @package			: Campaigner
  */
 
-class Example_addon_settings {
+class Campaigner_settings {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES.
@@ -125,5 +125,5 @@ class Example_addon_settings {
 	
 }
 
-/* End of file		: example_addon_settings.php */
-/* File location	: third_party/example_addon/classes/example_addon_settings.php */
+/* End of file		: campaigner_settings.php */
+/* File location	: third_party/campaigner/classes/campaigner_settings.php */

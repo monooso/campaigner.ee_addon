@@ -3,10 +3,10 @@
 /**
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
- * @package			: Example Add-on
+ * @package			: Campaigner
  */
 
-class Example_addon_ext {
+class Campaigner_ext {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES
@@ -95,18 +95,18 @@ class Example_addon_ext {
 		$this->_ee->load->library('table');
 		
 		// Load the model.
-		$this->_ee->load->add_package_path(PATH_THIRD .'example_addon/');
-		$this->_ee->load->model('example_addon_model');
+		$this->_ee->load->add_package_path(PATH_THIRD .'campaigner/');
+		$this->_ee->load->model('campaigner_model');
 		
 		// Load the language file.
-		$this->_ee->lang->loadfile('example_addon');
+		$this->_ee->lang->loadfile('campaigner');
 		
 		// Set the instance properties.
 		$this->description	= $this->_ee->lang->line('extension_description');
-		$this->docs_url		= 'http://experienceinternet.co.uk/software/example_addon/';
+		$this->docs_url		= 'http://experienceinternet.co.uk/software/campaigner/';
 		$this->name			= $this->_ee->lang->line('extension_name');
 		$this->settings		= $settings;
-		$this->version		= $this->_ee->example_addon_model->get_package_version();
+		$this->version		= $this->_ee->campaigner_model->get_package_version();
 	}
 	
 	
@@ -118,7 +118,7 @@ class Example_addon_ext {
 	 */
 	public function activate_extension()
 	{
-		$this->_ee->example_addon_model->activate_extension();
+		$this->_ee->campaigner_model->activate_extension();
 	}
 	
 	
@@ -130,7 +130,7 @@ class Example_addon_ext {
 	 */
 	public function disable_extension()
 	{
-		$this->_ee->example_addon_model->disable_extension();
+		$this->_ee->campaigner_model->disable_extension();
 	}
 	
 	
@@ -143,10 +143,10 @@ class Example_addon_ext {
 	public function save_settings()
 	{
 		// Update the settings with any input data.
-		$this->_ee->example_addon_model->update_extension_settings_from_input();
+		$this->_ee->campaigner_model->update_extension_settings_from_input();
 		
 		// Save the settings.
-		if ($this->_ee->example_addon_model->save_extension_settings())
+		if ($this->_ee->campaigner_model->save_extension_settings())
 		{
 			$this->_ee->session->set_flashdata('message_success', $this->_ee->lang->line('settings_saved'));
 		}
@@ -166,7 +166,7 @@ class Example_addon_ext {
 	public function settings_form()
 	{
 		// Define the navigation.
-		$base_url = BASE .AMP .'C=addons_extensions' .AMP .'M=extension_settings' .AMP .'file=example_addon' .AMP .'tab=';
+		$base_url = BASE .AMP .'C=addons_extensions' .AMP .'M=extension_settings' .AMP .'file=campaigner' .AMP .'tab=';
 		
 		$this->_ee->cp->set_right_nav(array(
 			'nav_settings'	=> $base_url .'settings',
@@ -201,7 +201,7 @@ class Example_addon_ext {
 	 */
 	public function update_extension($current_version = '')
 	{
-		return $this->_ee->example_addon_model->update_extension($current_version);
+		return $this->_ee->campaigner_model->update_extension($current_version);
 	}
 	
 	
@@ -244,8 +244,8 @@ class Example_addon_ext {
 		$vars = array(
 			'action_url'	=> 'C=addons_extensions' .AMP .'M=save_extension_settings',
 			'cp_page_title'	=> $this->_ee->lang->line('nav_settings') .' | ' .$this->_ee->lang->line('extension_name'),
-			'hidden_fields'	=> array('file' => strtolower($this->_ee->example_addon_model->get_package_name())),
-			'settings'		=> $this->_ee->example_addon_model->get_extension_settings()
+			'hidden_fields'	=> array('file' => strtolower($this->_ee->campaigner_model->get_package_name())),
+			'settings'		=> $this->_ee->campaigner_model->get_extension_settings()
 		);
 			
 		// Load the view.
@@ -254,5 +254,5 @@ class Example_addon_ext {
 	
 }
 
-/* End of file		: ext.example_addon.php */
-/* File location	: third_party/example_addon/ext.example_addon.php */
+/* End of file		: ext.campaigner.php */
+/* File location	: third_party/campaigner/ext.campaigner.php */

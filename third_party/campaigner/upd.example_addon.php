@@ -3,10 +3,10 @@
 /**
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
- * @package			: Example Add-on
+ * @package			: Campaigner
  */
 
-class Example_addon_upd {
+class Campaigner_upd {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES
@@ -49,10 +49,10 @@ class Example_addon_upd {
 		$this->_ee =& get_instance();
 
 		// We need to explicitly set the package path.
-		$this->_ee->load->add_package_path(PATH_THIRD .'example_addon/');
-		$this->_ee->load->model('example_addon_model');
+		$this->_ee->load->add_package_path(PATH_THIRD .'campaigner/');
+		$this->_ee->load->model('campaigner_model');
 		
-		$this->version = $this->_ee->example_addon_model->get_package_version();
+		$this->version = $this->_ee->campaigner_model->get_package_version();
 	}
 
 
@@ -64,7 +64,7 @@ class Example_addon_upd {
 	 */
 	public function install()
 	{
-		return $this->_ee->example_addon_model->install_module();
+		return $this->_ee->campaigner_model->install_module();
 	}
 
 
@@ -76,7 +76,7 @@ class Example_addon_upd {
 	 */
 	public function uninstall()
 	{
-		return $this->_ee->example_addon_model->uninstall_module();
+		return $this->_ee->campaigner_model->uninstall_module();
 	}
 
 
@@ -89,11 +89,11 @@ class Example_addon_upd {
 	 */
 	public function update($current_version = '')
 	{
-		return $this->_ee->example_addon_model->update_module();
+		return $this->_ee->campaigner_model->update_module();
 	}
 
 }
 
 
-/* End of file		: upd.example_addon_model.php */
-/* File location	: third_party/example_addon/upd.example_addon.php */
+/* End of file		: upd.campaigner_model.php */
+/* File location	: third_party/campaigner/upd.campaigner.php */

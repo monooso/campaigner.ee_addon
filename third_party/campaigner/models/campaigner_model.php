@@ -5,12 +5,12 @@
  *
  * @author			: Stephen Lewis
  * @copyright		: Experience Internet
- * @package			: Example Add-on
+ * @package			: Campaigner
  */
 
-require_once PATH_THIRD .'example_addon/classes/example_addon_settings' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 
-class Example_addon_model extends CI_Model {
+class Campaigner_model extends CI_Model {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES
@@ -37,7 +37,7 @@ class Example_addon_model extends CI_Model {
 	 * Extension settings.
 	 *
 	 * @access	private
-	 * @var		Example_addon_settings
+	 * @var		Campaigner_settings
 	 */
 	private $_extension_settings;
 	
@@ -84,9 +84,9 @@ class Example_addon_model extends CI_Model {
 		$this->_ee =& get_instance();
 		
 		$this->_site_id 			= $this->_ee->config->item('site_id');
-		$this->_package_name		= 'example_addon';
+		$this->_package_name		= 'Campaigner';
 		$this->_package_version		= '0.1.0';
-		$this->_extension_class 	= ucfirst($this->get_package_name() .'_ext');
+		$this->_extension_class 	= $this->get_package_name() .'_ext';
 		
 		/**
 		 * The model is still loaded even if the extension isn't installed.
@@ -155,7 +155,7 @@ class Example_addon_model extends CI_Model {
 		$this->load->dbforge();
 		$this->_ee->dbforge->add_field($fields);
 		$this->_ee->dbforge->add_key('site_id', TRUE);
-		$this->_ee->dbforge->create_table('example_addon_settings', TRUE);
+		$this->_ee->dbforge->create_table('campaigner_settings', TRUE);
 	}
 	
 	
@@ -172,7 +172,7 @@ class Example_addon_model extends CI_Model {
 		
 		// Delete the settings table.
 		$this->load->dbforge();
-		$this->_ee->dbforge->drop_table('example_addon_settings');
+		$this->_ee->dbforge->drop_table('campaigner_settings');
 	}
 	
 	
@@ -217,7 +217,7 @@ class Example_addon_model extends CI_Model {
 	 * Returns the extension settings.
 	 *
 	 * @access	public
-	 * @return	Example_addon_settings
+	 * @return	Campaigner_settings
 	 */
 	public function get_extension_settings()
 	{
@@ -225,13 +225,13 @@ class Example_addon_model extends CI_Model {
 		{
 			$db_settings = $this->_ee->db
 				->select('setting_a, setting_b')
-				->get_where('example_addon_settings', array('site_id' => $this->get_site_id()), 1);
+				->get_where('campaigner_settings', array('site_id' => $this->get_site_id()), 1);
 			
 			$settings_array = $db_settings->num_rows() == 1
 				? $db_settings->row_array()
 				: array();
 			
-			$this->_extension_settings = new Example_addon_settings($settings_array);
+			$this->_extension_settings = new Campaigner_settings($settings_array);
 		}
 		
 		return $this->_extension_settings;
@@ -251,25 +251,6 @@ class Example_addon_model extends CI_Model {
 	
 	
 	/**
-	 * Installs the module.
-	 *
-	 * @access	public
-	 * @return	bool
-	 */
-	public function install_module()
-	{
-		$this->_ee->db->insert('modules', array(
-			'has_cp_backend'		=> 'y',
-			'has_publish_fields'	=> 'n',
-			'module_name'			=> $this->get_package_name(),
-			'module_version'		=> $this->get_package_version()
-		));
-
-		return TRUE;
-	}
-	
-	
-	/**
 	 * Saves the extension settings.
 	 *
 	 * @access	public
@@ -282,36 +263,9 @@ class Example_addon_model extends CI_Model {
 			$this->get_extension_settings()->to_array()
 		);
 		
-		$this->_ee->db->delete('example_addon_settings', array('site_id' => $this->get_site_id()));
-		$this->_ee->db->insert('example_addon_settings', $settings);
+		$this->_ee->db->delete('campaigner_settings', array('site_id' => $this->get_site_id()));
+		$this->_ee->db->insert('campaigner_settings', $settings);
 		
-		return TRUE;
-	}
-	
-	
-	/**
-	 * Uninstalls the module.
-	 *
-	 * @access	public
-	 * @return	bool
-	 */
-	public function uninstall_module()
-	{
-		$db_module = $this->_ee->db
-			->select('module_id')
-			->where(array('module_name' => $this->get_package_name()))
-			->get('modules');
-		
-		$this->_ee->db->delete(
-			'module_member_groups',
-			array('module_id' => $db_module->row()->module_id)
-		);
-
-		$this->_ee->db->delete(
-			'modules',
-			array('module_name' => $this->get_package_name())
-		);
-
 		return TRUE;
 	}
 	
@@ -338,18 +292,6 @@ class Example_addon_model extends CI_Model {
 			array('class' => $this->get_extension_class())
 		);
 		
-		return TRUE;
-	}
-	
-	
-	/**
-	 * Updates the module.
-	 *
-	 * @access	public
-	 * @return	bool
-	 */
-	public function update_module()
-	{
 		return TRUE;
 	}
 	
@@ -390,5 +332,5 @@ class Example_addon_model extends CI_Model {
 
 }
 
-/* End of file		: example_addon_model.php */
-/* File location	: third_party/example_addon/models/example_addon_model.php */
+/* End of file		: campaigner_model.php */
+/* File location	: third_party/campaigner/models/campaigner_model.php */

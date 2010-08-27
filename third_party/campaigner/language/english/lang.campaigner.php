@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Example Add-on language strings.
+ * Campaigner language strings.
  * 
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
- * @package			: Example Add-on
+ * @package			: Campaigner
  */
 
 $lang = array(
@@ -13,8 +13,8 @@ $lang = array(
 /* --------------------------------------------------------------
  * EXTENSION : REQUIRED
  * ------------------------------------------------------------ */
-'extension_name'			=> 'Example Add-on',
-'extension_description'		=> 'A description of the example add-on.',
+'extension_name'			=> 'Campaigner',
+'extension_description'		=> 'Effortlessly subscribe members of your site to one or more Campaign Monitor mailing lists.',
 
 /* --------------------------------------------------------------
  * EXTENSION : SETTINGS
@@ -33,14 +33,7 @@ $lang = array(
 'nav_help'					=> 'Help',
 'nav_settings'				=> 'Settings',
 
-
-/* --------------------------------------------------------------
- * MODULE : REQUIRED
- * ------------------------------------------------------------ */
-'example_addon_module_name'			=> 'Example Add-on',
-'example_addon_module_description'	=> 'A description of the example add-on.'
-
 );
 
-/* End of file		: lang.example_addon.php */
-/* File location	: third_party/example_addon/language/english/lang.example_addon.php */
+/* End of file		: lang.campaigner.php */
+/* File location	: third_party/campaigner/language/english/lang.campaigner.php */
