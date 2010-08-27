@@ -243,7 +243,7 @@ class Campaigner_ext {
 		// Collate the view variables.
 		$vars = array(
 			'action_url'	=> 'C=addons_extensions' .AMP .'M=save_extension_settings',
-			'cp_page_title'	=> $this->_ee->lang->line('nav_settings') .' | ' .$this->_ee->lang->line('extension_name'),
+			'cp_page_title'	=> $this->_ee->lang->line('extension_name'),
 			'hidden_fields'	=> array('file' => strtolower($this->_ee->campaigner_model->get_package_name())),
 			'settings'		=> $this->_ee->campaigner_model->get_extension_settings()
 		);
