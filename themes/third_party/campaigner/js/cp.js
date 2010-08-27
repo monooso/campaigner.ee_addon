@@ -1,7 +1,7 @@
 /**
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
- * @package			: Example Add-on
+ * @package			: Campaigner
  */
 
 (function($) {
@@ -13,4 +13,4 @@
 })(window.jQuery);
 
 /* End of file		: cp.js */
-/* File location	: themes/third_party/example_addon/js/cp.js */
+/* File location	: themes/third_party/campaigner/js/cp.js */

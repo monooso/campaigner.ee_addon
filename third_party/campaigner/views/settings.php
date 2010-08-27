@@ -37,4 +37,4 @@ echo form_close();
 
 
 /* End of file		: settings.php */
-/* File location	: third_party/example_addon/views/settings.php */
+/* File location	: third_party/campaigner/views/settings.php */
