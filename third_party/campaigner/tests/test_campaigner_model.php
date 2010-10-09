@@ -9,6 +9,7 @@
  */
 
 require_once PATH_THIRD .'campaigner/models/campaigner_model' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 
 class Test_campaigner_model extends Testee_unit_test_case {
 	
@@ -288,6 +289,12 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$package_version	= '1.0.0';
 		
 		$this->assertIdentical(FALSE, $this->_model->update_extension($installed_version, $package_version));
+	}
+	
+	
+	public function test_get_extension_settings()
+	{
+		
 	}
 	
 }
