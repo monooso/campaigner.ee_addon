@@ -6,6 +6,8 @@
  * @package			: Campaigner
  */
 
+require_once PATH_THIRD .'campaigner/libraries/CMBase' .EXT;
+
 class Campaigner_ext {
 	
 	/* --------------------------------------------------------------
