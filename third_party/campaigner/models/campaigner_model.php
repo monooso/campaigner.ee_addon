@@ -152,7 +152,7 @@ class Campaigner_model extends CI_Model {
 				'type'			=> 'int',
 				'unsigned'		=> TRUE
 			),
-			'trigger_field_value' => array(
+			'trigger_value' => array(
 				'constraint'	=> 255,
 				'type'			=> 'varchar'
 			)
@@ -200,15 +200,10 @@ class Campaigner_model extends CI_Model {
 	 */
 	public function disable_extension()
 	{
-		$this->_ee->load->dbforge();
-		
-		// Delete the extension hooks.
 		$this->_ee->db->delete('extensions', array('class' => $this->get_extension_class()));
 		
-		// Drop the settings table.
+		$this->_ee->load->dbforge();
 		$this->_ee->dbforge->drop_table('campaigner_settings');
-		
-		// Drop the mailing lists table.
 		$this->_ee->dbforge->drop_table('campaigner_mailing_lists');
 	}
 	
@@ -223,6 +218,61 @@ class Campaigner_model extends CI_Model {
 	public function get_extension_class()
 	{
 		return $this->_extension_class;
+	}
+	
+	
+	/**
+	 * Returns the extension settings.
+	 *
+	 * @access	public
+	 * @return	Campaigner_settings
+	 */
+	public function get_extension_settings()
+	{
+		$settings = $this->get_settings_from_db();
+		$settings->set_mailing_lists($this->get_mailing_lists_from_db());
+		
+		return $settings;
+	}
+	
+	
+	/**
+	 * Retrieves the mailing lists from the `campaigner_mailing_lists` table.
+	 *
+	 * @access	public
+	 * @return	array
+	 */
+	public function get_mailing_lists_from_db()
+	{
+		$db_mailing_lists = $this->_ee->db->get_where(
+			'campaigner_mailing_lists',
+			array('site_id' => $this->get_site_id())
+		);
+		
+		$mailing_lists = array();
+		
+		foreach ($db_mailing_lists->result_array() AS $db_mailing_list)
+		{
+			// Extract the merge variables data.
+			$merge_vars = unserialize($db_mailing_list['merge_variables']);
+			unset($db_mailing_list['merge_variables']);
+			
+			// Create the basic mailing list object.
+			$mailing_list = new Campaigner_mailing_list($db_mailing_list);
+			
+			// Add the merge variables.
+			if (is_array($merge_vars))
+			{
+				foreach ($merge_vars AS $merge_var)
+				{
+					$mailing_list->add_merge_variable(new Campaigner_merge_variable($merge_var));
+				}
+			}
+			
+			$mailing_lists[] = $mailing_list;
+		}
+		
+		return $mailing_lists;
 	}
 	
 	
@@ -251,29 +301,24 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
-	 * Returns the extension settings.
+	 * Retrieves the settings from the `campaigner_settings` table.
 	 *
 	 * @access	public
 	 * @return	Campaigner_settings
 	 */
-	public function get_extension_settings()
+	public function get_settings_from_db()
 	{
-		/*
-		if ( ! isset($this->_extension_settings))
-		{
-			$db_settings = $this->_ee->db
-				->select('setting_a, setting_b')
-				->get_where('campaigner_settings', array('site_id' => $this->get_site_id()), 1);
-			
-			$settings_array = $db_settings->num_rows() == 1
-				? $db_settings->row_array()
-				: array();
-			
-			$this->_extension_settings = new Campaigner_settings($settings_array);
-		}
+		$db_settings = $this->_ee->db->get_where(
+			'campaigner_settings',
+			array('site_id' => $this->get_site_id()),
+			1
+		);
 		
-		return $this->_extension_settings;
-		*/
+		$settings_data = $db_settings->num_rows()
+			? $db_settings->row_array()
+			: array();
+		
+		return new Campaigner_settings($settings_data);
 	}
 	
 	
@@ -298,21 +343,95 @@ class Campaigner_model extends CI_Model {
 	 * Saves the extension settings.
 	 *
 	 * @access	public
+	 * @param 	Campaigner_settings 	$settings		The settings to save.
+	 * @return	void
+	 */
+	public function save_extension_settings(Campaigner_settings $settings)
+	{
+		if ( ! $this->save_settings_to_db($settings))
+		{
+			throw new Exception($this->_ee->lang->line('settings_not_saved'));
+		}
+		
+		if ( ! $this->save_mailing_lists_to_db($settings))
+		{
+			throw new Exception($this->_ee->lang->line('mailing_lists_not_saved'));
+		}
+	}
+	
+	
+	/**
+	 * Saves the supplied mailing lists to the database.
+	 *
+	 * @access	public
+	 * @param	Campaigner_settings		$settings		The settings.
 	 * @return	bool
 	 */
-	public function save_extension_settings()
+	public function save_mailing_lists_to_db(Campaigner_settings $settings)
 	{
-		/*
-		$settings = array_merge(
-			array('site_id' => $this->get_site_id()),
-			$this->get_extension_settings()->to_array()
-		);
+		$db = $this->_ee->db;
+		$site_id = $this->_ee->config->item('site_id');
 		
-		$this->_ee->db->delete('campaigner_settings', array('site_id' => $this->get_site_id()));
-		$this->_ee->db->insert('campaigner_settings', $settings);
+		// Delete the existing settings.
+		$db->delete('campaigner_mailing_lists', array('site_id' => $site_id));
 		
-		return TRUE;
-		*/
+		// Add the mailing lists.
+		$mailing_lists = $settings->get_mailing_lists();
+		$success = TRUE;
+		
+		foreach ($mailing_lists AS $mailing_list)
+		{
+			$data = $mailing_list->to_array();
+			$data['merge_variables'] = serialize($data['merge_variables']);
+			$data = array_merge(array('site_id' => $site_id), $data);
+			
+			$db->insert('campaigner_mailing_lists', $data);
+			
+			if ($db->affected_rows() !== 1)
+			{
+				$success = FALSE;
+				break;
+			}
+		}
+		
+		// One bad badger sullies the set.
+		if ( ! $success)
+		{
+			$db->delete('campaigner_mailing_lists', array('site_id' => $site_id));
+		}
+		
+		return $success;
+	}
+	
+	
+	/**
+	 * Saves the supplied settings to the database.
+	 *
+	 * @access	public
+	 * @param	Campaigner_settings		$settings		The settings.
+	 * @return	bool
+	 */
+	public function save_settings_to_db(Campaigner_settings $settings)
+	{
+		$db	= $this->_ee->db;
+		$site_id = $this->_ee->config->item('site_id');
+		
+		// Delete any existing site settings.
+		$db->delete('campaigner_settings', array('site_id' => $site_id));
+		
+		/**
+		 * Retrieve the basic settings, remove the mailing lists (which
+		 * are handled separately), and add the site ID.
+		 */
+		
+		$settings_data = $settings->to_array();
+		unset($settings_data['mailing_lists']);
+		$settings_data = array_merge(array('site_id' => $site_id), $settings_data);
+		
+		// Save the settings to the database.
+		$db->insert('campaigner_settings', $settings_data);
+		
+		return (bool) $db->affected_rows();
 	}
 	
 	
@@ -344,29 +463,37 @@ class Campaigner_model extends CI_Model {
 	 * Updates the settings from any POST input.
 	 *
 	 * @access	public
-	 * @return	array
+	 * @param 	Campaigner_settings 	$settings 		The settings object to update.
+	 * @return	Campaigner_settings
 	 */
-	public function update_extension_settings_from_input()
+	public function update_extension_settings_from_input(Campaigner_settings $settings)
 	{
-		/*
-		$settings = $this->get_extension_settings();
 		
-		// Works for simple data.
-		$fields = array('setting_a', 'setting_b');
+	}
+	
+	
+	/**
+	 * Updates the basic settings using POST data.
+	 *
+	 * @access	public
+	 * @param	Campaigner_settings		$settings		The settings object to update.
+	 * @return	Campaigner_settings
+	 */
+	public function update_settings_from_input(Campaigner_settings $settings)
+	{
+		$input 	= $this->_ee->input;
+		$props	= array('api_key', 'client_id');
 		
-		foreach ($fields AS $field_name)
+		foreach ($props AS $prop)
 		{
-			$set_method = 'set_' .$field_name;
-			
-			if (method_exists($settings, $set_method)
-				&& ($field_value = $this->_ee->input->get_post($field_name)) !== FALSE)
+			if ($prop_val = $input->post($prop))
 			{
-				$settings->$set_method($field_value);
+				$prop_method = 'set_' .$prop;
+				$settings->$prop_method($prop_val);
 			}
 		}
 		
-		$this->_extension_settings = $settings;
-		*/
+		return $settings;
 	}
 
 }

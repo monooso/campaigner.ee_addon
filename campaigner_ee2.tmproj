@@ -26,14 +26,14 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>2</integer>
+				<integer>37</integer>
 				<key>line</key>
-				<integer>259</integer>
+				<integer>491</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>253</integer>
+			<integer>452</integer>
 		</dict>
 		<key>third_party/campaigner/tests/test_campaigner_model.php</key>
 		<dict>
@@ -42,18 +42,18 @@
 				<key>column</key>
 				<integer>2</integer>
 				<key>line</key>
-				<integer>296</integer>
+				<integer>660</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>128</integer>
+			<integer>618</integer>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
-		<string>third_party/campaigner/tests/test_campaigner_model.php</string>
 		<string>third_party/campaigner/models/campaigner_model.php</string>
+		<string>third_party/campaigner/tests/test_campaigner_model.php</string>
 	</array>
 	<key>showFileHierarchyDrawer</key>
 	<false/>
@@ -114,6 +114,13 @@
 											<dict/>
 										</dict>
 									</dict>
+								</dict>
+								<key>views</key>
+								<dict>
+									<key>isExpanded</key>
+									<true/>
+									<key>subItems</key>
+									<dict/>
 								</dict>
 							</dict>
 						</dict>
