@@ -8,7 +8,7 @@
  * @package			: Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_merge_variable' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field' .EXT;
 
 class Campaigner_mailing_list {
 	
@@ -17,20 +17,20 @@ class Campaigner_mailing_list {
 	 * ------------------------------------------------------------ */
 	
 	/**
+	 * Custom fields.
+	 *
+	 * @access	private
+	 * @var		array
+	 */
+	private $_custom_fields = array();
+	
+	/**
 	 * List ID.
 	 *
 	 * @access	private
 	 * @var		string
 	 */
 	private $_list_id = '';
-	
-	/**
-	 * Merge variables.
-	 *
-	 * @access	private
-	 * @var		array
-	 */
-	private $_merge_variables = array();
 	
 	/**
 	 * Trigger field ID.
@@ -76,16 +76,54 @@ class Campaigner_mailing_list {
 	
 	
 	/**
-	 * Adds a merge variable to the merge variables array.
+	 * Adds a merge variable to the custom fields array.
 	 *
 	 * @access	public
-	 * @param	Campaigner_merge_variable	$merge_variable		The merge variable.
+	 * @param	Campaigner_custom_field		$custom_field		The custom field.
 	 * @return	array
 	 */
-	public function add_merge_variable(Campaigner_merge_variable $merge_variable)
+	public function add_custom_field(Campaigner_custom_field $custom_field)
 	{
-		$this->_merge_variables[] = $merge_variable;
-		return $this->get_merge_variables();
+		$this->_custom_fields[] = $custom_field;
+		return $this->get_custom_fields();
+	}
+	
+	
+	/**
+	 * Returns the custom fields.
+	 *
+	 * @access	public
+	 * @return	array
+	 */
+	public function get_custom_fields()
+	{
+		return $this->_custom_fields;
+	}
+	
+	
+	/**
+	 * Returns the specified custom field.
+	 *
+	 * @access	public
+	 * @param	string		$field_id		The custom field ID.
+	 * @return	Campaigner_custom_field|FALSE
+	 */
+	public function get_custom_field_by_id($field_id)
+	{
+		if ( ! $field_id OR ! is_string($field_id))
+		{
+			return FALSE;
+		}
+		
+		foreach ($this->_custom_fields AS $field)
+		{
+			if ($field->get_id() == $field_id)
+			{
+				return $field;
+			}
+		}
+		
+		return FALSE;
 	}
 	
 	
@@ -98,44 +136,6 @@ class Campaigner_mailing_list {
 	public function get_list_id()
 	{
 		return $this->_list_id;
-	}
-	
-	
-	/**
-	 * Returns the merge variables.
-	 *
-	 * @access	public
-	 * @return	array
-	 */
-	public function get_merge_variables()
-	{
-		return $this->_merge_variables;
-	}
-	
-	
-	/**
-	 * Returns the specified merge variable.
-	 *
-	 * @access	public
-	 * @param	string		$merge_variable_id		The merge variable ID.
-	 * @return	Campaigner_merge_variable|FALSE
-	 */
-	public function get_merge_variable_by_id($merge_variable_id)
-	{
-		if ( ! $merge_variable_id OR ! is_string($merge_variable_id))
-		{
-			return FALSE;
-		}
-		
-		foreach ($this->_merge_variables AS $var)
-		{
-			if ($var->get_id() == $merge_variable_id)
-			{
-				return $var;
-			}
-		}
-		
-		return FALSE;
 	}
 	
 	
@@ -164,6 +164,26 @@ class Campaigner_mailing_list {
 	
 	
 	/**
+	 * Sets the custom fields.
+	 *
+	 * @access	public
+	 * @param 	array		$custom_fields		The custom fields.
+	 * @return	array
+	 */
+	public function set_custom_fields(Array $custom_fields = array())
+	{
+		$this->_custom_fields = array();
+		
+		foreach ($custom_fields AS $field)
+		{
+			$this->add_custom_field($field);
+		}
+		
+		return $this->get_custom_fields();
+	}
+	
+	
+	/**
 	 * Sets the list ID.
 	 *
 	 * @access	public
@@ -174,26 +194,6 @@ class Campaigner_mailing_list {
 	{
 		$this->_list_id = $list_id;
 		return $this->get_list_id();
-	}
-	
-	
-	/**
-	 * Sets the merge variables.
-	 *
-	 * @access	public
-	 * @param 	array		$merge_variables		The merge variables.
-	 * @return	array
-	 */
-	public function set_merge_variables(Array $merge_variables = array())
-	{
-		$this->_merge_variables = array();
-		
-		foreach ($merge_variables AS $var)
-		{
-			$this->add_merge_variable($var);
-		}
-		
-		return $this->get_merge_variables();
 	}
 	
 	
@@ -234,17 +234,17 @@ class Campaigner_mailing_list {
 	public function to_array()
 	{
 		$return_data = array(
+			'custom_fields'		=> array(),
 			'list_id'			=> $this->get_list_id(),
-			'merge_variables'	=> array(),
 			'trigger_field_id'	=> $this->get_trigger_field_id(),
 			'trigger_value'		=> $this->get_trigger_value()
 		);
 		
-		// Merge variables.
-		$merge_vars = $this->get_merge_variables();
-		foreach ($merge_vars AS $merge_var)
+		// Custom fields.
+		$custom_fields = $this->get_custom_fields();
+		foreach ($custom_fields AS $custom_field)
 		{
-			$return_data['merge_variables'][] = $merge_var->to_array();
+			$return_data['custom_fields'][] = $custom_field->to_array();
 		}
 		
 		return $return_data;

@@ -119,7 +119,7 @@ class Campaigner_model extends CI_Model {
 				'unsigned'			=> TRUE
 			),
 			'api_key'	=> array(
-				'contraint'			=> 20,
+				'constraint'			=> 20,
 				'type'				=> 'varchar'
 			),
 			'client_id'	=> array(
@@ -144,7 +144,7 @@ class Campaigner_model extends CI_Model {
 				'type'			=> 'int',
 				'unsigned'		=> TRUE
 			),
-			'merge_variables' => array(
+			'custom_fields' => array(
 				'type'			=> 'text'
 			),
 			'trigger_field_id' => array(
@@ -253,19 +253,19 @@ class Campaigner_model extends CI_Model {
 		
 		foreach ($db_mailing_lists->result_array() AS $db_mailing_list)
 		{
-			// Extract the merge variables data.
-			$merge_vars = unserialize($db_mailing_list['merge_variables']);
-			unset($db_mailing_list['merge_variables']);
+			// Extract the custom fields data.
+			$custom_fields = unserialize($db_mailing_list['custom_fields']);
+			unset($db_mailing_list['custom_fields']);
 			
 			// Create the basic mailing list object.
 			$mailing_list = new Campaigner_mailing_list($db_mailing_list);
 			
-			// Add the merge variables.
-			if (is_array($merge_vars))
+			// Add the custom fields.
+			if (is_array($custom_fields))
 			{
-				foreach ($merge_vars AS $merge_var)
+				foreach ($custom_fields AS $custom_field)
 				{
-					$mailing_list->add_merge_variable(new Campaigner_merge_variable($merge_var));
+					$mailing_list->add_custom_field(new Campaigner_custom_field($custom_field));
 				}
 			}
 			
@@ -382,7 +382,7 @@ class Campaigner_model extends CI_Model {
 		foreach ($mailing_lists AS $mailing_list)
 		{
 			$data = $mailing_list->to_array();
-			$data['merge_variables'] = serialize($data['merge_variables']);
+			$data['custom_fields'] = serialize($data['custom_fields']);
 			$data = array_merge(array('site_id' => $site_id), $data);
 			
 			$db->insert('campaigner_mailing_lists', $data);

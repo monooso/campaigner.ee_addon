@@ -1,21 +1,21 @@
 <?php
 
 /**
- * Campaigner merge variable.
+ * Campaigner custom field.
  *
  * @author			: Stephen Lewis
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */
 
-class Campaigner_merge_variable {
+class Campaigner_custom_field {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES.
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * The member field ID associated with the merge variable.
+	 * The member field ID associated with the custom field.
 	 *
 	 * @access	private
 	 * @var		string
@@ -23,7 +23,7 @@ class Campaigner_merge_variable {
 	private $_field_id = '';
 	
 	/**
-	 * The Campaign Monitor merge variable ID.
+	 * The Campaign Monitor custom field ID.
 	 *
 	 * @access	private
 	 * @var		string
@@ -70,7 +70,7 @@ class Campaigner_merge_variable {
 	
 	
 	/**
-	 * Returns the Campaign Monitor merge variable ID.
+	 * Returns the Campaign Monitor custom field ID.
 	 *
 	 * @access	public
 	 * @return	string
@@ -96,10 +96,10 @@ class Campaigner_merge_variable {
 	
 	
 	/**
-	 * Sets the Campaign Monitor merge variable ID.
+	 * Sets the Campaign Monitor custom field ID.
 	 *
 	 * @access	public
-	 * @param 	string		$id		The Campaign Monitor merge variable ID.
+	 * @param 	string		$id		The Campaign Monitor custom field ID.
 	 * @return	string
 	 */
 	public function set_id($id)
@@ -125,5 +125,5 @@ class Campaigner_merge_variable {
 	
 }
 
-/* End of file		: campaigner_merge_variable.php */
-/* File location	: third_party/campaigner/classes/campaigner_merge_variable.php */
+/* End of file		: campaigner_custom_field.php */
+/* File location	: third_party/campaigner/classes/campaigner_custom_field.php */

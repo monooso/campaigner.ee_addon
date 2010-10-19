@@ -118,7 +118,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 				'unsigned'			=> TRUE
 			),
 			'api_key'	=> array(
-				'contraint'			=> 20,
+				'constraint'			=> 20,
 				'type'				=> 'varchar'
 			),
 			'client_id'	=> array(
@@ -152,7 +152,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		 * Create the mailing lists table.
 		 * - list_id
 		 * - site_id
-		 * - merge_variables
+		 * - custom_fields
 		 * 		serialised array: array($merge_variable => $member_field_id) --> simplest solution, for now.
 		 * - trigger_field_id
 		 * - trigger_field_value
@@ -168,7 +168,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 				'type'			=> 'int',
 				'unsigned'		=> TRUE
 			),
-			'merge_variables' => array(
+			'custom_fields' => array(
 				'type'			=> 'text'
 			),
 			'trigger_field_id' => array(
@@ -358,38 +358,38 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		// Site ID.
 		$this->_ee->config->setReturnValue('item', $site_id, array('site_id'));
 		
-		// Merge variables.
-		$merge_vars_data = array();
-		$merge_vars = array();
+		// Custom fields.
+		$custom_fields_data	= array();
+		$custom_fields 		= array();
 		
 		for ($count = 0; $count < 10; $count++)
 		{
 			$data = array('field_id' => 'm_field_id_' .$count, 'id' => 'merge_var_id_' .$count);
 			
-			$merge_vars_data[] = $data;
-			$merge_vars[] = new Campaigner_merge_variable($data);
+			$custom_fields_data[] 	= $data;
+			$custom_fields[] 		= new Campaigner_custom_field($data);
 		}
 		
-		$merge_vars_data = serialize($merge_vars_data);
+		$custom_fields_data = serialize($custom_fields_data);
 		
 		// Rows / mailing lists.
-		$db_rows = array();
-		$mailing_lists = array();
+		$db_rows 		= array();
+		$mailing_lists 	= array();
 		
 		for ($count = 0; $count < 10; $count++)
 		{
 			$data = array(
 				'site_id'			=> $site_id,
+				'custom_fields'		=> $custom_fields_data,
 				'list_id'			=> 'list_id_' .$count,
-				'merge_variables'	=> $merge_vars_data,
 				'trigger_field_id'	=> 'm_field_id_' .$count,
 				'trigger_value'		=> 'trigger_value_' .$count
 			);
 			
 			$db_rows[] = $data;
 			
-			$data['merge_variables'] = $merge_vars;
-			$mailing_lists[] = new Campaigner_mailing_list($data);
+			$data['custom_fields']	= $custom_fields;
+			$mailing_lists[]		= new Campaigner_mailing_list($data);
 		}
 		
 		// Return values.
@@ -434,15 +434,15 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		{
 			$data = array(
 				'site_id'			=> $site_id,
+				'custom_fields'		=> NULL,
 				'list_id'			=> 'list_id_' .$count,
-				'merge_variables'	=> NULL,
 				'trigger_field_id'	=> 'm_field_id_' .$count,
 				'trigger_value'		=> 'trigger_value_' .$count
 			);
 			
 			$db_rows[] = $data;
 			
-			unset($data['merge_variables']);
+			unset($data['custom_fields']);
 			$mailing_lists[] = new Campaigner_mailing_list($data);
 		}
 		
@@ -502,7 +502,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		// Merge variables.
 		for ($count = 0; $count < 10; $count++)
 		{
-			$merge_variables[] = new Campaigner_merge_variable(array(
+			$custom_fields[] = new Campaigner_custom_field(array(
 				'field_id'	=> 'm_field_id_' .$count,
 				'id'		=> 'id_' .$count
 			));
@@ -512,8 +512,8 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		for ($count = 0; $count < 10; $count++)
 		{
 			$mailing_lists[] = new Campaigner_mailing_list(array(
+				'custom_fields'		=> $custom_fields,
 				'list_id'			=> 'list_id_' .$count,
-				'merge_variables'	=> $merge_variables,
 				'trigger_field_id'	=> 'm_field_id_' .$count,
 				'trigger_value'		=> 'trigger_value_' .$count
 			));
@@ -533,9 +533,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		for ($count = 0; $count < count($mailing_lists); $count++)
 		{
-			$data = $mailing_lists[$count]->to_array();
-			$data['merge_variables'] = serialize($data['merge_variables']);
-			$data = array_merge(array('site_id' => $site_id), $data);
+			$data					= $mailing_lists[$count]->to_array();
+			$data['custom_fields']	= serialize($data['custom_fields']);
+			$data					= array_merge(array('site_id' => $site_id), $data);
 			
 			$db->expectAt($count, 'insert', array('campaigner_mailing_lists', $data));
 		}
@@ -658,7 +658,21 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	
 	public function test_update_mailing_lists_from_input__success()
 	{
+		// Dummy data.
+		/*
+		- mailing_list[list_id]
+		- mailing_list[list_id][checked]
+		- mailing_list[list_id][trigger_field_id]
+		- mailing_list[list_id][trigger_value]
+		- mailing_list[list_id][custom_fields]
+		*/
 		
+		
+		// Return values.
+		
+		// Settings.
+		
+		// Run the tests.
 	}
 	
 }
