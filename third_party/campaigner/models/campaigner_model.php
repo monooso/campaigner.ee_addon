@@ -538,7 +538,10 @@ class Campaigner_model extends CI_Model {
 	 */
 	public function update_extension_settings_from_input(Campaigner_settings $settings)
 	{
+		$settings = $this->update_settings_from_input($settings);
+		$settings->set_mailing_lists($this->get_mailing_lists_from_input());
 		
+		return $settings;
 	}
 	
 	

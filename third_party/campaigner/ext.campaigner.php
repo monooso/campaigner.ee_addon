@@ -145,16 +145,17 @@ class Campaigner_ext {
 	public function save_settings()
 	{
 		// Update the settings with any input data.
-		$this->_ee->campaigner_model->update_extension_settings_from_input();
+		$settings = $this->_ee->campaigner_model->update_extension_settings_from_input(new Campaigner_settings());
 		
 		// Save the settings.
-		if ($this->_ee->campaigner_model->save_extension_settings())
+		try
 		{
+			$this->_ee->campaigner_model->save_extension_settings($settings);
 			$this->_ee->session->set_flashdata('message_success', $this->_ee->lang->line('settings_saved'));
 		}
-		else
+		catch (Exception $e)
 		{
-			$this->_ee->session->set_flashdata('message_failure', $this->_ee->lang->line('settings_not_saved'));
+			$this->_ee->session->set_flashdata('message_failure', $e->getMessage());
 		}
 	}
 	

@@ -17,6 +17,13 @@ $lang = array(
 'extension_description'		=> 'Effortlessly subscribe members of your site to one or more Campaign Monitor mailing lists.',
 
 /* --------------------------------------------------------------
+ * EXTENSION : NAVIGATION
+ * ------------------------------------------------------------ */
+'nav_errors'				=> 'Error Log',
+'nav_help'					=> 'Help',
+'nav_settings'				=> 'Settings',
+
+/* --------------------------------------------------------------
  * EXTENSION : SETTINGS
  * ------------------------------------------------------------ */
 'settings_saved'			=> 'Settings saved.',
@@ -26,12 +33,9 @@ $lang = array(
 'value_heading'				=> 'Value',
 'save_settings'				=> 'Save Settings',
 
-'setting_a'					=> 'Setting A',
-'setting_b'					=> 'Setting B',
-
-'nav_errors'				=> 'Error Log',
-'nav_help'					=> 'Help',
-'nav_settings'				=> 'Settings',
+'api_title'					=> 'API Settings',
+'api_key'					=> 'API Key',
+'get_clients'				=> 'Get Clients',
 
 );
 

@@ -643,6 +643,26 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
+	public function test_update_settings_from_input__invalid_input()
+	{
+		$input 		= $this->_ee->input;
+		$api_key	= 'API key';
+		$client_id	= 'Client ID';
+		$invalid	= 'Wibble';
+		
+		// Return values.
+		$input->setReturnValue('post', $api_key, array('api_key'));
+		$input->setReturnValue('post', $client_id, array('client_id'));
+		$input->setReturnValue('post', $invalid, array('invalid'));
+		
+		// Settings.
+		$settings = new Campaigner_settings(array('api_key' => $api_key, 'client_id' => $client_id));
+		
+		// Run the test.
+		$this->assertIdentical($settings, $this->_model->update_settings_from_input(new Campaigner_settings()));
+	}
+	
+	
 	public function test_update_settings_from_input__missing_input()
 	{
 		// Return values.
