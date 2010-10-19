@@ -235,7 +235,7 @@ class Campaigner_ext {
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * Displays tab 'c'.
+	 * Displays the 'settings' tab.
 	 *
 	 * @access	private
 	 * @return	string

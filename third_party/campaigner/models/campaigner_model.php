@@ -209,6 +209,32 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
+	 * Retrieves the custom fields from the supplied POST input array.
+	 *
+	 * @access	public
+	 * @param	array		$custom_fields_data		The POST input array.
+	 * @return	array
+	 */
+	public function get_custom_fields_from_input_array(Array $custom_fields_data = array())
+	{
+		$custom_fields = array();
+
+		foreach ($custom_fields_data AS $cm_field_id => $ee_field_id)
+		{
+			if ($ee_field_id)
+			{
+				$custom_fields[] = new Campaigner_custom_field(array(
+					'id'		=> $cm_field_id,
+					'field_id'	=> $ee_field_id
+				));
+			}
+		}
+		
+		return $custom_fields;
+	}
+	
+	
+	/**
 	 * Returns the extension class name. Assumed to be the package name,
 	 * with a `_ext` suffix.
 	 *
@@ -273,6 +299,50 @@ class Campaigner_model extends CI_Model {
 		}
 		
 		return $mailing_lists;
+	}
+	
+	
+	/**
+	 * Retrieves the mailing lists from POST data.
+	 *
+	 * @access	public
+	 * @return	array
+	 */
+	public function get_mailing_lists_from_input()
+	{
+		$input 					= $this->_ee->input;
+		$active_mailing_lists	= $input->post('active_mailing_lists');
+		$all_mailing_lists 		= $input->post('all_mailing_lists');
+		$ret_mailing_lists		= array();
+		
+		foreach ($active_mailing_lists AS $list_id)
+		{
+			$ret_mailing_list = new Campaigner_mailing_list(array('list_id' => $list_id));
+			
+			// Trigger field ID.
+			if (isset($all_mailing_lists[$list_id]['trigger_field_id']))
+			{
+				$ret_mailing_list->set_trigger_field_id($all_mailing_lists[$list_id]['trigger_field_id']);
+			}
+			
+			// Trigger value.
+			if (isset($all_mailing_lists[$list_id]['trigger_value']))
+			{
+				$ret_mailing_list->set_trigger_value($all_mailing_lists[$list_id]['trigger_value']);
+			}
+			
+			// Custom fields.
+			if (isset($all_mailing_lists[$list_id]['custom_fields']))
+			{
+				$ret_mailing_list->set_custom_fields(
+					$this->get_custom_fields_from_input_array($all_mailing_lists[$list_id]['custom_fields'])
+				);
+			}
+			
+			$ret_mailing_lists[] = $ret_mailing_list;
+		}
+		
+		return $ret_mailing_lists;
 	}
 	
 	

@@ -216,19 +216,19 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			'user_register_end'
 		);
 		
-		for ($count = 0; $count < count($hooks); $count++)
+		for ($list_count = 0; $list_count < count($hooks); $list_count++)
 		{
 			$data = array(
 				'class'		=> $class,
 				'enabled'	=> 'y',
-				'hook'		=> $hooks[$count],
-				'method'	=> 'on_' .$hooks[$count],
+				'hook'		=> $hooks[$list_count],
+				'method'	=> 'on_' .$hooks[$list_count],
 				'priority'	=> 10,
 				'settings'	=> '',
 				'version'	=> $version
 			);
 			
-			$db->expectAt($count, 'insert', array('extensions', $data));
+			$db->expectAt($list_count, 'insert', array('extensions', $data));
 		}
 		
 		$db->expectCallCount('insert', count($hooks));
@@ -362,9 +362,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$custom_fields_data	= array();
 		$custom_fields 		= array();
 		
-		for ($count = 0; $count < 10; $count++)
+		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
-			$data = array('field_id' => 'm_field_id_' .$count, 'id' => 'merge_var_id_' .$count);
+			$data = array('field_id' => 'm_field_id_' .$list_count, 'id' => 'merge_var_id_' .$list_count);
 			
 			$custom_fields_data[] 	= $data;
 			$custom_fields[] 		= new Campaigner_custom_field($data);
@@ -376,14 +376,14 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$db_rows 		= array();
 		$mailing_lists 	= array();
 		
-		for ($count = 0; $count < 10; $count++)
+		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
 			$data = array(
 				'site_id'			=> $site_id,
 				'custom_fields'		=> $custom_fields_data,
-				'list_id'			=> 'list_id_' .$count,
-				'trigger_field_id'	=> 'm_field_id_' .$count,
-				'trigger_value'		=> 'trigger_value_' .$count
+				'list_id'			=> 'list_id_' .$list_count,
+				'trigger_field_id'	=> 'm_field_id_' .$list_count,
+				'trigger_value'		=> 'trigger_value_' .$list_count
 			);
 			
 			$db_rows[] = $data;
@@ -430,14 +430,14 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$db_rows = array();
 		$mailing_lists = array();
 		
-		for ($count = 0; $count < 10; $count++)
+		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
 			$data = array(
 				'site_id'			=> $site_id,
 				'custom_fields'		=> NULL,
-				'list_id'			=> 'list_id_' .$count,
-				'trigger_field_id'	=> 'm_field_id_' .$count,
-				'trigger_value'		=> 'trigger_value_' .$count
+				'list_id'			=> 'list_id_' .$list_count,
+				'trigger_field_id'	=> 'm_field_id_' .$list_count,
+				'trigger_value'		=> 'trigger_value_' .$list_count
 			);
 			
 			$db_rows[] = $data;
@@ -500,22 +500,22 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$site_id	= '10';
 		
 		// Merge variables.
-		for ($count = 0; $count < 10; $count++)
+		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
 			$custom_fields[] = new Campaigner_custom_field(array(
-				'field_id'	=> 'm_field_id_' .$count,
-				'id'		=> 'id_' .$count
+				'field_id'	=> 'm_field_id_' .$list_count,
+				'id'		=> 'id_' .$list_count
 			));
 		}
 		
 		// Mailing lists.
-		for ($count = 0; $count < 10; $count++)
+		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
 			$mailing_lists[] = new Campaigner_mailing_list(array(
 				'custom_fields'		=> $custom_fields,
-				'list_id'			=> 'list_id_' .$count,
-				'trigger_field_id'	=> 'm_field_id_' .$count,
-				'trigger_value'		=> 'trigger_value_' .$count
+				'list_id'			=> 'list_id_' .$list_count,
+				'trigger_field_id'	=> 'm_field_id_' .$list_count,
+				'trigger_value'		=> 'trigger_value_' .$list_count
 			));
 		}
 		
@@ -531,13 +531,13 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$db->expectOnce('delete', array('campaigner_mailing_lists', array('site_id' => $site_id)));
 		$db->expectCallCount('insert', count($mailing_lists));
 		
-		for ($count = 0; $count < count($mailing_lists); $count++)
+		for ($list_count = 0; $list_count < count($mailing_lists); $list_count++)
 		{
-			$data					= $mailing_lists[$count]->to_array();
+			$data					= $mailing_lists[$list_count]->to_array();
 			$data['custom_fields']	= serialize($data['custom_fields']);
 			$data					= array_merge(array('site_id' => $site_id), $data);
 			
-			$db->expectAt($count, 'insert', array('campaigner_mailing_lists', $data));
+			$db->expectAt($list_count, 'insert', array('campaigner_mailing_lists', $data));
 		}
 		
 		// Run the test.
@@ -656,23 +656,111 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_update_mailing_lists_from_input__success()
+	public function test_get_mailing_lists_from_input__success()
 	{
+		/**
+		 * NOTE:
+		 * We test the custom fields separately.
+		 */
+		
+		$input = $this->_ee->input;
+		
 		// Dummy data.
 		/*
-		- mailing_list[list_id]
-		- mailing_list[list_id][checked]
-		- mailing_list[list_id][trigger_field_id]
-		- mailing_list[list_id][trigger_value]
-		- mailing_list[list_id][custom_fields]
+		- active_mailing_lists[] (value = list_id)
+		- all_mailing_lists[list_id][trigger_field_id]
+		- all_mailing_lists[list_id][trigger_value]
+		- all_mailing_lists[list_id][custom_fields]
+		- all_mailing_lists[list_id][custom_fields][cm_field_id] (value = m_field_id)
 		*/
 		
+		$all_mailing_lists_data		= array();
+		$active_mailing_list_ids	= array();
+		$active_mailing_lists 		= array();
+		
+		for ($list_count = 1; $list_count <= 10; $list_count++)
+		{
+			$mailing_list_data = array(
+				'custom_fields'		=> array(),
+				'trigger_field_id'	=> 'm_field_id_' .$list_count,
+				'trigger_value'		=> 'trigger_value_' .$list_count
+			);
+			
+			$all_mailing_lists_data['list_id_' .$list_count] = $mailing_list_data;
+			
+			// Active mailing lists.
+			if ($list_count <= 5)
+			{
+				$active_mailing_list_ids[]		= 'list_id_' .$list_count;
+				$mailing_list_data['list_id']	= 'list_id_' .$list_count;
+				$active_mailing_lists[]			= new Campaigner_mailing_list($mailing_list_data);
+			}
+		}
+		
+		// Expectations.
+		$input->expectCallCount('post', 2);
 		
 		// Return values.
-		
-		// Settings.
+		$input->setReturnValue('post', $active_mailing_list_ids, array('active_mailing_lists'));
+		$input->setReturnValue('post', $all_mailing_lists_data, array('all_mailing_lists'));
 		
 		// Run the tests.
+		$test_mailing_lists = $this->_model->get_mailing_lists_from_input();
+		$this->assertIsA($test_mailing_lists, 'Array');
+		$this->assertIdentical(count($active_mailing_lists), count($test_mailing_lists));
+		
+		for ($list_count = 0; $list_count < count($active_mailing_lists); $list_count++)
+		{
+			$this->assertIsA($test_mailing_lists[$list_count], 'Campaigner_mailing_list');
+			$this->assertIdentical($active_mailing_lists[$list_count], $test_mailing_lists[$list_count]);
+		}
+	}
+	
+	
+	public function test_get_custom_fields_from_input_array__success()
+	{
+		// Dummy data.
+		$custom_fields		= array();
+		$custom_fields_data	= array();
+		
+		for ($field_count = 1; $field_count <= 5; $field_count++)
+		{
+			$custom_fields_data['cm_field_id_' .$field_count] = 'm_field_id_' .$field_count;
+			
+			$custom_fields[] = new Campaigner_custom_field(array(
+				'id'		=> 'cm_field_id_' .$field_count,
+				'field_id'	=> 'm_field_id_' .$field_count
+			));
+		}
+		
+		// Run the tests.
+		$returned_data = $this->_model->get_custom_fields_from_input_array($custom_fields_data);
+		
+		$this->assertIsA($returned_data, 'Array');
+		$this->assertIdentical(count($returned_data), count($custom_fields));
+		$this->assertIdentical($returned_data, $custom_fields);
+	}
+	
+	
+	/**
+	 * Testing for custom fields that have not been mapped to member fields.
+	 */
+	public function test_get_custom_fields_from_input_array__custom_field_not_mapped()
+	{
+		// Dummy data.
+		$custom_fields		= array();
+		$custom_fields_data	= array();
+		
+		for ($field_count = 1; $field_count <= 5; $field_count++)
+		{
+			$custom_fields_data['cm_field_id_' .$field_count] = '';
+		}
+		
+		// Run the tests.
+		$returned_data = $this->_model->get_custom_fields_from_input_array($custom_fields_data);
+		
+		$this->assertIsA($returned_data, 'Array');
+		$this->assertIdentical($returned_data, $custom_fields);
 	}
 	
 }
