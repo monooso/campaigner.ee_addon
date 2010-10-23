@@ -9,7 +9,7 @@
  * @copyright	Experience Internet
  */
 
-class Campaigner_mock_api {
+class Mock_CMBase {
 	
 	/* --------------------------------------------------------------
 	 * PUBLIC METHODS.
@@ -17,11 +17,11 @@ class Campaigner_mock_api {
 	public function clientGetLists() {}		// clientGetListsDropdown?
 	public function listGetCustomFields() {}
 	public function subscriberAddWithCustomFields() {}
-	public function subscriberUnsubscriber() {}
+	public function subscriberUnsubscribe() {}
 	public function userGetClients() {}
 	
 }
 
 
-/* End of file		: Campaigner_mock_api.php */
-/* File location	: third_party/campaigner/tests/mocks/campaigner_mock_api.php */
+/* End of file		: mock.cmbase.php */
+/* File location	: third_party/campaigner/tests/mocks/mock.cmbase.php */

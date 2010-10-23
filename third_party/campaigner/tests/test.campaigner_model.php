@@ -10,12 +10,22 @@
 
 require_once PATH_THIRD .'campaigner/models/campaigner_model' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
+require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_api_connector' .EXT;
 
 class Test_campaigner_model extends Testee_unit_test_case {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES
 	 * ------------------------------------------------------------ */
+	
+	/**
+	 * The API connector.
+	 *
+	 * @access	private
+	 * @var		Mock_campaigner_api_connector
+	 */
+	private $_api_connector;
+	
 	
 	/**
 	 * The model.
@@ -41,7 +51,10 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	{
 		parent::setUp();
 		
+		Mock::generate('Mock_campaigner_api_connector', 'Campaigner_api_connector');
+		
 		$this->_model = new Campaigner_model();
+		$this->_model->set_api_connector(new Campaigner_api_connector());
 	}
 	
 	
@@ -781,6 +794,18 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		$this->assertIsA($returned_data, 'Array');
 		$this->assertIdentical($returned_data, $custom_fields);
+	}
+	
+	
+	public function test_get_clients__success()
+	{
+		// Dummy data.
+		
+		// Expectations.
+		
+		// Return values.
+		
+		// Tests.
 	}
 	
 }

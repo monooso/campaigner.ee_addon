@@ -15,7 +15,15 @@ class Campaigner_model extends CI_Model {
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES
 	 * ------------------------------------------------------------ */
-
+	
+	/**
+	 * API connector.
+	 *
+	 * @access	private
+	 * @var		Campaigner_api_connector
+	 */
+	private $_api_connector;
+	
 	/**
 	 * ExpressionEngine object reference.
 	 *
@@ -502,6 +510,19 @@ class Campaigner_model extends CI_Model {
 		$db->insert('campaigner_settings', $settings_data);
 		
 		return (bool) $db->affected_rows();
+	}
+	
+	
+	/**
+	 * Sets the API connector.
+	 *
+	 * @access	public
+	 * @param	Campaigner_api_connector		$api_connector		The API connector.
+	 * @return	void
+	 */
+	public function set_api_connector(Campaigner_api_connector $api_connector)
+	{
+		$this->_api_connector = $api_connector;
 	}
 	
 	
