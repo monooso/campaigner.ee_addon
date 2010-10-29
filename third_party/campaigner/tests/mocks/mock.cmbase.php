@@ -14,7 +14,7 @@ class Mock_CMBase {
 	/* --------------------------------------------------------------
 	 * PUBLIC METHODS.
 	 * ------------------------------------------------------------ */
-	public function clientGetLists() {}		// clientGetListsDropdown?
+	public function clientGetLists() {}
 	public function listGetCustomFields() {}
 	public function subscriberAddWithCustomFields() {}
 	public function subscriberUnsubscribe() {}

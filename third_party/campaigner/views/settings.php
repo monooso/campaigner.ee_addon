@@ -1,9 +1,9 @@
 <?php
 
 echo form_open($action_url, '', $hidden_fields);
-$this->table->set_template($cp_pad_table_template);
 
-$this->table->set_heading(array('colspan' => '3', 'data' => lang('api_title')));
+$this->table->set_template($cp_pad_table_template);
+$this->table->set_heading(array('colspan' => '3', 'data' => lang('hd_api_title')));
 
 /*
 $this->table->set_heading(array(
@@ -13,7 +13,10 @@ $this->table->set_heading(array(
 */
 
 $this->table->add_row(array(
-	lang('api_key', 'api_key'),
+	array(
+		'data' 	=> lang('lbl_api_key', 'api_key'),
+		'style'	=> 'width : 15%'
+	),
 	form_input(array(
 		'id'	=> 'api_key',
 		'class'	=> 'full_field',
@@ -24,20 +27,42 @@ $this->table->add_row(array(
 		'data' => form_button(array(
 			'id'		=> 'get_clients',
 			'class'		=> 'submit',
-			'content'	=> lang('get_clients'),
+			'content'	=> lang('lbl_get_clients'),
 			'name'		=> 'get_clients'
 		)),
-		'style' => 'width : 25%;'
+		'style' => 'width : 20%;'
 	)
 ));
 
 echo $this->table->generate();
+$this->table->clear();
+
+?>
+
+<!-- Clients -->
+<div id="campaigner_clients">
+<?php
+
+//$this->load->view('_clients');
+
+?>
+</div>
+
+<!-- Mailing Lists -->
+<div id="campaigner_lists">
+<?php
+
+//$this->load->view('_mailing_lists');
+
+?>
+</div>
+
+<?php
 
 echo '<div class="submit_wrapper">';
-echo form_submit(array('name' => 'submit', 'value' => lang('save_settings'), 'class' => 'submit'));
+echo form_submit(array('name' => 'submit', 'value' => lang('lbl_save_settings'), 'class' => 'submit'));
 echo '</div>';
 echo form_close();
-
 
 /* End of file		: settings.php */
 /* File location	: third_party/campaigner/views/settings.php */

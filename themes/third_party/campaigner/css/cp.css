@@ -1,13 +1,37 @@
 /**
+ * Campaigner control panel styles.
+ *
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */
 
 @media screen, projection {
-	
-	
-	
+
+/* =campaigner_loading
+ -------------------------------------------------------------*/
+#campaigner_loading {
+background 				: rgb(0, 0, 0);
+display 				: none;
+opacity 				: 0.9;
+position 				: absolute;
+}
+
+#campaigner_loading p {
+-moz-border-radius		: 10px;
+-webkit-border-radius	: 10px;
+background 				: rgb(0, 0, 0) url('../img/loading.gif') no-repeat 50% 50%;
+border 					: 2px solid rgb(51, 51, 51);
+border-radius 			: 10px;
+height 					: 32px;
+left 					: 50%;
+margin 					: -68px 0 0 -68px;
+padding 				: 50px;
+position 				: absolute;
+top 					: 50%;
+width 					: 32px;
+}
+
 }
 
 /* End of file		: cp.css */

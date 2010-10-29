@@ -8,9 +8,9 @@
  * @copyright	Experience Internet
  */
 
-require_once PATH_THIRD .'campaigner/models/campaigner_model' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
-require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_api_connector' .EXT;
+require_once PATH_THIRD .'campaigner/models/campaigner_model' .EXT;
+require_once PATH_THIRD .'campaigner/tests/mocks/mock.cmbase' .EXT;
 
 class Test_campaigner_model extends Testee_unit_test_case {
 	
@@ -22,10 +22,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	 * The API connector.
 	 *
 	 * @access	private
-	 * @var		Mock_campaigner_api_connector
+	 * @var		CMBase
 	 */
 	private $_api_connector;
-	
 	
 	/**
 	 * The model.
@@ -51,10 +50,10 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	{
 		parent::setUp();
 		
-		Mock::generate('Mock_campaigner_api_connector', 'Campaigner_api_connector');
+		Mock::generate('Mock_CMBase', 'CMBase');
 		
-		$this->_model = new Campaigner_model();
-		$this->_model->set_api_connector(new Campaigner_api_connector());
+		$this->_api_connector	= new CMBase();
+		$this->_model 			= new Campaigner_model();
 	}
 	
 	
@@ -799,13 +798,45 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	
 	public function test_get_clients__success()
 	{
-		// Dummy data.
+		// Set the API connector.
+		$this->_model->set_api_connector($this->_api_connector);
 		
 		// Expectations.
-		
-		// Return values.
+		$this->_api_connector->expectOnce('userGetClients');
 		
 		// Tests.
+		$this->_model->get_clients();
+	}
+	
+	
+	public function test_get_clients__api_connector_not_set()
+	{
+		try
+		{
+			$this->_model->get_clients();
+			$this->fail();
+		}
+		catch (Exception $e)
+		{
+			$this->assertPattern('#api connector not set#i', $e->getMessage());
+		}
+	}
+	
+	
+	public function test_get_theme_url__no_slash()
+	{
+		// Dummy values.
+		$theme_url 		= '/path/to/themes';
+		$package_url	= $theme_url .'/third_party/' .strtolower($this->_model->get_package_name()) .'/';
+		
+		// Expectations.
+		$this->_ee->config->expectOnce('item', array('theme_folder_url'));
+		
+		// Return values.
+		$this->_ee->config->setReturnValue('item', $theme_url, array('theme_folder_url'));
+		
+		// Tests.
+		$this->assertIdentical($package_url, $this->_model->get_theme_url());
 	}
 	
 }

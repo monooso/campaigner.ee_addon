@@ -151,11 +151,14 @@ class Campaigner_ext {
 		try
 		{
 			$this->_ee->campaigner_model->save_extension_settings($settings);
-			$this->_ee->session->set_flashdata('message_success', $this->_ee->lang->line('settings_saved'));
+			$this->_ee->session->set_flashdata('message_success', $this->_ee->lang->line('msg_settings_saved'));
 		}
 		catch (Exception $e)
 		{
-			$this->_ee->session->set_flashdata('message_failure', $e->getMessage());
+			$this->_ee->session->set_flashdata(
+				'message_failure',
+				$this->_ee->lang->line('msg_settings_not_saved') .' (' .$e->getMessage() .')'
+			);
 		}
 	}
 	
@@ -243,16 +246,79 @@ class Campaigner_ext {
 	 */
 	private function _display_settings()
 	{
+		// Theme URL.
+		$theme_url = $this->_ee->campaigner_model->get_theme_url();
+		
 		// Collate the view variables.
-		$vars = array(
+		$view_vars = array(
 			'action_url'	=> 'C=addons_extensions' .AMP .'M=save_extension_settings',
 			'cp_page_title'	=> $this->_ee->lang->line('extension_name'),
 			'hidden_fields'	=> array('file' => strtolower($this->_ee->campaigner_model->get_package_name())),
 			'settings'		=> $this->_ee->campaigner_model->get_extension_settings()
 		);
+		
+		
+		/**
+		 * Is this an AJAX request?
+		 */
+		
+		if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
+		{
+			switch (strtolower($this->_ee->input->get('request')))
+			{
+				case 'get_clients':
+					$this->_ee->output->send_ajax_response($this->_ee->load->view('_clients', $view_vars, TRUE));
+					break;
+					
+				case 'get_mailing_lists':
+					$this->_ee->output->send_ajax_response($this->_ee->load->view('_mailing_lists', $view_vars, TRUE));
+					break;
+				
+				default:
+					break;
+			}
+		}
+		else
+		{
+			// Add the CSS.
+			$this->_ee->cp->add_to_foot('<link media="screen, projection" rel="stylesheet" type="text/css" href="'
+				.$theme_url .'css/cp.css" />');
+
+			// JavaScript.
+			$this->_ee->load->library('javascript');
 			
-		// Load the view.
-		return $this->_ee->load->view('settings', $vars, TRUE);
+			$this->_ee->cp->add_to_foot('<script type="text/javascript" src="'
+				.$theme_url .'js/cp.js"></script>');
+
+			// JavaScript globals.
+			$this->_ee->javascript->set_global(
+				'campaigner.lang',
+				array(
+					'missingApiKey' 	=> $this->_ee->lang->line('msg_missing_api_key'),
+					'missingClientId'	=> $this->_ee->lang->line('msg_missing_client_id')
+				)
+			);
+
+			/*
+			$this->_ee->javascript->set_global(
+				'campaigner.memberFields',
+				$this->_ee->javascript->generate_json($member_fields)
+			);
+			*/
+
+			$this->_ee->javascript->set_global(
+				'campaigner.ajaxUrl',
+				str_replace(AMP, '&', BASE)
+					.'&C=addons_extensions&M=extension_settings&file='
+					.strtolower($this->_ee->campaigner_model->get_package_name())
+			);
+
+			// Compile the JavaScript.
+			$this->_ee->javascript->compile();
+			
+			// Load the view.
+			return $this->_ee->load->view('settings', $view_vars, TRUE);
+		}
 	}
 	
 }

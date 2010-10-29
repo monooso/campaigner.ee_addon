@@ -26,16 +26,31 @@ $lang = array(
 /* --------------------------------------------------------------
  * EXTENSION : SETTINGS
  * ------------------------------------------------------------ */
-'settings_saved'			=> 'Settings saved.',
-'settings_not_saved'		=> 'Settings not saved.',
+'msg_settings_saved'		=> 'Settings saved.',
+'msg_settings_not_saved'	=> 'Unable to save settings.',
 
-'setting_heading'			=> 'Setting',
-'value_heading'				=> 'Value',
-'save_settings'				=> 'Save Settings',
+'hd_api_title'				=> 'API Settings',
+'lbl_api_key'				=> 'API Key',
+'lbl_get_clients'			=> 'Get Clients',
 
-'api_title'					=> 'API Settings',
-'api_key'					=> 'API Key',
-'get_clients'				=> 'Get Clients',
+'hd_clients'				=> 'Clients',
+'lbl_client'				=> 'Client',
+'lbl_get_lists'				=> 'Get Mailing Lists',
+
+'tbl_hd_list_name'			=> 'List Name',
+'tbl_hd_trigger_field'		=> 'Trigger Field',
+'tbl_hd_trigger_value'		=> 'Trigger Value',
+'tbl_hd_custom_fields'		=> 'Custom Fields',
+
+'msg_no_mailing_lists'		=> 'There are no mailing lists to display.',
+
+'lbl_save_settings'			=> 'Save Settings',
+
+/* --------------------------------------------------------------
+ * JAVASCRIPT MESSAGES
+ * ------------------------------------------------------------ */
+'msg_missing_api_key'		=> 'Please enter your Campaign Monitor API key.',
+'msg_missing_client_id'		=> 'Please select a client from the list.'
 
 );
 

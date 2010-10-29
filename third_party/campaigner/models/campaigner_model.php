@@ -20,7 +20,7 @@ class Campaigner_model extends CI_Model {
 	 * API connector.
 	 *
 	 * @access	private
-	 * @var		Campaigner_api_connector
+	 * @var		CMBase
 	 */
 	private $_api_connector;
 	
@@ -66,12 +66,28 @@ class Campaigner_model extends CI_Model {
 	private $_package_version;
 	
 	/**
+	 * The extension settings.
+	 *
+	 * @access	private
+	 * @var		Campaigner_settings
+	 */
+	private $_settings;
+	
+	/**
 	 * The site ID.
 	 *
 	 * @access	private
 	 * @var		string
 	 */
 	private $_site_id;
+	
+	/**
+	 * Package theme URL.
+	 *
+	 * @access	private
+	 * @var		string
+	 */
+	private $_theme_url;
 	
 	
 	
@@ -217,6 +233,23 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
+	 * Wrapper for the CMBase::userGetClients method.
+	 *
+	 * @access	public
+	 * @return	void
+	 */
+	public function get_clients()
+	{
+		if ( ! $this->_api_connector)
+		{
+			throw new Exception('API connector not set.');
+		}
+		
+		$this->_api_connector->userGetClients();
+	}
+	
+	
+	/**
 	 * Retrieves the custom fields from the supplied POST input array.
 	 *
 	 * @access	public
@@ -263,10 +296,13 @@ class Campaigner_model extends CI_Model {
 	 */
 	public function get_extension_settings()
 	{
-		$settings = $this->get_settings_from_db();
-		$settings->set_mailing_lists($this->get_mailing_lists_from_db());
+		if ( ! $this->_settings)
+		{
+			$this->_settings = $this->get_settings_from_db();
+			$this->_settings->set_mailing_lists($this->get_mailing_lists_from_db());
+		}
 		
-		return $settings;
+		return $this->_settings;
 	}
 	
 	
@@ -418,6 +454,28 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
+	 * Returns the package theme URL.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function get_theme_url()
+	{
+		if ( ! $this->_theme_url)
+		{
+			$theme_url = $this->_ee->config->item('theme_folder_url');
+			$theme_url = substr($theme_url, -1) == '/'
+				? $theme_url .'third_party/'
+				: $theme_url .'/third_party/';
+			
+			$this->_theme_url = $theme_url .strtolower($this->get_package_name()) .'/';
+		}
+		
+		return $this->_theme_url;
+	}
+	
+	
+	/**
 	 * Saves the extension settings.
 	 *
 	 * @access	public
@@ -514,13 +572,13 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
-	 * Sets the API connector.
+	 * Sets the API connector object.
 	 *
 	 * @access	public
-	 * @param	Campaigner_api_connector		$api_connector		The API connector.
+	 * @param	CMBase		$api_connector		The API connector object.
 	 * @return	void
 	 */
-	public function set_api_connector(Campaigner_api_connector $api_connector)
+	public function set_api_connector(CMBase $api_connector)
 	{
 		$this->_api_connector = $api_connector;
 	}

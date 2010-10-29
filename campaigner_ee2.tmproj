@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>third_party/campaigner/tests/test.campaigner_api_connector.php</string>
+	<string>third_party/campaigner/tests/test.campaigner_model.php</string>
 	<key>documents</key>
 	<array>
 		<dict>
@@ -21,100 +21,69 @@
 	<integer>325</integer>
 	<key>metaData</key>
 	<dict>
-		<key>third_party/campaigner/classes/campaigner_api_connector.php</key>
+		<key>third_party/campaigner/libraries/CMBase.php</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>74</integer>
+				<integer>0</integer>
 				<key>line</key>
-				<integer>39</integer>
+				<integer>1082</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>0</integer>
+			<integer>1052</integer>
 		</dict>
 		<key>third_party/campaigner/models/campaigner_model.php</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>34</integer>
+				<integer>2</integer>
 				<key>line</key>
-				<integer>22</integer>
-			</dict>
-			<key>columnSelection</key>
-			<false/>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>0</integer>
-			<key>selectFrom</key>
-			<dict>
-				<key>column</key>
-				<integer>0</integer>
-				<key>line</key>
-				<integer>0</integer>
-			</dict>
-			<key>selectTo</key>
-			<dict>
-				<key>column</key>
-				<integer>72</integer>
-				<key>line</key>
-				<integer>595</integer>
-			</dict>
-		</dict>
-		<key>third_party/campaigner/tests/mocks/mock.campaigner_api_connector.php</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>83</integer>
-				<key>line</key>
-				<integer>25</integer>
+				<integer>238</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>0</integer>
+			<integer>209</integer>
 		</dict>
 		<key>third_party/campaigner/tests/mocks/mock.cmbase.php</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>8</integer>
+				<integer>67</integer>
 				<key>line</key>
-				<integer>20</integer>
+				<integer>15</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
 			<integer>0</integer>
 		</dict>
-		<key>third_party/campaigner/tests/test.campaigner_api_connector.php</key>
+		<key>third_party/campaigner/tests/test.campaigner_model.php</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>15</integer>
+				<integer>2</integer>
 				<key>line</key>
-				<integer>25</integer>
+				<integer>812</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>12</integer>
+			<integer>760</integer>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
-		<string>third_party/campaigner/tests/test.campaigner_api_connector.php</string>
+		<string>third_party/campaigner/tests/test.campaigner_model.php</string>
 		<string>third_party/campaigner/tests/mocks/mock.cmbase.php</string>
-		<string>third_party/campaigner/classes/campaigner_api_connector.php</string>
-		<string>third_party/campaigner/tests/mocks/mock.campaigner_api_connector.php</string>
 		<string>third_party/campaigner/models/campaigner_model.php</string>
+		<string>third_party/campaigner/libraries/CMBase.php</string>
 	</array>
 	<key>showFileHierarchyDrawer</key>
 	<false/>
@@ -206,6 +175,6 @@
 		</dict>
 	</dict>
 	<key>windowFrame</key>
-	<string>{{244, 150}, {1436, 878}}</string>
+	<string>{{4, 0}, {1916, 1178}}</string>
 </dict>
 </plist>
