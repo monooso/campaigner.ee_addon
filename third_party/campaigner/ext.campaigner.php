@@ -291,6 +291,7 @@ class Campaigner_ext {
 			{
 				if (($saved_mailing_list = $this->settings->get_mailing_list_by_id($mailing_list->get_list_id())))
 				{
+					$mailing_list->set_active(TRUE);
 					$mailing_list->set_trigger_field($saved_mailing_list->get_trigger_field());
 					$mailing_list->set_trigger_value($saved_mailing_list->get_trigger_value());
 					

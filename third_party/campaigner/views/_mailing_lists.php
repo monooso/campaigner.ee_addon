@@ -30,7 +30,7 @@ if ($mailing_lists)
 		$list_name	= $mailing_list->get_list_name();
 		
 		$checkbox = form_checkbox(array(
-			'checked'	=> FALSE,
+			'checked'	=> $mailing_list->get_active(),
 			'id' 		=> "mailing_lists[{$list_id}][checked]",
 			'name' 		=> "mailing_lists[{$list_id}][checked]",
 			'tabindex'	=> $tabindex += 10,
