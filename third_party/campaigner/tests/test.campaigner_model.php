@@ -1032,7 +1032,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function xtest_get_mailing_list_custom_fields_from_api__success()
+	public function test_get_mailing_list_custom_fields_from_api__success()
 	{
 		// Dummy values.
 		$list_id = 'ABC123';
@@ -1072,11 +1072,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		foreach ($api_result['anyType']['ListCustomField'] AS $custom_field_data)
 		{
-			$custom_fields[] = new Campaigner_api_custom_field(array(
-				'type'		=> $custom_field_data['DataType'],
-				'name'		=> $custom_field_data['FieldName'],
-				'options'	=> $custom_field_data['FieldOptions'],
-				'key'		=> $custom_field_data['Key']
+			$custom_fields[] = new Campaigner_custom_field(array(
+				'label'		=> $custom_field_data['FieldName'],
+				'cm_key'	=> $custom_field_data['Key']
 			));
 		}
 		

@@ -8,11 +8,12 @@
  * @package			: Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_api_custom_field' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_client' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
+require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
 
 class Campaigner_model extends CI_Model {
 	
@@ -350,19 +351,14 @@ class Campaigner_model extends CI_Model {
 			 * or missing data (for some unforeseen reason).
 			 */
 			
-			if ( ! isset($api_field['Key'])
-				OR ! isset($api_field['FieldName'])
-				OR ! isset($api_field['FieldOptions'])
-				OR ! isset($api_field['DataType']))
+			if ( ! isset($api_field['Key']) OR ! isset($api_field['FieldName']))
 			{
 				continue;
 			}
 			
-			$fields[] = new Campaigner_api_custom_field(array(
-				'key'		=> $api_field['Key'],
-				'name'		=> $api_field['FieldName'],
-				'options'	=> $api_field['FieldOptions'],
-				'type'		=> $api_field['DataType']
+			$fields[] = new Campaigner_custom_field(array(
+				'cm_key'	=> $api_field['Key'],
+				'label'		=> $api_field['FieldName']
 			));
 		}
 		
