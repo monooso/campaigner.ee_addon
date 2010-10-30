@@ -9,8 +9,8 @@
  */
 
 require_once PATH_THIRD .'campaigner/classes/campaigner_api_custom_field' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_api_mailing_list' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_client' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
 
@@ -400,9 +400,9 @@ class Campaigner_model extends CI_Model {
 				continue;
 			}
 			
-			$lists[] = new Campaigner_api_mailing_list(array(
-				'id'			=> $api_list['ListID'],
-				'name'			=> $api_list['Name'],
+			$lists[] = new Campaigner_mailing_list(array(
+				'list_id'		=> $api_list['ListID'],
+				'list_name'		=> $api_list['Name'],
 				'custom_fields'	=> $this->get_mailing_list_custom_fields_from_api($api_list['ListID'])
 			));
 		}
