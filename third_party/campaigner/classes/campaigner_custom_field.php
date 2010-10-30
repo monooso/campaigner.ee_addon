@@ -15,7 +15,7 @@ class Campaigner_custom_field {
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * The Campaign Monitor key.
+	 * Campaign Monitor key.
 	 *
 	 * @access	private
 	 * @var		string
@@ -23,7 +23,16 @@ class Campaigner_custom_field {
 	private $_cm_key = '';
 	
 	/**
-	 * The member field ID associated with the custom field.
+	 * Label.
+	 *
+	 * @access	private
+	 * @var		string
+	 */
+	private $_label;
+	
+	
+	/**
+	 * Member field ID.
 	 *
 	 * @access	private
 	 * @var		string
@@ -70,6 +79,18 @@ class Campaigner_custom_field {
 	
 	
 	/**
+	 * Returns the label.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function get_label()
+	{
+		return $this->_label;
+	}
+	
+	
+	/**
 	 * Returns the member field ID.
 	 *
 	 * @access	public
@@ -92,6 +113,24 @@ class Campaigner_custom_field {
 	{
 		$this->_cm_key = $cm_key;
 		return $this->get_cm_key();
+	}
+	
+	
+	/**
+	 * Sets the label.
+	 *
+	 * @access	public
+	 * @param 	string		$label		The label.
+	 * @return	string
+	 */
+	public function set_label($label)
+	{
+		if (is_string($label))
+		{
+			$this->_label = $label;
+		}
+		
+		return $this->get_label();
 	}
 	
 	
@@ -119,6 +158,7 @@ class Campaigner_custom_field {
 	{
 		return array(
 			'cm_key'			=> $this->get_cm_key(),
+			'label'				=> $this->get_label(),
 			'member_field_id'	=> $this->get_member_field_id()
 		);
 	}

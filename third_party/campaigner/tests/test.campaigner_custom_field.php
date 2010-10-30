@@ -40,7 +40,11 @@ class Test_campaigner_custom_field extends Testee_unit_test_case {
 	{
 		parent::setUp();
 		
-		$this->_props = array('cm_key' => 'campaign_monitor_key', 'member_field_id' => 'm_field_id_10');
+		$this->_props = array(
+			'cm_key' 			=> '[DateOfBirth]',
+			'label'				=> 'Date of Birth',
+			'member_field_id' 	=> 'm_field_id_10'
+		);
 	}
 	
 	
