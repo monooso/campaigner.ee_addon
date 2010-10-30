@@ -422,19 +422,58 @@ class Campaigner_ext {
 	 * ------------------------------------------------------------ */
 
 	/**
-	 * Handles the `example_hook` hook.
+	 * Handles the `cp_members_member_create` hook.
 	 *
-	 * @see		http://expressionengine.com/developers/extension_hooks/on_example_hook/
+	 * @see		http://expressionengine.com/developers/extension_hooks/cp_members_member_create/
 	 * @access	public
-	 * @param 	string 		$example_data		Data passed to the hook handler.
+	 * @param 	int|string 		$member_id			The member ID.
+	 * @param	array 			$member_data		Additional member data.
 	 * @return	void
 	 */
-	public function on_example_hook($example_data = '')
+	public function on_cp_members_member_create($member_id, Array $member_data)
 	{
-		// Check for previous handlers.
-		$example_data = $this->_ee->extensions->last_call
-			? $this->_ee->extensions->last_call
-			: $example_data;
+		
+	}
+	
+	
+	/**
+	 * Handles the `cp_members_validate_members` hook.
+	 *
+	 * @see		http://expressionengine.com/developers/extension_hooks/cp_members_validate_members/
+	 * @access	public
+	 * @return	void
+	 */
+	public function on_cp_members_validate_members()
+	{
+		
+	}
+	
+	
+	/**
+	 * Handles the `member_member_register` hook.
+	 *
+	 * @see		http://expressionengine.com/developers/extension_hooks/member_member_register/
+	 * @access	public
+	 * @param	array 			$member_data		Member data.
+	 * @return	void
+	 */
+	public function on_member_member_register(Array $member_data)
+	{
+		
+	}
+	
+	
+	/**
+	 * Handles the `member_register_validate_members` hook.
+	 *
+	 * @see		http://expressionengine.com/developers/extension_hooks/member_register_validate_members/
+	 * @access	public
+	 * @param	int|string 		$member_id			The member ID.
+	 * @return	void
+	 */
+	public function on_member_register_validate_members($member_id)
+	{
+		
 	}
 	
 }
