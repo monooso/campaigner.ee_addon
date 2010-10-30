@@ -912,8 +912,8 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$api_field_result = array('anyType' => array('ListCustomField' => array()));
 		
 		$lists = array(
-			new Campaigner_api_mailing_list(array('id' => $list_id, 'name' => $list_name)),
-			new Campaigner_api_mailing_list(array('id' => $list_id, 'name' => $list_name))
+			new Campaigner_mailing_list(array('list_id' => $list_id, 'list_name' => $list_name)),
+			new Campaigner_mailing_list(array('list_id' => $list_id, 'list_name' => $list_name))
 		);
 		
 		// Set the API connector.
