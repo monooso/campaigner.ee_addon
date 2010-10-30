@@ -9,7 +9,6 @@
  */
 
 require_once PATH_THIRD .'campaigner/ext.campaigner' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_api_client' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model' .EXT;
 
@@ -272,8 +271,14 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$model	= $this->_ee->campaigner_model;
 		
 		// Dummy values.
-		$lists		= array();
-		$view_vars	= array('mailing_lists' => $lists, 'settings' => $this->_ext_settings);
+		$lists			= array();
+		$member_fields	= array();
+		
+		$view_vars = array(
+			'mailing_lists'	=> $lists,
+			'member_fields'	=> $member_fields,
+			'settings'		=> $this->_ext_settings
+		);
 		
 		// Expectations.
 		$loader->expectOnce('view', array('_mailing_lists', $view_vars, TRUE));
@@ -282,7 +287,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		
 		// Return values.
 		$model->setReturnValue('get_mailing_lists_from_api', $lists);
-		$model->setReturnValue('get_member_fields', array());
+		$model->setReturnValue('get_member_fields', $member_fields);
 		
 		// Tests.
 		$ext->display_settings_mailing_lists();
