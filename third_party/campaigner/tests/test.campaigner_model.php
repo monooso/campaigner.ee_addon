@@ -110,66 +110,47 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_activate_extension__create_settings_table()
+	public function test_activate_extension_settings_table__success()
 	{
-		$db 	= $this->_ee->db;
+		// Shortcuts.
 		$dbf	= $this->_ee->dbforge;
 		$loader	= $this->_ee->load;
 		
-		/**
-		 * Create the settings table.
-		 * - site_id
-		 * - api_key
-		 * - client_id
-		 */
-		
+		// Dummy data.
 		$fields = array(
-			'site_id'	=> array(
-				'constraint'		=> 5,
-				'type'				=> 'int',
-				'unsigned'			=> TRUE
+			'site_id' => array(
+				'constraint'	=> 5,
+				'type'			=> 'int',
+				'unsigned'		=> TRUE
 			),
-			'api_key'	=> array(
-				'constraint'		=> 50,
-				'type'				=> 'varchar'
+			'api_key' => array(
+				'constraint'	=> 50,
+				'type'			=> 'varchar'
 			),
 			'client_id'	=> array(
-				'constraint'		=> 50,
-				'type'				=> 'varchar'
+				'constraint'	=> 50,
+				'type'			=> 'varchar'
 			)
 		);
 		
+		// Expectations.
+		$dbf->expectOnce('add_field', array($fields));
+		$dbf->expectOnce('add_key', array('site_id', TRUE));
+		$dbf->expectOnce('create_table', array('campaigner_settings'));
 		$loader->expectOnce('dbforge', array());
 		
-		$dbf->expectAt(0, 'add_field', array($fields));
-		$dbf->expectAt(0, 'add_key', array('site_id', TRUE));
-		$dbf->expectAt(0, 'create_table', array('campaigner_settings'));
-		
-		// Tests for the _total_ call count.
-		$dbf->expectCallCount('add_field', 2);
-		$dbf->expectCallCount('add_key', 2);
-		$dbf->expectCallCount('create_table', 2);
-		
-		$this->_model->activate_extension();
+		// Tests.
+		$this->_model->activate_extension_settings_table();
 	}
 	
 	
-	public function test_activate_extension__create_mailing_lists_table()
+	public function test_activate_extension_mailing_lists_table__success()
 	{
-		$db		= $this->_ee->db;
+		// Shortcuts.
 		$dbf	= $this->_ee->dbforge;
 		$loader	= $this->_ee->load;
 		
-		/**
-		 * Create the mailing lists table.
-		 * - list_id
-		 * - site_id
-		 * - custom_fields
-		 * 		serialised array: array($merge_variable => $member_field_id) --> simplest solution, for now.
-		 * - trigger_field_id
-		 * - trigger_field_value
-		 */
-		
+		// Dummy data.
 		$fields = array(
 			'list_id' => array(
 				'constraint'	=> 50,
@@ -185,8 +166,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			),
 			'trigger_field' => array(
 				'constraint'	=> 50,
-				'type'			=> 'varchar',
-				'unsigned'		=> TRUE
+				'type'			=> 'varchar'
 			),
 			'trigger_value' => array(
 				'constraint'	=> 255,
@@ -194,33 +174,28 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			)
 		);
 		
+		// Expectations.
+		$dbf->expectOnce('add_field', array($fields));
+		$dbf->expectOnce('add_key', array('list_id', TRUE));
+		$dbf->expectOnce('create_table', array('campaigner_mailing_lists'));
 		$loader->expectOnce('dbforge', array());
 		
-		$dbf->expectAt(1, 'add_field', array($fields));
-		$dbf->expectAt(1, 'add_key', array('list_id', TRUE));
-		$dbf->expectAt(1, 'create_table', array('campaigner_mailing_lists'));
-		
-		$this->_model->activate_extension();
+		// Tests.
+		$this->_model->activate_extension_mailing_lists_table();
 	}
 	
 	
-	public function test_activate_extension__register_extension_hooks()
+	public function test_activate_extension_register_hooks__success()
 	{
+		// Shortcuts.
 		$db = $this->_ee->db;
 		
-		/**
-		 * Register the extension hooks:
-		 * - cp_members_validate_members
-		 * - member_member_register
-		 * - member_register_validate_members
-		 * - user_edit_end
-		 * - user_register_end
-		 */
-		
-		$class = $this->_model->get_extension_class();
-		$version = $this->_model->get_package_version();
+		// Dummy data.
+		$class 		= $this->_model->get_extension_class();
+		$version 	= $this->_model->get_package_version();
 		
 		$hooks = array(
+			'cp_members_member_create',
 			'cp_members_validate_members',
 			'member_member_register',
 			'member_register_validate_members',
@@ -228,23 +203,29 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			'user_register_end'
 		);
 		
-		for ($list_count = 0; $list_count < count($hooks); $list_count++)
+		$hook_data = array(
+			'class'		=> $class,
+			'enabled'	=> 'y',
+			'hook'		=> '',
+			'method'	=> '',
+			'priority'	=> 10,
+			'settings'	=> '',
+			'version'	=> $version
+		);
+		
+		// Expectations.
+		$db->expectCallCount('insert', count($hooks));
+		
+		for ($count = 0; $count < count($hooks); $count++)
 		{
-			$data = array(
-				'class'		=> $class,
-				'enabled'	=> 'y',
-				'hook'		=> $hooks[$list_count],
-				'method'	=> 'on_' .$hooks[$list_count],
-				'priority'	=> 10,
-				'settings'	=> '',
-				'version'	=> $version
-			);
+			$hook_data['hook'] 		= $hooks[$count];
+			$hook_data['method']	= 'on_' .$hooks[$count];
 			
-			$db->expectAt($list_count, 'insert', array('extensions', $data));
+			$db->expectAt($count, 'insert', array('extensions', $hook_data));
 		}
 		
-		$db->expectCallCount('insert', count($hooks));
-		$this->_model->activate_extension();
+		// Tests.
+		$this->_model->activate_extension_register_hooks();
 	}
 	
 	

@@ -137,10 +137,104 @@ class Campaigner_model extends CI_Model {
 	 */
 	public function activate_extension()
 	{
+		$this->activate_extension_mailing_lists_table();
+		$this->activate_extension_settings_table();
+		$this->activate_extension_register_hooks();
+	}
+	
+	
+	/**
+	 * Creates the mailing lists table when the extension is activated.
+	 *
+	 * @access	public
+	 * @return	void
+	 */
+	public function activate_extension_mailing_lists_table()
+	{
+		// Shortcuts.
 		$this->_ee->load->dbforge();
 		$dbforge = $this->_ee->dbforge;
 		
-		// Create the settings table.
+		// Table data.
+		$fields = array(
+			'list_id' => array(
+				'constraint'	=> 50,
+				'type'			=> 'varchar'
+			),
+			'site_id' => array(
+				'constraint'	=> 5,
+				'type'			=> 'int',
+				'unsigned'		=> TRUE
+			),
+			'custom_fields' => array(
+				'type'			=> 'text'
+			),
+			'trigger_field' => array(
+				'constraint'	=> 50,
+				'type'			=> 'varchar'
+			),
+			'trigger_value' => array(
+				'constraint'	=> 255,
+				'type'			=> 'varchar'
+			)
+		);
+		
+		$dbforge->add_field($fields);
+		$dbforge->add_key('list_id', TRUE);
+		$dbforge->create_table('campaigner_mailing_lists');
+	}
+	
+	
+	/**
+	 * Registers the extension hooks when the extension is activated.
+	 *
+	 * @access	public
+	 * @return	void
+	 */
+	public function activate_extension_register_hooks()
+	{
+		$hooks = array(
+			'cp_members_member_create',
+			'cp_members_validate_members',
+			'member_member_register',
+			'member_register_validate_members',
+			'user_edit_end',
+			'user_register_end'
+		);
+		
+		$hook_data = array(
+			'class'		=> $this->get_extension_class(),
+			'enabled'	=> 'y',
+			'hook'		=> '',
+			'method'	=> '',
+			'priority'	=> 10,
+			'settings'	=> '',
+			'version'	=> $this->get_package_version()
+		);
+		
+		foreach ($hooks AS $hook)
+		{
+			$hook_data['hook'] = $hook;
+			$hook_data['method'] = 'on_' .$hook;
+			
+			$this->_ee->db->insert('extensions', $hook_data);
+		}
+	}
+	
+	
+	/**
+	 * Creates the settings table when the extension is activated.
+	 *
+	 * @access	public
+	 * @return	void
+	 */
+	public function activate_extension_settings_table()
+	{
+		// Shortcuts.
+		$this->_ee->load->dbforge();
+		$dbforge = $this->_ee->dbforge;
+		
+		// Table data.
 		$fields = array(
 			'site_id'	=> array(
 				'constraint'		=> 5,
@@ -160,64 +254,6 @@ class Campaigner_model extends CI_Model {
 		$dbforge->add_field($fields);
 		$dbforge->add_key('site_id', TRUE);
 		$dbforge->create_table('campaigner_settings');
-		
-		
-		// Create the mailing lists table.
-		$fields = array(
-			'list_id' => array(
-				'constraint'	=> 50,
-				'type'			=> 'varchar'
-			),
-			'site_id' => array(
-				'constraint'	=> 5,
-				'type'			=> 'int',
-				'unsigned'		=> TRUE
-			),
-			'custom_fields' => array(
-				'type'			=> 'text'
-			),
-			'trigger_field' => array(
-				'constraint'	=> 50,
-				'type'			=> 'varchar',
-				'unsigned'		=> TRUE
-			),
-			'trigger_value' => array(
-				'constraint'	=> 255,
-				'type'			=> 'varchar'
-			)
-		);
-		
-		$dbforge->add_field($fields);
-		$dbforge->add_key('list_id', TRUE);
-		$dbforge->create_table('campaigner_mailing_lists');
-		
-		
-		// Insert the extension hooks.
-		$class = $this->get_extension_class();
-		$version = $this->get_package_version();
-		
-		$hooks = array(
-			'cp_members_validate_members',
-			'member_member_register',
-			'member_register_validate_members',
-			'user_edit_end',
-			'user_register_end'
-		);
-		
-		for ($count = 0; $count < count($hooks); $count++)
-		{
-			$data = array(
-				'class'		=> $class,
-				'enabled'	=> 'y',
-				'hook'		=> $hooks[$count],
-				'method'	=> 'on_' .$hooks[$count],
-				'priority'	=> 10,
-				'settings'	=> '',
-				'version'	=> $version
-			);
-			
-			$this->_ee->db->insert('extensions', $data);
-		}
 	}
 	
 	
