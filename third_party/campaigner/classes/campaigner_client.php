@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Client information, returned from the Campaign Monitor API.
+ * Campaigner Client.
  *
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */
 
-class Campaigner_api_client {
+class Campaigner_client {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES.
@@ -20,7 +20,7 @@ class Campaigner_api_client {
 	 * @access	private
 	 * @var		string
 	 */
-	private $_id = '';
+	private $_client_id = '';
 	
 	/**
 	 * Client name.
@@ -28,7 +28,7 @@ class Campaigner_api_client {
 	 * @access	private
 	 * @var		string
 	 */
-	private $_name = '';
+	private $_client_name = '';
 	
 	
 	
@@ -63,9 +63,9 @@ class Campaigner_api_client {
 	 * @access	public
 	 * @return	string
 	 */
-	public function get_id()
+	public function get_client_id()
 	{
-		return $this->_id;
+		return $this->_client_id;
 	}
 	
 	
@@ -75,9 +75,9 @@ class Campaigner_api_client {
 	 * @access	public
 	 * @return	string
 	 */
-	public function get_name()
+	public function get_client_name()
 	{
-		return $this->_name;
+		return $this->_client_name;
 	}
 	
 	
@@ -85,17 +85,17 @@ class Campaigner_api_client {
 	 * Sets client ID.
 	 *
 	 * @access	public
-	 * @param 	string		$id			The client ID.
+	 * @param 	string		$client_id			The client ID.
 	 * @return	string
 	 */
-	public function set_id($id = '')
+	public function set_client_id($client_id)
 	{
-		if (is_string($id) OR is_int($id))
+		if (is_string($client_id) OR is_int($client_id))
 		{
-			$this->_id = $id;
+			$this->_client_id = $client_id;
 		}
 		
-		return $this->get_id();
+		return $this->get_client_id();
 	}
 	
 	
@@ -103,17 +103,17 @@ class Campaigner_api_client {
 	 * Sets client name.
 	 *
 	 * @access	public
-	 * @param 	string		$name		The client name.
+	 * @param 	string		$client_name		The client name.
 	 * @return	string
 	 */
-	public function set_name($name = '')
+	public function set_client_name($client_name)
 	{
-		if (is_string($name))
+		if (is_string($client_name))
 		{
-			$this->_name = $name;
+			$this->_client_name = $client_name;
 		}
 		
-		return $this->get_name();
+		return $this->get_client_name();
 	}
 	
 	
@@ -126,12 +126,12 @@ class Campaigner_api_client {
 	public function to_array()
 	{
 		return array(
-			'id'	=> $this->get_id(),
-			'name'	=> $this->get_name()
+			'client_id'		=> $this->get_client_id(),
+			'client_name'	=> $this->get_client_name()
 		);
 	}
 	
 }
 
-/* End of file		: campaigner_api_client.php */
-/* File location	: third_party/campaigner/classes/campaigner_api_client.php */
+/* End of file		: campaigner_client.php */
+/* File location	: third_party/campaigner/classes/campaigner_client.php */

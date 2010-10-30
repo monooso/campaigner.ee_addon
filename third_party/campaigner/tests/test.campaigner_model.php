@@ -391,11 +391,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
 			$data = array(
-				'site_id'			=> $site_id,
-				'custom_fields'		=> $custom_fields_data,
-				'list_id'			=> 'list_id_' .$list_count,
-				'trigger_field_id'	=> 'm_field_id_' .$list_count,
-				'trigger_value'		=> 'trigger_value_' .$list_count
+				'site_id'		=> $site_id,
+				'custom_fields'	=> $custom_fields_data,
+				'list_id'		=> 'list_id_' .$list_count,
+				'trigger_field'	=> 'm_field_id_' .$list_count,
+				'trigger_value'	=> 'trigger_value_' .$list_count
 			);
 			
 			$db_rows[] = $data;
@@ -432,7 +432,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_mailing_lists_from_db__no_merge_variables()
+	public function test_get_mailing_lists_from_db__no_custom_fields()
 	{
 		$db			= $this->_ee->db;
 		$db_query 	= $this->_get_mock('db_query');
@@ -445,11 +445,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
 			$data = array(
-				'site_id'			=> $site_id,
-				'custom_fields'		=> NULL,
-				'list_id'			=> 'list_id_' .$list_count,
-				'trigger_field_id'	=> 'm_field_id_' .$list_count,
-				'trigger_value'		=> 'trigger_value_' .$list_count
+				'site_id'		=> $site_id,
+				'custom_fields'	=> NULL,
+				'list_id'		=> 'list_id_' .$list_count,
+				'trigger_field'	=> 'm_field_id_' .$list_count,
+				'trigger_value'	=> 'trigger_value_' .$list_count
 			);
 			
 			$db_rows[] = $data;
@@ -515,8 +515,8 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
 			$custom_fields[] = new Campaigner_custom_field(array(
-				'field_id'	=> 'm_field_id_' .$list_count,
-				'id'		=> 'id_' .$list_count
+				'cm_key'			=> 'cm_key_' .$list_count,
+				'member_field_id'	=> 'm_field_id_' .$list_count
 			));
 		}
 		
@@ -524,10 +524,10 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
 			$mailing_lists[] = new Campaigner_mailing_list(array(
-				'custom_fields'		=> $custom_fields,
-				'list_id'			=> 'list_id_' .$list_count,
-				'trigger_field_id'	=> 'm_field_id_' .$list_count,
-				'trigger_value'		=> 'trigger_value_' .$list_count
+				'custom_fields'	=> $custom_fields,
+				'list_id'		=> 'list_id_' .$list_count,
+				'trigger_field'	=> 'm_field_id_' .$list_count,
+				'trigger_value'	=> 'trigger_value_' .$list_count
 			));
 		}
 		
@@ -796,7 +796,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$client_id		= 'CLIENT_ID';
 		$client_name	= 'CLIENT_NAME';
 		$api_result 	= array('anyType' => array('Client' => array('ClientID' => $client_id, 'Name' => $client_name)));
-		$clients		= array(new Campaigner_api_client(array('id' => $client_id, 'name' => $client_name)));
+		$clients		= array(new Campaigner_client(array('client_id' => $client_id, 'client_name' => $client_name)));
 		
 		// Set the API connector.
 		$this->_model->set_api_connector($this->_api_connector);
