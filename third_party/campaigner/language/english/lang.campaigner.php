@@ -20,8 +20,8 @@ $lang = array(
  * EXTENSION : NAVIGATION
  * ------------------------------------------------------------ */
 'nav_errors'				=> 'Error Log',
-'nav_help'					=> 'Help',
 'nav_settings'				=> 'Settings',
+'nav_support'				=> 'Support',
 
 /* --------------------------------------------------------------
  * EXTENSION : SETTINGS

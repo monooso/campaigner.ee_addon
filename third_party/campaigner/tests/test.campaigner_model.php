@@ -321,6 +321,13 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
+	public function test_get_support_url__success()
+	{
+		$pattern = '#^http://support.experienceinternet.co.uk/#';
+		$this->assertPattern($pattern, $this->_model->get_support_url());
+	}
+	
+	
 	
 	/* --------------------------------------------------------------
 	 * DATABASE TESTS
@@ -662,50 +669,112 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	
 	public function test_save_mailing_lists_to_db__success()
 	{
-		$config		= $this->_ee->config;
-		$db 		= $this->_ee->db;
-		$site_id	= '10';
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$db 	= $this->_ee->db;
 		
-		// Merge variables.
-		for ($list_count = 0; $list_count < 10; $list_count++)
-		{
-			$custom_fields[] = new Campaigner_custom_field(array(
-				'cm_key'			=> 'cm_key_' .$list_count,
-				'member_field_id'	=> 'm_field_id_' .$list_count
-			));
-		}
+		// Dummy values.
+		$site_id = '10';
+		
+		$custom_field_data = array(
+			'cm_key'			=> '[Gender]',
+			'member_field_id'	=> 'm_field_id_100'
+		);
+		
+		$custom_fields = array(new Campaigner_custom_field($custom_field_data));
+		
+		$mailing_list_a_data = array(
+			'custom_fields'	=> $custom_fields,
+			'list_id'		=> 'ABC123',
+			'trigger_field'	=> 'm_field_id_10',
+			'trigger_value'	=> 'Yes'
+		);
+		
+		$mailing_list_b_data = array(
+			'custom_fields'	=> $custom_fields,
+			'list_id'		=> 'XYZ987',
+			'trigger_field'	=> 'm_field_id_20',
+			'trigger_value'	=> 'Octopus'
+		);
 		
 		// Mailing lists.
-		for ($list_count = 0; $list_count < 10; $list_count++)
-		{
-			$mailing_lists[] = new Campaigner_mailing_list(array(
-				'custom_fields'	=> $custom_fields,
-				'list_id'		=> 'list_id_' .$list_count,
-				'trigger_field'	=> 'm_field_id_' .$list_count,
-				'trigger_value'	=> 'trigger_value_' .$list_count
-			));
-		}
+		$mailing_lists = array(
+			new Campaigner_mailing_list($mailing_list_a_data),
+			new Campaigner_mailing_list($mailing_list_b_data)
+		);
+		
+		$insert_array_a = array(
+			'custom_fields'	=> serialize(array($custom_field_data)),
+			'list_id'		=> $mailing_list_a_data['list_id'],
+			'site_id'		=> $site_id,
+			'trigger_field'	=> $mailing_list_a_data['trigger_field'],
+			'trigger_value'	=> $mailing_list_a_data['trigger_value']
+		);
+		
+		$insert_array_b = array(
+			'custom_fields'	=> serialize(array($custom_field_data)),
+			'list_id'		=> $mailing_list_b_data['list_id'],
+			'site_id'		=> $site_id,
+			'trigger_field'	=> $mailing_list_b_data['trigger_field'],
+			'trigger_value'	=> $mailing_list_b_data['trigger_value']
+		);
 		
 		// Settings.
 		$settings = new Campaigner_settings(array('mailing_lists' => $mailing_lists));
 		
-		// Return values.
-		$config->setReturnValue('item', $site_id, array('site_id'));
-		$db->setReturnValue('affected_rows', 1);
 		
 		// Expectations.
 		$config->expectOnce('item', array('site_id'));
 		$db->expectOnce('delete', array('campaigner_mailing_lists', array('site_id' => $site_id)));
 		$db->expectCallCount('insert', count($mailing_lists));
+		$db->expectAt(0, 'insert', array('campaigner_mailing_lists', $insert_array_a));
+		$db->expectAt(1, 'insert', array('campaigner_mailing_lists', $insert_array_b));
 		
-		for ($list_count = 0; $list_count < count($mailing_lists); $list_count++)
-		{
-			$data					= $mailing_lists[$list_count]->to_array();
-			$data['custom_fields']	= serialize($data['custom_fields']);
-			$data					= array_merge(array('site_id' => $site_id), $data);
-			
-			$db->expectAt($list_count, 'insert', array('campaigner_mailing_lists', $data));
-		}
+		// Return values.
+		$config->setReturnValue('item', $site_id, array('site_id'));
+		$db->setReturnValue('affected_rows', 1);
+		
+		// Run the test.
+		$this->assertIdentical(TRUE, $this->_model->save_mailing_lists_to_db($settings));
+	}
+	
+	
+	public function test_save_mailing_lists_to_db__no_custom_fields()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$db 	= $this->_ee->db;
+		
+		// Dummy values.
+		$site_id = '10';
+		
+		$mailing_list_a_data = array(
+			'list_id'		=> 'ABC123',
+			'trigger_field'	=> 'm_field_id_10',
+			'trigger_value'	=> 'Yes'
+		);
+		
+		// Mailing lists.
+		$mailing_lists = array(new Campaigner_mailing_list($mailing_list_a_data));
+		
+		$insert_array_a = array(
+			'custom_fields'	=> serialize(array()),
+			'list_id'		=> $mailing_list_a_data['list_id'],
+			'site_id'		=> $site_id,
+			'trigger_field'	=> $mailing_list_a_data['trigger_field'],
+			'trigger_value'	=> $mailing_list_a_data['trigger_value']
+		);
+		
+		// Settings.
+		$settings = new Campaigner_settings(array('mailing_lists' => $mailing_lists));
+		
+		
+		// Expectations.
+		$db->expectAt(0, 'insert', array('campaigner_mailing_lists', $insert_array_a));
+		
+		// Return values.
+		$config->setReturnValue('item', $site_id, array('site_id'));
+		$db->setReturnValue('affected_rows', 1);
 		
 		// Run the test.
 		$this->assertIdentical(TRUE, $this->_model->save_mailing_lists_to_db($settings));

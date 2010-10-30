@@ -14,14 +14,6 @@ $this->table->set_heading(
 
 if ($mailing_lists)
 {
-	// Prepare the member fields data for use in a dropdown.
-	$member_fields_dd_data = array();
-	
-	foreach ($member_fields AS $member_field)
-	{
-		$member_fields_dd_data[$member_field->get_id()] = $member_field->get_label();
-	}
-	
 	// Loop through all the available mailing lists.
 	foreach ($mailing_lists AS $mailing_list)
 	{
@@ -39,7 +31,7 @@ if ($mailing_lists)
 		
 		$label = form_label($list_name, "mailing_lists[{$list_id}][checked]");
 		
-		// Trigger field. Do it the old-fashioned way.
+		// Trigger field.
 		$trigger_field = form_dropdown(
 			"mailing_lists[{$list_id}][trigger_field]",
 			array_merge(array('' => lang('lbl_no_trigger_field')), $member_fields_dd_data),

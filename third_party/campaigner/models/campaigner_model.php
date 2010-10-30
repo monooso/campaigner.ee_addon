@@ -556,6 +556,18 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
+	 * Returns the support URL.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function get_support_url()
+	{
+		return 'http://support.experienceinternet.co.uk/discussions/campaigner/';
+	}
+	
+	
+	/**
 	 * Returns the package theme URL.
 	 *
 	 * @access	public
@@ -672,11 +684,25 @@ class Campaigner_model extends CI_Model {
 		
 		foreach ($mailing_lists AS $mailing_list)
 		{
-			$data = $mailing_list->to_array();
-			$data['custom_fields'] = serialize($data['custom_fields']);
-			$data = array_merge(array('site_id' => $site_id), $data);
+			$custom_field_data = array();
 			
-			$db->insert('campaigner_mailing_lists', $data);
+			foreach ($mailing_list->get_custom_fields() AS $custom_field)
+			{
+				$custom_field_array = $custom_field->to_array();
+				unset($custom_field_array['label']);
+				
+				$custom_field_data[] = $custom_field_array;
+			}
+			
+			$mailing_list_data = array(
+				'custom_fields'	=> serialize($custom_field_data),
+				'list_id'		=> $mailing_list->get_list_id(),
+				'site_id'		=> $site_id,
+				'trigger_field'	=> $mailing_list->get_trigger_field(),
+				'trigger_value'	=> $mailing_list->get_trigger_value()
+			);
+			
+			$db->insert('campaigner_mailing_lists', $mailing_list_data);
 			
 			if ($db->affected_rows() !== 1)
 			{

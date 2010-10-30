@@ -309,11 +309,23 @@ class Campaigner_ext {
 				}
 			}
 			
+			// Retrieve the member fields.
+			$member_fields = $model->get_member_fields();
+			
+			// Prepare the member fields data for use in a dropdown.
+			$member_fields_dd_data = array();
+
+			foreach ($member_fields AS $member_field)
+			{
+				$member_fields_dd_data[$member_field->get_id()] = $member_field->get_label();
+			}
+			
 			// Define the view variables.
 			$view_vars = array(
-				'mailing_lists'	=> $mailing_lists,
-				'member_fields'	=> $model->get_member_fields(),
-				'settings'		=> $this->settings
+				'mailing_lists'			=> $mailing_lists,
+				'member_fields'			=> $member_fields,
+				'member_fields_dd_data'	=> $member_fields_dd_data,
+				'settings'				=> $this->settings
 			);
 		
 			$view_name = '_mailing_lists';
@@ -370,7 +382,7 @@ class Campaigner_ext {
 		$this->_ee->cp->set_right_nav(array(
 			'nav_settings'	=> $base_url .'settings',
 			'nav_errors'	=> $base_url .'errors',
-			'nav_help'		=> $base_url .'help'
+			'nav_support'	=> $this->_ee->campaigner_model->get_support_url()
 		));
 		
 		switch ($this->_ee->input->get('tab'))
