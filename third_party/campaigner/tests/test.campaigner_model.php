@@ -326,6 +326,89 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	 * DATABASE TESTS
 	 * ------------------------------------------------------------ */
 	
+	public function test_get_member_fields__success()
+	{
+		// Dummy values.
+		$db_result	= $this->_get_mock('db_query');
+		$db_rows	= array(
+			array('m_field_id' => '10', 'm_field_label' => 'Name', 'm_field_list_items' => '', 'm_field_type' => 'text'),
+			array('m_field_id' => '20', 'm_field_label' => 'Email', 'm_field_list_items' => '', 'm_field_type' => 'text'),
+			array('m_field_id' => '30', 'm_field_label' => 'Address', 'm_field_list_items' => '', 'm_field_type' => 'textarea'),
+			array('m_field_id' => '40', 'm_field_label' => 'Gender', 'm_field_list_items' => "Male\nFemale", 'm_field_type' => 'select')
+		);
+		
+		$member_fields	= array();
+		$dummy_label	= 'Label';
+		
+		$standard_member_fields = array(
+			array('id' => 'group_id', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'location', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'occupation', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'screen_name', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'url', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'username', 'label' => $dummy_label, 'options' => array(), 'type' => 'text')
+		);
+		
+		foreach ($standard_member_fields AS $member_field_data)
+		{
+			$member_fields[] = new EI_member_field($member_field_data);
+		}
+		
+		foreach ($db_rows AS $db_row)
+		{
+			$member_field = new EI_member_field();
+			$member_field->populate_from_db_array($db_row);
+			
+			$member_fields[] = $member_field;
+		}
+		
+		// Expectations.
+		$this->_ee->db->expectOnce('select');
+		$this->_ee->db->expectOnce('get', array('member_fields'));
+		$db_result->expectOnce('result_array');
+		
+		// Return values.
+		$this->_ee->db->setReturnReference('get', $db_result);
+		$this->_ee->lang->setReturnValue('line', $dummy_label);
+		$db_result->setReturnValue('result_array', $db_rows);
+		
+		// Tests.
+		$this->assertIdentical($member_fields, $this->_model->get_member_fields());
+	}
+	
+	
+	public function test_get_member_fields__no_custom_member_fields()
+	{
+		// Dummy values.
+		$db_result		= $this->_get_mock('db_query');
+		$db_rows		= array();
+		$member_fields	= array();
+		$dummy_label	= 'Label';
+
+		$standard_member_fields = array(
+			array('id' => 'group_id', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'location', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'occupation', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'screen_name', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'url', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
+			array('id' => 'username', 'label' => $dummy_label, 'options' => array(), 'type' => 'text')
+		);
+
+		foreach ($standard_member_fields AS $member_field_data)
+		{
+			$member_fields[] = new EI_member_field($member_field_data);
+		}
+
+		// Return values.
+		$this->_ee->db->setReturnReference('get', $db_result);
+		$this->_ee->lang->setReturnValue('line', $dummy_label);
+		$db_result->setReturnValue('result_array', $db_rows);
+
+		// Tests.
+		$this->assertIdentical($member_fields, $this->_model->get_member_fields());
+	}
+	
+	
 	public function test_get_installed_extension_version__installed()
 	{
 		$db = $this->_ee->db;
@@ -1167,89 +1250,6 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		// Tests.
 		$this->assertIdentical($fixed_response, $this->_model->fix_api_response($api_response, $root_node));
-	}
-	
-	
-	public function test_get_member_fields__success()
-	{
-		// Dummy values.
-		$db_result	= $this->_get_mock('db_query');
-		$db_rows	= array(
-			array('m_field_id' => '10', 'm_field_label' => 'Name', 'm_field_list_items' => '', 'm_field_type' => 'text'),
-			array('m_field_id' => '20', 'm_field_label' => 'Email', 'm_field_list_items' => '', 'm_field_type' => 'text'),
-			array('m_field_id' => '30', 'm_field_label' => 'Address', 'm_field_list_items' => '', 'm_field_type' => 'textarea'),
-			array('m_field_id' => '40', 'm_field_label' => 'Gender', 'm_field_list_items' => "Male\nFemale", 'm_field_type' => 'select')
-		);
-		
-		$member_fields	= array();
-		$dummy_label	= 'Label';
-		
-		$standard_member_fields = array(
-			array('id' => 'group_id', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'location', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'occupation', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'screen_name', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'url', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'username', 'label' => $dummy_label, 'options' => array(), 'type' => 'text')
-		);
-		
-		foreach ($standard_member_fields AS $member_field_data)
-		{
-			$member_fields[] = new EI_member_field($member_field_data);
-		}
-		
-		foreach ($db_rows AS $db_row)
-		{
-			$member_field = new EI_member_field();
-			$member_field->populate_from_db_array($db_row);
-			
-			$member_fields[] = $member_field;
-		}
-		
-		// Expectations.
-		$this->_ee->db->expectOnce('select');
-		$this->_ee->db->expectOnce('get', array('member_fields'));
-		$db_result->expectOnce('result_array');
-		
-		// Return values.
-		$this->_ee->db->setReturnReference('get', $db_result);
-		$this->_ee->lang->setReturnValue('line', $dummy_label);
-		$db_result->setReturnValue('result_array', $db_rows);
-		
-		// Tests.
-		$this->assertIdentical($member_fields, $this->_model->get_member_fields());
-	}
-	
-	
-	public function test_get_member_fields__no_custom_member_fields()
-	{
-		// Dummy values.
-		$db_result		= $this->_get_mock('db_query');
-		$db_rows		= array();
-		$member_fields	= array();
-		$dummy_label	= 'Label';
-
-		$standard_member_fields = array(
-			array('id' => 'group_id', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'location', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'occupation', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'screen_name', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'url', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-			array('id' => 'username', 'label' => $dummy_label, 'options' => array(), 'type' => 'text')
-		);
-
-		foreach ($standard_member_fields AS $member_field_data)
-		{
-			$member_fields[] = new EI_member_field($member_field_data);
-		}
-
-		// Return values.
-		$this->_ee->db->setReturnReference('get', $db_result);
-		$this->_ee->lang->setReturnValue('line', $dummy_label);
-		$db_result->setReturnValue('result_array', $db_rows);
-
-		// Tests.
-		$this->assertIdentical($member_fields, $this->_model->get_member_fields());
 	}
 	
 }
