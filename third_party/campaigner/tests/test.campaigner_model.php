@@ -183,9 +183,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			'custom_fields' => array(
 				'type'			=> 'text'
 			),
-			'trigger_field_id' => array(
-				'constraint'	=> 4,
-				'type'			=> 'int',
+			'trigger_field' => array(
+				'constraint'	=> 50,
+				'type'			=> 'varchar',
 				'unsigned'		=> TRUE
 			),
 			'trigger_value' => array(
