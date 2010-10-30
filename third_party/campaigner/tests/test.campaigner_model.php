@@ -304,6 +304,78 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
+	public function test_get_theme_url__no_slash()
+	{
+		// Dummy values.
+		$theme_url 		= '/path/to/themes';
+		$package_url	= $theme_url .'/third_party/' .strtolower($this->_model->get_package_name()) .'/';
+		
+		// Expectations.
+		$this->_ee->config->expectOnce('item', array('theme_folder_url'));
+		
+		// Return values.
+		$this->_ee->config->setReturnValue('item', $theme_url, array('theme_folder_url'));
+		
+		// Tests.
+		$this->assertIdentical($package_url, $this->_model->get_theme_url());
+	}
+	
+	
+	
+	/* --------------------------------------------------------------
+	 * DATABASE TESTS
+	 * ------------------------------------------------------------ */
+	
+	public function test_get_installed_extension_version__installed()
+	{
+		$db = $this->_ee->db;
+		
+		// Dummy values.
+		$criteria	= array('class' => $this->_model->get_extension_class());
+		$limit		= 1;
+		$table 		= 'extensions';
+		$version	= '1.1.0';
+		
+		$db_result			= $this->_get_mock('db_query');
+		$db_row				= new stdClass();
+		$db_row->version 	= $version;
+		
+		// Expectations.
+		$db->expectOnce('select', array('version'));
+		$db->expectOnce('get_where', array($table, $criteria, $limit));
+		$db_result->expectOnce('num_rows');
+		$db_result->expectOnce('row');
+		
+		// Return values.
+		$db->setReturnReference('get_where', $db_result);
+		$db_result->setReturnValue('num_rows', 1);
+		$db_result->setReturnValue('row', $db_row);
+		
+		// Tests.
+		$this->assertIdentical($version, $this->_model->get_installed_extension_version());
+	}
+	
+	
+	public function test_get_installed_extension_version__not_installed()
+	{
+		$db = $this->_ee->db;
+		
+		// Dummy values.
+		$db_result	= $this->_get_mock('db_query');
+		
+		// Expectations.
+		$db_result->expectNever('row');
+		
+		// Return values.
+		$db->setReturnReference('select', $db);
+		$db->setReturnReference('get_where', $db_result);
+		$db_result->setReturnValue('num_rows', 0);
+		
+		// Tests.
+		$this->assertIdentical('', $this->_model->get_installed_extension_version());
+	}
+	
+	
 	public function test_get_settings_from_db__success()
 	{
 		$config		= $this->_ee->config;
@@ -633,6 +705,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
+	
+	/* --------------------------------------------------------------
+	 * UPDATE FROM INPUT TESTS
+	 * ------------------------------------------------------------ */
+	
 	public function test_update_basic_settings_from_input__success()
 	{
 		$input 		= $this->_ee->input;
@@ -759,22 +836,10 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_theme_url__no_slash()
-	{
-		// Dummy values.
-		$theme_url 		= '/path/to/themes';
-		$package_url	= $theme_url .'/third_party/' .strtolower($this->_model->get_package_name()) .'/';
-		
-		// Expectations.
-		$this->_ee->config->expectOnce('item', array('theme_folder_url'));
-		
-		// Return values.
-		$this->_ee->config->setReturnValue('item', $theme_url, array('theme_folder_url'));
-		
-		// Tests.
-		$this->assertIdentical($package_url, $this->_model->get_theme_url());
-	}
 	
+	/* --------------------------------------------------------------
+	 * API TESTS
+	 * ------------------------------------------------------------ */
 	
 	public function test_make_api_call__api_connector_not_set()
 	{
@@ -960,56 +1025,6 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		// Tests.
 		$this->assertIdentical(array(), $this->_model->get_mailing_list_custom_fields_from_api($list_id));
-	}
-	
-	
-	public function test_get_installed_extension_version__installed()
-	{
-		$db = $this->_ee->db;
-		
-		// Dummy values.
-		$criteria	= array('class' => $this->_model->get_extension_class());
-		$limit		= 1;
-		$table 		= 'extensions';
-		$version	= '1.1.0';
-		
-		$db_result			= $this->_get_mock('db_query');
-		$db_row				= new stdClass();
-		$db_row->version 	= $version;
-		
-		// Expectations.
-		$db->expectOnce('select', array('version'));
-		$db->expectOnce('get_where', array($table, $criteria, $limit));
-		$db_result->expectOnce('num_rows');
-		$db_result->expectOnce('row');
-		
-		// Return values.
-		$db->setReturnReference('get_where', $db_result);
-		$db_result->setReturnValue('num_rows', 1);
-		$db_result->setReturnValue('row', $db_row);
-		
-		// Tests.
-		$this->assertIdentical($version, $this->_model->get_installed_extension_version());
-	}
-	
-	
-	public function test_get_installed_extension_version__not_installed()
-	{
-		$db = $this->_ee->db;
-		
-		// Dummy values.
-		$db_result	= $this->_get_mock('db_query');
-		
-		// Expectations.
-		$db_result->expectNever('row');
-		
-		// Return values.
-		$db->setReturnReference('select', $db);
-		$db->setReturnReference('get_where', $db_result);
-		$db_result->setReturnValue('num_rows', 0);
-		
-		// Tests.
-		$this->assertIdentical('', $this->_model->get_installed_extension_version());
 	}
 	
 	
