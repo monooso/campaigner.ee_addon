@@ -476,6 +476,37 @@ class Campaigner_ext {
 		
 	}
 	
+	
+	/**
+	 * Handles the `user_edit_end` hook.
+	 *
+	 * @see		http://www.solspace.com/docs/detail/user_user_edit_end/
+	 * @access	public
+	 * @param	int|string 		$member_id				The member ID.
+	 * @param 	array 			$member_data 			Additional member data.
+	 * @param 	array 			$member_custom_data		Member custom field data.
+	 * @return	void
+	 */
+	public function on_user_edit_end($member_id, Array $member_data, Array $member_custom_data)
+	{
+		
+	}
+	
+	
+	/**
+	 * Handles the `user_register_end` hook.
+	 *
+	 * @see		http://www.solspace.com/docs/detail/user_user_register_end/
+	 * @access	public
+	 * @param	object 			$user				Instance of the User class.
+	 * @param 	int|string		$member_id 			The member ID.
+	 * @return	void
+	 */
+	public function on_user_register_end($user, $member_id)
+	{
+		
+	}
+	
 }
 
 /* End of file		: ext.campaigner.php */
