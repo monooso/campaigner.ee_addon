@@ -51,9 +51,11 @@ class Test_campaigner_api_error extends Testee_unit_test_case {
 	{
 		$error = new Campaigner_api_error($this->_props);
 		
-		// Tests.
-		$this->assertIdentical($this->_props['code'], $error->get_code());
-		$this->assertIdentical($this->_props['message'], $error->get_message());
+		foreach ($this->_props AS $key => $val)
+		{
+			$method = 'get_' .$key;
+			$this->assertIdentical($val, $error->$method());
+		}
 	}
 	
 	

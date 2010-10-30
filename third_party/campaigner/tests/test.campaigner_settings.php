@@ -17,12 +17,12 @@ class Test_campaigner_settings extends Testee_unit_test_case {
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * The settings.
+	 * Properties.
 	 *
 	 * @access	private
-	 * @var		Campaigner_settings
+	 * @var		array
 	 */
-	private $_settings;
+	private $_props;
 	
 	
 	
@@ -40,7 +40,11 @@ class Test_campaigner_settings extends Testee_unit_test_case {
 	{
 		parent::setUp();
 		
-		$this->_settings = new Campaigner_settings();
+		$this->_props = array(
+			'api_key'		=> 'API_KEY',
+			'client_id'		=> 'CLIENT_ID',
+			'mailing_lists'	=> array(new Campaigner_mailing_list())
+		);
 	}
 	
 	
@@ -50,109 +54,73 @@ class Test_campaigner_settings extends Testee_unit_test_case {
 	
 	public function test_constructor()
 	{
-		$api_key = 'API key';
-		$client_id = 'Client ID';
-		$mailing_lists = array(new Campaigner_mailing_list());
+		$settings = new Campaigner_settings($this->_props);
 		
-		$data = array(
-			'api_key'		=> $api_key,
-			'client_id'		=> $client_id,
-			'mailing_lists'	=> $mailing_lists
-		);
-		
-		$settings = new Campaigner_settings($data);
-		
-		$this->assertIdentical($api_key, $settings->get_api_key());
-		$this->assertIdentical($client_id, $settings->get_client_id());
-		$this->assertIdentical($mailing_lists, $settings->get_mailing_lists());
-	}
-	
-	
-	public function test_add_mailing_list__success()
-	{
-		$list = new Campaigner_mailing_list();
-		$this->assertIdentical(array($list), $this->_settings->add_mailing_list($list));
+		foreach ($this->_props AS $key => $val)
+		{
+			$method = 'get_' .$key;
+			$this->assertIdentical($val, $settings->$method());
+		}
 	}
 	
 	
 	public function test_add_mailing_list__failure()
 	{
-		$this->expectError(new PatternExpectation('/must be an instance of Campaigner_mailing_list/i'));
-		$this->_settings->add_mailing_list('Invalid');
-	}
-	
-	
-	public function test_set_api_key()
-	{
-		$api_key = 'API key';
-		$this->assertIdentical($api_key, $this->_settings->set_api_key($api_key));
-	}
-	
-	
-	public function test_set_client_id()
-	{
-		$client_id = 'Client ID';
-		$this->assertIdentical($client_id, $this->_settings->set_client_id($client_id));
-	}
-	
-	
-	public function test_set_mailing_lists__success()
-	{
-		$list = new Campaigner_mailing_list();
-		$lists = array($list, $list, $list);
+		$settings = new Campaigner_settings($this->_props);
 		
-		$this->assertIdentical($lists, $this->_settings->set_mailing_lists($lists));
+		$this->expectError(new PatternExpectation('/must be an instance of Campaigner_mailing_list/i'));
+		$settings->add_mailing_list('Invalid');
 	}
 	
 	
 	public function test_set_mailing_lists__failure()
 	{
-		$list = new Campaigner_mailing_list();
-		$lists = array($list, 'Invalid', $list);
+		$settings	= new Campaigner_settings($this->_props);
+		$list 		= new Campaigner_mailing_list();
+		$lists 		= array($list, 'Invalid', $list);
 		
 		$this->expectError(new PatternExpectation('/must be an instance of Campaigner_mailing_list/i'));
-		$this->_settings->set_mailing_lists($lists);
+		$settings->set_mailing_lists($lists);
 	}
 	
 	
 	public function test_get_mailing_list_by_id()
 	{
-		$lists = array();
+		$settings 	= new Campaigner_settings($this->_props);
+		$lists 		= array();
 		
 		for ($count = 1; $count < 10; $count++)
 		{
-			$lists[] = new Campaigner_mailing_list(array('list_id' => 'list_id_' .$count));
+			$settings->add_mailing_list(new Campaigner_mailing_list(array('list_id' => 'list_id_' .$count)));
 		}
 		
-		$this->_settings->set_mailing_lists($lists);
-		
-		$this->assertIsA($this->_settings->get_mailing_list_by_id('list_id_5'), 'Campaigner_mailing_list');
-		$this->assertIdentical(FALSE, $this->_settings->get_mailing_list_by_id('list_id_100'));
+		$this->assertIsA($settings->get_mailing_list_by_id('list_id_5'), 'Campaigner_mailing_list');
+		$this->assertIdentical(FALSE, $settings->get_mailing_list_by_id('list_id_100'));
 	}
 	
 	
 	public function test_to_array()
 	{
-		$api_key		= 'API key';
-		$client_id		= 'Client ID';
-		$mailing_list 	= new Campaigner_mailing_list();
-		$mailing_lists	= array($mailing_list);
+		$settings = new Campaigner_settings($this->_props);
+		$settings_array = $settings->to_array();
 		
-		$data = array(
-			'api_key'		=> $api_key,
-			'client_id'		=> $client_id,
-			'mailing_lists'	=> array($mailing_list->to_array())
-		);
+		$mailing_lists = $this->_props['mailing_lists'];
+		$this->_props['mailing_lists'] = array();
 		
-		$this->_settings->set_api_key($api_key);
-		$this->_settings->set_client_id($client_id);
-		$this->_settings->set_mailing_lists($mailing_lists);
+		foreach ($mailing_lists AS $mailing_list)
+		{
+			$this->_props['mailing_lists'][] = $mailing_list->to_array();
+		}
 		
-		$this->assertIdentical($data, $this->_settings->to_array());
+		ksort($this->_props);
+		ksort($settings_array);
+		
+		// Tests.
+		$this->assertIdentical($this->_props, $settings_array);
 	}
 	
 }
 
 
-/* End of file		: test_campaigner_settings.php */
-/* File location	: third_party/campaigner/tests/test_campaigner_settings.php */
+/* End of file		: test.campaigner_settings.php */
+/* File location	: third_party/campaigner/tests/test.campaigner_settings.php */

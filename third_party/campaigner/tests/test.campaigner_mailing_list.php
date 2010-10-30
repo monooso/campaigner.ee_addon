@@ -47,8 +47,6 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 			'trigger_field'	=> 'm_field_id_10',
 			'trigger_value'	=> 'y'
 		);
-		
-		$this->_list = new Campaigner_mailing_list();
 	}
 	
 	
