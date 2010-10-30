@@ -15,7 +15,7 @@ $this->table->set_heading(array(
 $this->table->add_row(array(
 	array(
 		'data' 	=> lang('lbl_api_key', 'api_key'),
-		'style'	=> 'width : 15%'
+		'style'	=> 'width : 25%'
 	),
 	form_input(array(
 		'id'	=> 'api_key',

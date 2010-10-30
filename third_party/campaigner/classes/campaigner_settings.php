@@ -3,7 +3,7 @@
 /**
  * Extension settings.
  *
- * @author			: Stephen Lewis
+ * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */

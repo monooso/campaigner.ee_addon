@@ -3,7 +3,7 @@
 /**
  * Campaigner mailing list.
  *
- * @author			: Stephen Lewis
+ * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */
@@ -33,12 +33,12 @@ class Campaigner_mailing_list {
 	private $_list_id = '';
 	
 	/**
-	 * Trigger field ID.
+	 * Trigger field.
 	 *
 	 * @access	private
 	 * @var		string
 	 */
-	private $_trigger_field_id = '';
+	private $_trigger_field = '';
 	
 	/**
 	 * Trigger value.
@@ -105,19 +105,19 @@ class Campaigner_mailing_list {
 	 * Returns the specified custom field.
 	 *
 	 * @access	public
-	 * @param	string		$field_id		The custom field ID.
+	 * @param	string		$cm_key		The Campaign Monitor key.
 	 * @return	Campaigner_custom_field|FALSE
 	 */
-	public function get_custom_field_by_id($field_id)
+	public function get_custom_field_by_cm_key($cm_key)
 	{
-		if ( ! $field_id OR ! is_string($field_id))
+		if ( ! $cm_key OR ! is_string($cm_key))
 		{
 			return FALSE;
 		}
 		
 		foreach ($this->_custom_fields AS $field)
 		{
-			if ($field->get_id() == $field_id)
+			if ($field->get_cm_key() == $cm_key)
 			{
 				return $field;
 			}
@@ -140,14 +140,14 @@ class Campaigner_mailing_list {
 	
 	
 	/**
-	 * Returns the trigger field ID.
+	 * Returns the trigger field.
 	 *
 	 * @access	public
 	 * @return	string
 	 */
-	public function get_trigger_field_id()
+	public function get_trigger_field()
 	{
-		return $this->_trigger_field_id;
+		return $this->_trigger_field;
 	}
 	
 	
@@ -198,16 +198,16 @@ class Campaigner_mailing_list {
 	
 	
 	/**
-	 * Sets the trigger field ID.
+	 * Sets the trigger field.
 	 *
 	 * @access	public
-	 * @param 	string		$trigger_field_id		The trigger field ID.
+	 * @param 	string		$trigger_field		The trigger field.
 	 * @return	string
 	 */
-	public function set_trigger_field_id($trigger_field_id)
+	public function set_trigger_field($trigger_field)
 	{
-		$this->_trigger_field_id = $trigger_field_id;
-		return $this->get_trigger_field_id();
+		$this->_trigger_field = $trigger_field;
+		return $this->get_trigger_field();
 	}
 	
 	
@@ -236,7 +236,7 @@ class Campaigner_mailing_list {
 		$return_data = array(
 			'custom_fields'		=> array(),
 			'list_id'			=> $this->get_list_id(),
-			'trigger_field_id'	=> $this->get_trigger_field_id(),
+			'trigger_field'		=> $this->get_trigger_field(),
 			'trigger_value'		=> $this->get_trigger_value()
 		);
 		

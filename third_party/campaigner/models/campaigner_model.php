@@ -3,12 +3,16 @@
 /**
  * Example add-on model.
  *
- * @author			: Stephen Lewis
+ * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */
 
+require_once PATH_THIRD .'campaigner/classes/campaigner_api_client' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_api_custom_field' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_api_mailing_list' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
+require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
 
 class Campaigner_model extends CI_Model {
 	
@@ -143,11 +147,11 @@ class Campaigner_model extends CI_Model {
 				'unsigned'			=> TRUE
 			),
 			'api_key'	=> array(
-				'constraint'			=> 20,
+				'constraint'		=> 50,
 				'type'				=> 'varchar'
 			),
 			'client_id'	=> array(
-				'constraint'		=> 20,
+				'constraint'		=> 50,
 				'type'				=> 'varchar'
 			)
 		);
@@ -160,7 +164,7 @@ class Campaigner_model extends CI_Model {
 		// Create the mailing lists table.
 		$fields = array(
 			'list_id' => array(
-				'constraint'	=> 20,
+				'constraint'	=> 50,
 				'type'			=> 'varchar'
 			),
 			'site_id' => array(
@@ -171,9 +175,9 @@ class Campaigner_model extends CI_Model {
 			'custom_fields' => array(
 				'type'			=> 'text'
 			),
-			'trigger_field_id' => array(
-				'constraint'	=> 4,
-				'type'			=> 'int',
+			'trigger_field' => array(
+				'constraint'	=> 50,
+				'type'			=> 'varchar',
 				'unsigned'		=> TRUE
 			),
 			'trigger_value' => array(
@@ -233,45 +237,37 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
-	 * Wrapper for the CMBase::userGetClients method.
+	 * Retrieves clients from the Campaign Monitor API. Wrapper for the
+	 * Campaigner::userGetClients method.
 	 *
 	 * @access	public
 	 * @return	void
 	 */
-	public function get_clients()
+	public function get_clients_from_api()
 	{
-		if ( ! $this->_api_connector)
-		{
-			throw new Exception('API connector not set.');
-		}
+		$root_node		= 'Client';
+		$api_clients 	= $this->prep_api_response($this->make_api_call('userGetClients', array(), $root_node), $root_node);
+		$clients		= array();
 		
-		$this->_api_connector->userGetClients();
-	}
-	
-	
-	/**
-	 * Retrieves the custom fields from the supplied POST input array.
-	 *
-	 * @access	public
-	 * @param	array		$custom_fields_data		The POST input array.
-	 * @return	array
-	 */
-	public function get_custom_fields_from_input_array(Array $custom_fields_data = array())
-	{
-		$custom_fields = array();
-
-		foreach ($custom_fields_data AS $cm_field_id => $ee_field_id)
+		foreach ($api_clients AS $api_client)
 		{
-			if ($ee_field_id)
+			/**
+			 * Ensure we're not tripped-up by an empty array (i.e. no clients),
+			 * or missing data (for some unforeseen reason).
+			 */
+			
+			if ( ! isset($api_client['ClientID']) OR ! isset($api_client['Name']))
 			{
-				$custom_fields[] = new Campaigner_custom_field(array(
-					'id'		=> $cm_field_id,
-					'field_id'	=> $ee_field_id
-				));
+				continue;
 			}
+			
+			$clients[] = new Campaigner_api_client(array(
+				'id'	=> $api_client['ClientID'],
+				'name'	=> $api_client['Name']
+			));
 		}
 		
-		return $custom_fields;
+		return $clients;
 	}
 	
 	
@@ -303,6 +299,115 @@ class Campaigner_model extends CI_Model {
 		}
 		
 		return $this->_settings;
+	}
+	
+	
+	/**
+	 * Returns the installed extension version. If the extension is not
+	 * installed, returns an empty string.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function get_installed_extension_version()
+	{
+		$db = $this->_ee->db;
+		
+		$db_extension = $db->select('version')->get_where(
+			'extensions',
+			array('class' => $this->get_extension_class()),
+			1
+		);
+		
+		return $db_extension->num_rows()
+			? $db_extension->row()->version
+			: '';
+	}
+	
+	
+	/**
+	 * Retrieves the mailing list custom fields from the Campaign Monitor API.
+	 * Wrapper for the CampaignMonitor::listGetCustomFields method.
+	 *
+	 * @access	public
+	 * @param	string		$list_id		The list ID.
+	 * @return	array
+	 */
+	public function get_mailing_list_custom_fields_from_api($list_id)
+	{
+		$fields		= array();
+		$root_node	= 'ListCustomField';
+		
+		$api_fields = $this->prep_api_response(
+			$this->make_api_call('listGetCustomFields', array($list_id), $root_node),
+			$root_node
+		);
+		
+		foreach ($api_fields AS $api_field)
+		{
+			/**
+			 * Ensure we're not tripped-up by an empty array (i.e. no custom fields),
+			 * or missing data (for some unforeseen reason).
+			 */
+			
+			if ( ! isset($api_field['Key'])
+				OR ! isset($api_field['FieldName'])
+				OR ! isset($api_field['FieldOptions'])
+				OR ! isset($api_field['DataType']))
+			{
+				continue;
+			}
+			
+			$fields[] = new Campaigner_api_custom_field(array(
+				'key'		=> $api_field['Key'],
+				'name'		=> $api_field['FieldName'],
+				'options'	=> $api_field['FieldOptions'],
+				'type'		=> $api_field['DataType']
+			));
+		}
+		
+		return $fields;
+	}
+	
+	
+	/**
+	 * Retrieves mailing lists from the Campaign Monitor API. Wrapper for the
+	 * CampaignMonitor::clientGetLists method.
+	 *
+	 * @access	public
+	 * @param	string		$client_id		The client ID.
+	 * @return	array
+	 */
+	public function get_mailing_lists_from_api($client_id)
+	{
+		$lists		= array();
+		$root_node	= 'List';
+		
+		$api_lists = $this->prep_api_response(
+			$this->make_api_call('clientGetLists', array($client_id), $root_node),
+			$root_node
+		);
+		
+		foreach ($api_lists AS $api_list)
+		{
+			/**
+			 * Ensure we're not tripped-up by an empty array (i.e. no mailing lists),
+			 * or missing data (for some unforeseen reason).
+			 */
+			
+			if ( ! isset($api_list['ListID']) OR ! isset($api_list['Name']))
+			{
+				continue;
+			}
+			
+			$lists[] = new Campaigner_api_mailing_list(array(
+				'id'			=> $api_list['ListID'],
+				'name'			=> $api_list['Name'],
+				'custom_fields'	=> $this->get_mailing_list_custom_fields_from_api($api_list['ListID'])
+			));
+		}
+		
+		return $lists;
 	}
 	
 	
@@ -347,46 +452,47 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
-	 * Retrieves the mailing lists from POST data.
+	 * Retrieves the member fields from the database.
 	 *
 	 * @access	public
 	 * @return	array
 	 */
-	public function get_mailing_lists_from_input()
+	public function get_member_fields()
 	{
-		$input 					= $this->_ee->input;
-		$active_mailing_lists	= $input->post('active_mailing_lists');
-		$all_mailing_lists 		= $input->post('all_mailing_lists');
-		$ret_mailing_lists		= array();
+		// Shortcuts.
+		$lang = $this->_ee->lang;
 		
-		foreach ($active_mailing_lists AS $list_id)
+		$member_fields = array();
+		
+		// ExpressionEngine hard-codes these member fields, so we must do the same.
+		$standard_member_fields = array(
+			array('id' => 'group_id', 'label' => $lang->line('mbr_group_id'), 'options' => array(), 'type' => 'text'),
+			array('id' => 'location', 'label' => $lang->line('mbr_location'), 'options' => array(), 'type' => 'text'),
+			array('id' => 'occupation', 'label' => $lang->line('mbr_occupation'), 'options' => array(), 'type' => 'text'),
+			array('id' => 'screen_name', 'label' => $lang->line('mbr_screen_name'), 'options' => array(), 'type' => 'text'),
+			array('id' => 'url', 'label' => $lang->line('mbr_url'), 'options' => array(), 'type' => 'text'),
+			array('id' => 'username', 'label' => $lang->line('mbr_username'), 'options' => array(), 'type' => 'text')
+		);
+		
+		foreach ($standard_member_fields AS $member_field_data)
 		{
-			$ret_mailing_list = new Campaigner_mailing_list(array('list_id' => $list_id));
-			
-			// Trigger field ID.
-			if (isset($all_mailing_lists[$list_id]['trigger_field_id']))
-			{
-				$ret_mailing_list->set_trigger_field_id($all_mailing_lists[$list_id]['trigger_field_id']);
-			}
-			
-			// Trigger value.
-			if (isset($all_mailing_lists[$list_id]['trigger_value']))
-			{
-				$ret_mailing_list->set_trigger_value($all_mailing_lists[$list_id]['trigger_value']);
-			}
-			
-			// Custom fields.
-			if (isset($all_mailing_lists[$list_id]['custom_fields']))
-			{
-				$ret_mailing_list->set_custom_fields(
-					$this->get_custom_fields_from_input_array($all_mailing_lists[$list_id]['custom_fields'])
-				);
-			}
-			
-			$ret_mailing_lists[] = $ret_mailing_list;
+			$member_fields[] = new EI_member_field($member_field_data);
 		}
 		
-		return $ret_mailing_lists;
+		// Load the custom member fields from the database.
+		$db_member_fields = $this->_ee->db
+			->select("m_field_id, m_field_label, m_field_list_items, m_field_type")
+			->get('member_fields');
+		
+		foreach ($db_member_fields->result_array() AS $db_row)
+		{
+			$member_field = new EI_member_field();
+			$member_field->populate_from_db_array($db_row);
+			
+			$member_fields[] = $member_field;
+		}
+		
+		return $member_fields;
 	}
 	
 	
@@ -472,6 +578,59 @@ class Campaigner_model extends CI_Model {
 		}
 		
 		return $this->_theme_url;
+	}
+	
+	
+	/**
+	 * Makes the specified API call. Wrapper for the CampaignerMonitor methods.
+	 *
+	 * @access	public
+	 * @param	string		$method			The method to call.
+	 * @param	array		$params			The method parameters.
+	 * @param	string		$root_node		The result root node.
+	 * @return	array
+	 */
+	public function make_api_call($method, $params = array(), $root_node)
+	{
+		// Can't do anything without an API connector.
+		if ( ! $this->_api_connector)
+		{
+			throw new Exception('API connector not set.');
+		}
+		
+		// Confirm that the method exists.
+		if ( ! method_exists($this->_api_connector, $method))
+		{
+			throw new Exception('Unknown API method: ' .$method);
+		}
+		
+		// Call the API method.
+		return call_user_func_array(array($this->_api_connector, $method), $params);
+	}
+	
+	
+	/**
+	 * Validates and preps an API result array.
+	 *
+	 * @access	public
+	 * @param	array		$api_result		The API result.
+	 * @param	string		$root_node		The result root node.
+	 * @return	array
+	 */
+	public function prep_api_response($api_result, $root_node)
+	{
+		/**
+		 * Validate the result. Throws an exception if it's invalid.
+		 * We just let it bubble.
+		 */
+		
+		$this->_validate_api_response($api_result, $root_node);
+		
+		// Fix the result array structure, if required.
+		$api_result = $this->_fix_api_response_structure($api_result, $root_node);
+		
+		// Retrieve the root node, and return the data structure.
+		return $api_result['anyType'][$root_node];
 	}
 	
 	
@@ -575,12 +734,37 @@ class Campaigner_model extends CI_Model {
 	 * Sets the API connector object.
 	 *
 	 * @access	public
-	 * @param	CMBase		$api_connector		The API connector object.
+	 * @param	CampaignMonitor		$api_connector		The API connector object.
 	 * @return	void
 	 */
-	public function set_api_connector(CMBase $api_connector)
+	public function set_api_connector(CampaignMonitor $api_connector)
 	{
 		$this->_api_connector = $api_connector;
+	}
+	
+	
+	/**
+	 * Updates the basic settings using input data.
+	 *
+	 * @access	public
+	 * @param	Campaigner_settings		$settings		The settings object to update.
+	 * @return	Campaigner_settings
+	 */
+	public function update_basic_settings_from_input(Campaigner_settings $settings)
+	{
+		$input 	= $this->_ee->input;
+		$props	= array('api_key', 'client_id');
+		
+		foreach ($props AS $prop)
+		{
+			if ($prop_val = $input->get_post($prop))
+			{
+				$prop_method = 'set_' .$prop;
+				$settings->$prop_method($prop_val);
+			}
+		}
+		
+		return $settings;
 	}
 	
 	
@@ -609,7 +793,7 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
-	 * Updates the settings from any POST input.
+	 * Updates the settings from any input data.
 	 *
 	 * @access	public
 	 * @param 	Campaigner_settings 	$settings 		The settings object to update.
@@ -617,35 +801,147 @@ class Campaigner_model extends CI_Model {
 	 */
 	public function update_extension_settings_from_input(Campaigner_settings $settings)
 	{
-		$settings = $this->update_settings_from_input($settings);
-		$settings->set_mailing_lists($this->get_mailing_lists_from_input());
-		
-		return $settings;
+		return $this->update_mailing_list_settings_from_input($this->update_basic_settings_from_input($settings));
 	}
 	
 	
 	/**
-	 * Updates the basic settings using POST data.
+	 * Updates the mailing list settings using input (GET / POST) data. Note that "update"
+	 * is something of a misnomer, used for consistency. In actuality, any existing mailing
+	 * lists are discarded.
 	 *
 	 * @access	public
 	 * @param	Campaigner_settings		$settings		The settings object to update.
 	 * @return	Campaigner_settings
 	 */
-	public function update_settings_from_input(Campaigner_settings $settings)
+	public function update_mailing_list_settings_from_input(Campaigner_settings $settings)
 	{
-		$input 	= $this->_ee->input;
-		$props	= array('api_key', 'client_id');
-		
-		foreach ($props AS $prop)
+		// Get out early.
+		if ( ! ($input_lists = $this->_ee->input->get_post('mailing_lists')))
 		{
-			if ($prop_val = $input->post($prop))
-			{
-				$prop_method = 'set_' .$prop;
-				$settings->$prop_method($prop_val);
-			}
+			return $settings;
 		}
 		
+		$mailing_lists = array();
+		
+		foreach ($input_lists AS $input_list)
+		{
+			// Only interested in "selected" mailing lists.
+			if ( ! is_array($input_list) OR ! isset($input_list['checked']))
+			{
+				continue;
+			}
+			
+			// The basics.
+			$mailing_list = new Campaigner_mailing_list(array(
+				'list_id'		=> $input_list['checked'],
+				'trigger_field'	=> isset($input_list['trigger_field']) ? $input_list['trigger_field'] : '',
+				'trigger_value'	=> isset($input_list['trigger_value']) ? $input_list['trigger_value'] : ''
+			));
+			
+			// Custom fields.
+			if (isset($input_list['custom_fields']))
+			{
+				$input_custom_fields = $input_list['custom_fields'];
+				
+				foreach ($input_custom_fields AS $cm_key => $member_field_id)
+				{
+					// If no member field has been associated with the custom field, ignore it.
+					if ( ! $member_field_id)
+					{
+						continue;
+					}
+					
+					// "Desanitize" the Campaign Monitor key, and create the custom field.
+					$mailing_list->add_custom_field(new Campaigner_custom_field(array(
+						'cm_key' 			=> desanitize_string($cm_key),
+						'member_field_id'	=> $member_field_id
+					)));
+				}
+			}
+			
+			$mailing_lists[] = $mailing_list;
+		}
+		
+		$settings->set_mailing_lists($mailing_lists);
 		return $settings;
+	}
+	
+	
+	
+	/* --------------------------------------------------------------
+	 * PRIVATE METHODS
+	 * ------------------------------------------------------------ */
+	
+	/**
+	 * Fixes the API result structure, if required.
+	 *
+	 * @see 	http://www.campaignmonitor.com/forums/viewtopic.php?id=2765
+	 * @access	private
+	 * @param	array		$api_result		The API result array.
+	 * @param	string		$root_node		The root node.
+	 * @return	array
+	 */
+	private function _fix_api_response_structure(Array $api_result = array(), $root_node)
+	{
+		if ( ! isset($api_result['anyType'][$root_node][0]))
+		{
+			$fake_item = array();
+			
+			foreach ($api_result['anyType'][$root_node] AS $key => $val)
+			{
+				$fake_item[$key] = $val;
+			}
+			
+			$api_result['anyType'][$root_node] = array($fake_item);
+		}
+		
+		return $api_result;
+	}
+	
+	
+	/**
+	 * Validates an API response. Throws an exception if the API returned
+	 * an error.
+	 *
+	 * @access	private
+	 * @param	array		$api_response	The API response.
+	 * @param 	string 		$root_node		The expected root node (optional).
+	 * @return	bool
+	 */
+	private function _validate_api_response(Array $api_response = array(), $root_node = '')
+	{
+		// Check for catastrophic failure.
+		if ( ! isset($api_response['anyType']))
+		{
+			$error_code 	= 0;
+			$error_message	= $this->_ee->lang->line('api_error_unknown');
+			
+			throw new Exception($error_message, $error_code);
+		}
+		
+		// Check for known error types.
+		if (isset($api_response['anyType']['Code']))
+		{
+			$error_code = (int) $api_response['anyType']['Code'];
+			
+			$error_message = isset($api_response['anyType']['Message'])
+				? $this->_ee->lang->line('api_error_preamble') .$api_response['anyType']['Message']
+				: $this->_ee->lang->line('api_error_unknown');
+			
+			throw new Exception($error_message, $error_code);
+		}
+		
+		// Check for the root node, if required.
+		if ($root_node && ! isset($api_response['anyType'][$root_node]))
+		{
+			$error_code 	= 0;
+			$error_message	= $this->_ee->lang->line('api_error_missing_root_preamble') .$root_node;
+			
+			throw new Exception($error_message, $error_code);
+		}
+		
+		return TRUE;
 	}
 
 }

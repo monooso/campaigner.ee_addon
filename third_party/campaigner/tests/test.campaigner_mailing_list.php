@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Tests for the Campaigner_mailing_list class.
+ * Campaigner Mailing List tests.
  *
  * @package 	Campaigner
  * @author 		Stephen Lewis <addons@experienceinternet.co.uk>
@@ -50,23 +50,23 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 	
 	public function test_constructor()
 	{
-		$list_id 			= 'List ID';
-		$trigger_field_id 	= 'Trigger field ID';
-		$trigger_value		= 'Trigger value';
-		$custom_fields		= array(new Campaigner_custom_field());
+		$list_id 		= 'List ID';
+		$trigger_field 	= 'Trigger field';
+		$trigger_value	= 'Trigger value';
+		$custom_fields	= array(new Campaigner_custom_field());
 		
 		$data = array(
 			'custom_fields'	=> $custom_fields,
-			'list_id'			=> $list_id,
-			'trigger_field_id'	=> $trigger_field_id,
-			'trigger_value'		=> $trigger_value
+			'list_id'		=> $list_id,
+			'trigger_field'	=> $trigger_field,
+			'trigger_value'	=> $trigger_value
 		);
 		
 		$list = new Campaigner_mailing_list($data);
 		
 		$this->assertIdentical($list_id, $list->get_list_id());
 		$this->assertIdentical($custom_fields, $list->get_custom_fields());
-		$this->assertIdentical($trigger_field_id, $list->get_trigger_field_id());
+		$this->assertIdentical($trigger_field, $list->get_trigger_field());
 		$this->assertIdentical($trigger_value, $list->get_trigger_value());
 	}
 	
@@ -78,10 +78,10 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_set_trigger_field_id()
+	public function test_set_trigger_field()
 	{
 		$field_id = 'm_field_id_20';
-		$this->assertIdentical($field_id, $this->_list->set_trigger_field_id($field_id));
+		$this->assertIdentical($field_id, $this->_list->set_trigger_field($field_id));
 	}
 	
 	
@@ -125,52 +125,52 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_custom_field_by_id__success()
+	public function test_get_custom_field_by_cm_key__success()
 	{
 		$custom_fields = array();
 		
 		for ($count = 1; $count < 10; $count++)
 		{
-			$custom_fields[] = new Campaigner_custom_field(array('id' => 'cm_id_' .$count));
+			$custom_fields[] = new Campaigner_custom_field(array('cm_key' => 'cm_id_' .$count));
 		}
 		
 		$this->_list->set_custom_fields($custom_fields);
-		$this->assertIsA($this->_list->get_custom_field_by_id('cm_id_5'), 'Campaigner_custom_field');
+		$this->assertIsA($this->_list->get_custom_field_by_cm_key('cm_id_5'), 'Campaigner_custom_field');
 	}
 	
 	
-	public function test_get_custom_field_by_id__failure()
+	public function test_get_custom_field_by_cm_key__failure()
 	{
 		$custom_fields = array();
 		
 		for ($count = 1; $count < 10; $count++)
 		{
-			$custom_fields[] = new Campaigner_custom_field(array('id' => 'cm_id_' .$count));
+			$custom_fields[] = new Campaigner_custom_field(array('cm_key' => 'cm_id_' .$count));
 		}
 		
 		$this->_list->set_custom_fields($custom_fields);
-		$this->assertIdentical(FALSE, $this->_list->get_custom_field_by_id('wibble'));
+		$this->assertIdentical(FALSE, $this->_list->get_custom_field_by_cm_key('wibble'));
 	}
 	
 	
 	public function test_to_array()
 	{
 		$list_id 			= 'List ID';
-		$trigger_field_id 	= 'Trigger field ID';
+		$trigger_field 		= 'Trigger field';
 		$trigger_value		= 'Trigger value';
 		$custom_field 		= new Campaigner_custom_field();
 		$custom_fields		= array($custom_field);
 		
 		$data = array(
-			'custom_fields'		=> array($custom_field->to_array()),
-			'list_id'			=> $list_id,
-			'trigger_field_id'	=> $trigger_field_id,
-			'trigger_value'		=> $trigger_value
+			'custom_fields'	=> array($custom_field->to_array()),
+			'list_id'		=> $list_id,
+			'trigger_field'	=> $trigger_field,
+			'trigger_value'	=> $trigger_value
 		);
 		
 		$this->_list->set_custom_fields($custom_fields);
 		$this->_list->set_list_id($list_id);
-		$this->_list->set_trigger_field_id($trigger_field_id);
+		$this->_list->set_trigger_field($trigger_field);
 		$this->_list->set_trigger_value($trigger_value);
 		
 		$this->assertIdentical($data, $this->_list->to_array());
@@ -179,5 +179,5 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 }
 
 
-/* End of file		: test_campaigner_mailing_list.php */
-/* File location	: third_party/campaigner/tests/test_campaigner_mailing_list.php */
+/* End of file		: test.campaigner_mailing_list.php */
+/* File location	: third_party/campaigner/tests/test.campaigner_mailing_list.php */

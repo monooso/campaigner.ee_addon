@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Tests for the Campaigner_custom_field class.
+ * Campaigner Custom Field tests.
  *
  * @package 	Campaigner
  * @author 		Stephen Lewis <addons@experienceinternet.co.uk>
@@ -17,12 +17,12 @@ class Test_campaigner_custom_field extends Testee_unit_test_case {
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * The custom field.
+	 * Properies.
 	 *
 	 * @access	private
-	 * @var		Campaigner_custom_field
+	 * @var		array
 	 */
-	private $_field;
+	private $_props = array();
 	
 	
 	
@@ -39,7 +39,8 @@ class Test_campaigner_custom_field extends Testee_unit_test_case {
 	public function setUp()
 	{
 		parent::setUp();
-		$this->_field = new Campaigner_custom_field();
+		
+		$this->_props = array('cm_key' => 'campaign_monitor_key', 'member_field_id' => 'm_field_id_10');
 	}
 	
 	
@@ -47,55 +48,40 @@ class Test_campaigner_custom_field extends Testee_unit_test_case {
 	 * TEST METHODS
 	 * ------------------------------------------------------------ */
 	
-	public function test_constructor()
+	public function test_constructor__success()
 	{
-		$id 		= 'cm_id';
-		$field_id 	= 'm_field_id';
+		$field = new Campaigner_custom_field($this->_props);
 		
-		$data = array(
-			'field_id'	=> $field_id,
-			'id'		=> $id
-		);
-		
-		$var = new Campaigner_custom_field($data);
-		
-		$this->assertIdentical($field_id, $var->get_field_id());
-		$this->assertIdentical($id, $var->get_id());
+		foreach ($this->_props AS $key => $val)
+		{
+			$method = 'get_' .$key;
+			$this->assertIdentical($val, $field->$method());
+		}
 	}
 	
 	
-	public function test_set_id()
+	public function test_constructor__invalid_property()
 	{
-		$id = 'cm_id';
-		$this->assertIdentical($id, $this->_field->set_id($id));
+		$this->_props['INVALID'] = 'INVALID';
+		
+		// If this doesn't throw an error, we're golden.
+		new Campaigner_custom_field($this->_props);
 	}
 	
 	
-	public function test_set_field_id()
+	public function test_to_array__success()
 	{
-		$field_id = 'm_field_id';
-		$this->assertIdentical($field_id, $this->_field->set_field_id($field_id));
-	}
-	
-	
-	public function test_to_array()
-	{
-		$id 		= 'cm_id';
-		$field_id 	= 'm_field_id';
+		$field = new Campaigner_custom_field($this->_props);
+		$field_array = $field->to_array();
 		
-		$data = array(
-			'field_id'	=> $field_id,
-			'id'		=> $id
-		);
+		ksort($this->_props);
+		ksort($field_array);
 		
-		$this->_field->set_id($id);
-		$this->_field->set_field_id($field_id);
-		
-		$this->assertIdentical($data, $this->_field->to_array());
+		$this->assertIdentical($this->_props, $field_array);
 	}
 	
 }
 
 
-/* End of file		: test_Campaigner_custom_field.php */
-/* File location	: third_party/campaigner/tests/test_Campaigner_custom_field.php */
+/* End of file		: test.campaigner_custom_field.php */
+/* File location	: third_party/campaigner/tests/test.campaigner_custom_field.php */

@@ -1,34 +1,34 @@
 <?php
 
 /**
- * Campaigner custom field.
+ * Client information, returned from the Campaign Monitor API.
  *
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */
 
-class Campaigner_custom_field {
+class Campaigner_api_client {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES.
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * The Campaign Monitor key.
+	 * Client ID.
 	 *
 	 * @access	private
 	 * @var		string
 	 */
-	private $_cm_key = '';
+	private $_id = '';
 	
 	/**
-	 * The member field ID associated with the custom field.
+	 * Client name.
 	 *
 	 * @access	private
 	 * @var		string
 	 */
-	private $_member_field_id = '';
+	private $_name = '';
 	
 	
 	
@@ -58,54 +58,62 @@ class Campaigner_custom_field {
 	
 	
 	/**
-	 * Returns the Campaign Monitor key.
+	 * Returns client ID.
 	 *
 	 * @access	public
 	 * @return	string
 	 */
-	public function get_cm_key()
+	public function get_id()
 	{
-		return $this->_cm_key;
+		return $this->_id;
 	}
 	
 	
 	/**
-	 * Returns the member field ID.
+	 * Returns client name.
 	 *
 	 * @access	public
 	 * @return	string
 	 */
-	public function get_member_field_id()
+	public function get_name()
 	{
-		return $this->_member_field_id;
+		return $this->_name;
 	}
 	
 	
 	/**
-	 * Sets the Campaign Monitor key.
+	 * Sets client ID.
 	 *
 	 * @access	public
-	 * @param 	string		$cm_key		The Campaign Monitor key.
+	 * @param 	string		$id			The client ID.
 	 * @return	string
 	 */
-	public function set_cm_key($cm_key)
+	public function set_id($id = '')
 	{
-		$this->_cm_key = $cm_key;
-		return $this->get_cm_key();
+		if (is_string($id) OR is_int($id))
+		{
+			$this->_id = $id;
+		}
+		
+		return $this->get_id();
 	}
 	
 	
 	/**
-	 * Sets the member field ID.
+	 * Sets client name.
 	 *
 	 * @access	public
-	 * @param 	string		$member_field_id		The member field ID.
+	 * @param 	string		$name		The client name.
 	 * @return	string
 	 */
-	public function set_member_field_id($member_field_id)
+	public function set_name($name = '')
 	{
-		$this->_member_field_id = $member_field_id;
-		return $this->get_member_field_id();
+		if (is_string($name))
+		{
+			$this->_name = $name;
+		}
+		
+		return $this->get_name();
 	}
 	
 	
@@ -118,12 +126,12 @@ class Campaigner_custom_field {
 	public function to_array()
 	{
 		return array(
-			'cm_key'			=> $this->get_cm_key(),
-			'member_field_id'	=> $this->get_member_field_id()
+			'id'	=> $this->get_id(),
+			'name'	=> $this->get_name()
 		);
 	}
 	
 }
 
-/* End of file		: campaigner_custom_field.php */
-/* File location	: third_party/campaigner/classes/campaigner_custom_field.php */
+/* End of file		: campaigner_api_client.php */
+/* File location	: third_party/campaigner/classes/campaigner_api_client.php */

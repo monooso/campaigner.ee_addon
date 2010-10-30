@@ -8,7 +8,34 @@
 
 (function($) {
 	
-	var loading = false;
+	var loading 	= false;
+	var firstRun	= true;
+	
+	/**
+	 * Checks if an API key is already set. If so, an AJAX call is
+	 * automatically triggered, to load the clients.
+	 *
+	 * @return 	void
+	 */
+	function autoLoadClients() {
+		if ($('#api_key').val()) {
+			getClients();
+		}
+	}
+	
+	
+	/**
+	 * Checks if a client ID is already set. If so, an AJAX call is
+	 * automatically triggered, to load the mailing lists.
+	 *
+	 * @return 	void
+	 */
+	function autoLoadLists() {
+		if ($('#api_key').val() && $('#client_id').val()) {
+			getLists();
+		}
+	}
+	
 	
 	/**
 	 * Retrieves the 'clients' HTML via AJAX.
@@ -84,6 +111,11 @@
 		$('#campaigner_clients').html(eval(response));
 		iniGetListsLink();
 		stopLoading();
+		
+		if (firstRun) {
+			firstRun = false;
+			autoLoadLists();
+		}
 	}
 	
 	
@@ -186,6 +218,7 @@
 		iniGetClientsLink();
 		iniGetListsLink();
 		iniLoadingMessage();
+		autoLoadClients();
 	});
 
 })(window.jQuery);

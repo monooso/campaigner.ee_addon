@@ -7,6 +7,25 @@
  */
 
 @media screen, projection {
+	
+/* =campaigner_lists
+ -------------------------------------------------------------*/
+#campaigner_lists .stacked label {
+display 				: block;
+font-weight 			: normal;
+margin-bottom 			: 0.5em;
+}
+
+#campaigner_lists .stacked label span {
+display 				: inline-block;
+margin-right 			: 10px;
+width 					: 35%;
+}
+
+#campaigner_lists .stacked select {
+display 				: inline-block;
+}
+
 
 /* =campaigner_loading
  -------------------------------------------------------------*/

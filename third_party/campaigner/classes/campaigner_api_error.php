@@ -1,34 +1,36 @@
 <?php
 
 /**
- * Campaigner custom field.
+ * Campaign Monitor API error.
  *
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */
 
-class Campaigner_custom_field {
+require_once PATH_THIRD .'campaigner/helpers/EI_number_helper' .EXT;
+
+class Campaigner_api_error {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES.
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * The Campaign Monitor key.
+	 * API error code.
 	 *
 	 * @access	private
-	 * @var		string
+	 * @var		int
 	 */
-	private $_cm_key = '';
+	private $_code = 0;
 	
 	/**
-	 * The member field ID associated with the custom field.
+	 * API error message.
 	 *
 	 * @access	private
 	 * @var		string
 	 */
-	private $_member_field_id = '';
+	private $_message;
 	
 	
 	
@@ -58,54 +60,62 @@ class Campaigner_custom_field {
 	
 	
 	/**
-	 * Returns the Campaign Monitor key.
+	 * Returns the API error code.
 	 *
 	 * @access	public
-	 * @return	string
+	 * @return	int
 	 */
-	public function get_cm_key()
+	public function get_code()
 	{
-		return $this->_cm_key;
+		return $this->_code;
 	}
 	
 	
 	/**
-	 * Returns the member field ID.
+	 * Returns the API error message.
 	 *
 	 * @access	public
 	 * @return	string
 	 */
-	public function get_member_field_id()
+	public function get_message()
 	{
-		return $this->_member_field_id;
+		return $this->_message;
 	}
 	
 	
 	/**
-	 * Sets the Campaign Monitor key.
+	 * Sets the API error code.
 	 *
 	 * @access	public
-	 * @param 	string		$cm_key		The Campaign Monitor key.
-	 * @return	string
+	 * @param 	int			$code			The API error code.
+	 * @return	int
 	 */
-	public function set_cm_key($cm_key)
+	public function set_code($code)
 	{
-		$this->_cm_key = $cm_key;
-		return $this->get_cm_key();
+		if (valid_int($code, 0))
+		{
+			$this->_code = $code;
+		}
+		
+		return $this->get_code();
 	}
 	
 	
 	/**
-	 * Sets the member field ID.
+	 * Sets the API error message.
 	 *
 	 * @access	public
-	 * @param 	string		$member_field_id		The member field ID.
+	 * @param 	string		$message		The API error message.
 	 * @return	string
 	 */
-	public function set_member_field_id($member_field_id)
+	public function set_message($message)
 	{
-		$this->_member_field_id = $member_field_id;
-		return $this->get_member_field_id();
+		if (is_string($message))
+		{
+			$this->_message = $message;
+		}
+		
+		return $this->get_message();
 	}
 	
 	
@@ -118,12 +128,12 @@ class Campaigner_custom_field {
 	public function to_array()
 	{
 		return array(
-			'cm_key'			=> $this->get_cm_key(),
-			'member_field_id'	=> $this->get_member_field_id()
+			'code'		=> $this->get_code(),
+			'message'	=> $this->get_message()
 		);
 	}
 	
 }
 
-/* End of file		: campaigner_custom_field.php */
-/* File location	: third_party/campaigner/classes/campaigner_custom_field.php */
+/* End of file		: campaigner_api_error.php */
+/* File location	: third_party/campaigner/classes/campaigner_api_error.php */

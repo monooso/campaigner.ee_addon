@@ -1,11 +1,14 @@
 <?php if ( ! defined('BASEPATH')) exit('Direct script access is not permitted.');
 
 /**
+ * Automatically add your EE members to Campaign Monitor mailing lists.
+ * 
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */
 
+require_once PATH_THIRD .'campaigner/classes/campaigner_api_error' .EXT;
 require_once PATH_THIRD .'campaigner/libraries/CMBase' .EXT;
 
 class Campaigner_ext {
@@ -92,13 +95,12 @@ class Campaigner_ext {
 	{
 		$this->_ee =& get_instance();
 		
-		// Load our glamorous assistants.
-		$this->_ee->load->helper('form');
-		$this->_ee->load->library('table');
-		
 		// Load the model.
 		$this->_ee->load->add_package_path(PATH_THIRD .'campaigner/');
 		$this->_ee->load->model('campaigner_model');
+		
+		// Shortcut.
+		$model = $this->_ee->campaigner_model;
 		
 		// Load the language file.
 		$this->_ee->lang->loadfile('campaigner');
@@ -108,7 +110,20 @@ class Campaigner_ext {
 		$this->docs_url		= 'http://experienceinternet.co.uk/software/campaigner/';
 		$this->name			= $this->_ee->lang->line('extension_name');
 		$this->settings		= $settings;
-		$this->version		= $this->_ee->campaigner_model->get_package_version();
+		$this->version		= $model->get_package_version();
+		
+		// Is the extension installed?
+		if ($model->get_installed_extension_version())
+		{
+			// Load the settings from the database, and update them with any input data.
+			$this->settings = $model->update_extension_settings_from_input($model->get_extension_settings());
+			
+			// If the API key has been set, initialise the API connector.
+			if ($this->settings->get_api_key())
+			{
+				$model->set_api_connector(new CampaignMonitor($this->settings->get_api_key()));
+			}
+		}
 	}
 	
 	
@@ -137,6 +152,157 @@ class Campaigner_ext {
 	
 	
 	/**
+	 * Displays the 'settings' page.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function display_settings()
+	{
+		// If this isn't an AJAX request, just display the "base" settings form.
+		if ( ! isset($_SERVER['HTTP_X_REQUESTED_WITH']) OR strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest')
+		{
+			return $this->display_settings_base();
+		}
+		
+		// Handle AJAX requests.
+		switch (strtolower($this->_ee->input->get('request')))
+		{
+			case 'get_clients':
+				$this->_ee->output->send_ajax_response($this->display_settings_clients());
+				break;
+				
+			case 'get_mailing_lists':
+				$this->_ee->output->send_ajax_response($this->display_settings_mailing_lists());
+				break;
+			
+			default:
+				// Unknown request. Do nothing.
+				break;
+		}
+	}
+	
+	
+	/**
+	 * Displays the "base" settings form.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function display_settings_base()
+	{
+		// Shortcuts.
+		$cp		= $this->_ee->cp;
+		$lang	= $this->_ee->lang;
+		$model	= $this->_ee->campaigner_model;
+		
+		$lower_package_name = strtolower($model->get_package_name());
+		
+		// View variables.
+		$view_vars = array(
+			'action_url'		=> 'C=addons_extensions' .AMP .'M=save_extension_settings',
+			'cp_page_title'		=> $lang->line('extension_name'),
+			'hidden_fields'		=> array('file' => $lower_package_name),
+			'settings'			=> $this->settings		// Loaded in the constructor.
+		);
+		
+		// Theme URL.
+		$theme_url = $model->get_theme_url();
+		
+		// Add the CSS.
+		$cp->add_to_foot('<link media="screen, projection" rel="stylesheet" type="text/css" href="' .$theme_url .'css/cp.css" />');
+
+		// Load the JavaScript library, and set a shortcut.
+		$this->_ee->load->library('javascript');
+		$js = $this->_ee->javascript;
+		
+		$cp->add_to_foot('<script type="text/javascript" src="' .$theme_url .'js/cp.js"></script>');
+
+		// JavaScript globals.
+		$js->set_global('campaigner.lang', array(
+				'missingApiKey' 	=> $lang->line('msg_missing_api_key'),
+				'missingClientId'	=> $lang->line('msg_missing_client_id')
+		));
+		
+		// $js->set_global('campaigner.memberFields', $js->generate_json($member_fields->to_array()));
+
+		$js->set_global('campaigner.ajaxUrl',
+			str_replace(AMP, '&', BASE) .'&C=addons_extensions&M=extension_settings&file=' .$lower_package_name
+		);
+
+		// Compile the JavaScript.
+		$js->compile();
+		
+		// Load the view.
+		return $this->_ee->load->view('settings', $view_vars, TRUE);
+	}
+	
+	
+	/**
+	 * Displays the "clients" settings form fragment.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function display_settings_clients()
+	{
+		try
+		{
+			$view_vars = array(
+				'clients'	=> $this->_ee->campaigner_model->get_clients_from_api(),
+				'settings'	=> $this->settings
+			);
+			
+			$view_name = '_clients';
+		}
+		catch (Exception $e)
+		{
+			// Something went wrong with the API call.
+			$view_vars = array('api_error' => new Campaigner_api_error(array(
+				'code'		=> $e->getCode(),
+				'message'	=> $e->getMessage()
+			)));
+			
+			$view_name = '_clients_api_error';
+		}
+		
+		return $this->_ee->load->view($view_name, $view_vars, TRUE);
+	}
+	
+	
+	/**
+	 * Displays the "mailing lists" settings form fragment.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function display_settings_mailing_lists()
+	{
+		try
+		{
+			$view_vars = array(
+				'mailing_lists'	=> $this->_ee->campaigner_model->get_mailing_lists_from_api($this->settings->get_client_id()),
+				'member_fields'	=> $this->_ee->campaigner_model->get_member_fields(),
+				'settings'		=> $this->settings
+			);
+		
+			$view_name = '_mailing_lists';
+		}
+		catch (Exception $e)
+		{
+			$view_vars = array('api_error' => new Campaigner_api_error(array(
+					'code'		=> $e->getCode(),
+					'message'	=> $e->getMessage()
+			)));
+			
+			$view_name = '_mailing_lists_api_error';
+		}
+		
+		return $this->_ee->load->view($view_name, $view_vars, TRUE);
+	}
+	
+	
+	/**
 	 * Saves the extension settings.
 	 *
 	 * @access	public
@@ -144,13 +310,10 @@ class Campaigner_ext {
 	 */
 	public function save_settings()
 	{
-		// Update the settings with any input data.
-		$settings = $this->_ee->campaigner_model->update_extension_settings_from_input(new Campaigner_settings());
-		
 		// Save the settings.
 		try
 		{
-			$this->_ee->campaigner_model->save_extension_settings($settings);
+			$this->_ee->campaigner_model->save_extension_settings($this->settings);
 			$this->_ee->session->set_flashdata('message_success', $this->_ee->lang->line('msg_settings_saved'));
 		}
 		catch (Exception $e)
@@ -171,6 +334,10 @@ class Campaigner_ext {
 	 */
 	public function settings_form()
 	{
+		// Load our glamorous assistants.
+		$this->_ee->load->helper('form');
+		$this->_ee->load->library('table');
+		
 		// Define the navigation.
 		$base_url = BASE .AMP .'C=addons_extensions' .AMP .'M=extension_settings' .AMP .'file=campaigner' .AMP .'tab=';
 		
@@ -183,16 +350,16 @@ class Campaigner_ext {
 		switch ($this->_ee->input->get('tab'))
 		{
 			case 'errors':
-				return $this->_display_errors();
+				return $this->display_errors();
 				break;
 				
 			case 'help':
-				return $this->_display_help();
+				return $this->display_help();
 				break;
 			
 			case 'settings':
 			default:
-				return $this->_display_settings();
+				return $this->display_settings();
 				break;
 		}
 	}
@@ -207,7 +374,7 @@ class Campaigner_ext {
 	 */
 	public function update_extension($current_version = '')
 	{
-		return $this->_ee->campaigner_model->update_extension($current_version);
+		return $this->_ee->campaigner_model->update_extension($current_version, $this->version);
 	}
 	
 	
@@ -230,95 +397,6 @@ class Campaigner_ext {
 		$example_data = $this->_ee->extensions->last_call
 			? $this->_ee->extensions->last_call
 			: $example_data;
-	}
-	
-	
-	
-	/* --------------------------------------------------------------
-	 * PRIVATE METHODS
-	 * ------------------------------------------------------------ */
-	
-	/**
-	 * Displays the 'settings' tab.
-	 *
-	 * @access	private
-	 * @return	string
-	 */
-	private function _display_settings()
-	{
-		// Theme URL.
-		$theme_url = $this->_ee->campaigner_model->get_theme_url();
-		
-		// Collate the view variables.
-		$view_vars = array(
-			'action_url'	=> 'C=addons_extensions' .AMP .'M=save_extension_settings',
-			'cp_page_title'	=> $this->_ee->lang->line('extension_name'),
-			'hidden_fields'	=> array('file' => strtolower($this->_ee->campaigner_model->get_package_name())),
-			'settings'		=> $this->_ee->campaigner_model->get_extension_settings()
-		);
-		
-		
-		/**
-		 * Is this an AJAX request?
-		 */
-		
-		if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
-		{
-			switch (strtolower($this->_ee->input->get('request')))
-			{
-				case 'get_clients':
-					$this->_ee->output->send_ajax_response($this->_ee->load->view('_clients', $view_vars, TRUE));
-					break;
-					
-				case 'get_mailing_lists':
-					$this->_ee->output->send_ajax_response($this->_ee->load->view('_mailing_lists', $view_vars, TRUE));
-					break;
-				
-				default:
-					break;
-			}
-		}
-		else
-		{
-			// Add the CSS.
-			$this->_ee->cp->add_to_foot('<link media="screen, projection" rel="stylesheet" type="text/css" href="'
-				.$theme_url .'css/cp.css" />');
-
-			// JavaScript.
-			$this->_ee->load->library('javascript');
-			
-			$this->_ee->cp->add_to_foot('<script type="text/javascript" src="'
-				.$theme_url .'js/cp.js"></script>');
-
-			// JavaScript globals.
-			$this->_ee->javascript->set_global(
-				'campaigner.lang',
-				array(
-					'missingApiKey' 	=> $this->_ee->lang->line('msg_missing_api_key'),
-					'missingClientId'	=> $this->_ee->lang->line('msg_missing_client_id')
-				)
-			);
-
-			/*
-			$this->_ee->javascript->set_global(
-				'campaigner.memberFields',
-				$this->_ee->javascript->generate_json($member_fields)
-			);
-			*/
-
-			$this->_ee->javascript->set_global(
-				'campaigner.ajaxUrl',
-				str_replace(AMP, '&', BASE)
-					.'&C=addons_extensions&M=extension_settings&file='
-					.strtolower($this->_ee->campaigner_model->get_package_name())
-			);
-
-			// Compile the JavaScript.
-			$this->_ee->javascript->compile();
-			
-			// Load the view.
-			return $this->_ee->load->view('settings', $view_vars, TRUE);
-		}
 	}
 	
 }
