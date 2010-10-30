@@ -278,11 +278,34 @@ class Campaigner_ext {
 	 */
 	public function display_settings_mailing_lists()
 	{
+		// Shortcut.
+		$model = $this->_ee->campaigner_model;
+		
 		try
 		{
+			// Retrieve all the available mailing lists from the API.
+			$mailing_lists = $model->get_mailing_lists_from_api($this->settings->get_client_id());
+			
+			/**
+			 * Loop through the mailing lists. If we have settings for this
+			 * list, make a note of them.
+			 */
+			
+			foreach ($mailing_lists AS $mailing_list)
+			{
+				if (($saved_mailing_list = $this->settings->get_mailing_list_by_id($mailing_list->get_list_id())))
+				{
+					$mailing_list->set_trigger_field($saved_mailing_list->get_trigger_field());
+					$mailing_list->set_trigger_value($saved_mailing_list->get_trigger_value());
+					
+					// Custom fields.
+				}
+			}
+			
+			// Define the view variables.
 			$view_vars = array(
-				'mailing_lists'	=> $this->_ee->campaigner_model->get_mailing_lists_from_api($this->settings->get_client_id()),
-				'member_fields'	=> $this->_ee->campaigner_model->get_member_fields(),
+				'mailing_lists'	=> $mailing_lists,
+				'member_fields'	=> $model->get_member_fields(),
 				'settings'		=> $this->settings
 			);
 		
@@ -290,11 +313,7 @@ class Campaigner_ext {
 		}
 		catch (Exception $e)
 		{
-			$view_vars = array('api_error' => new Campaigner_api_error(array(
-					'code'		=> $e->getCode(),
-					'message'	=> $e->getMessage()
-			)));
-			
+			$view_vars = array('api_error' => new Campaigner_api_error(array('code' => $e->getCode(), 'message' => $e->getMessage())));
 			$view_name = '_mailing_lists_api_error';
 		}
 		

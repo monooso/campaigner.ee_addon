@@ -1,12 +1,14 @@
 <?php
 
 /**
- * Campaigner custom field.
+ * Campaigner Custom Field class.
  *
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
  */
+
+require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
 
 class Campaigner_custom_field {
 	
@@ -29,7 +31,6 @@ class Campaigner_custom_field {
 	 * @var		string
 	 */
 	private $_label;
-	
 	
 	/**
 	 * Member field ID.
@@ -99,6 +100,19 @@ class Campaigner_custom_field {
 	public function get_member_field_id()
 	{
 		return $this->_member_field_id;
+	}
+	
+	
+	/**
+	 * Returns the Campaign Monitor key, "sanitized" so as not to trigger
+	 * a "Disallowed Characters" error.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function get_sanitized_cm_key()
+	{
+		return sanitize_string($this->get_cm_key());
 	}
 	
 	

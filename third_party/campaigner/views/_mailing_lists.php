@@ -22,30 +22,15 @@ if ($mailing_lists)
 		$member_fields_dd_data[$member_field->get_id()] = $member_field->get_label();
 	}
 	
-	// Shortcut to the saved mailing lists.
-	$saved_mailing_lists = $settings->get_mailing_lists();
-	
 	// Loop through all the available mailing lists.
 	foreach ($mailing_lists AS $mailing_list)
 	{
-		// Extract the list information.
-		$list_id	= $mailing_list->get_id();
-		$list_name	= $mailing_list->get_name();
-		
-		// Determine whether settings have been saved for this mailing list. Hugely inefficient.
-		$saved_mailing_list = new Campaigner_mailing_list();
-		
-		foreach ($saved_mailing_lists AS $saved_list)
-		{
-			if ($saved_list->get_list_id() == $list_id)
-			{
-				$saved_mailing_list = $saved_list;
-				break;
-			}
-		}
+		// Shortcuts.
+		$list_id	= $mailing_list->get_list_id();
+		$list_name	= $mailing_list->get_list_name();
 		
 		$checkbox = form_checkbox(array(
-			'checked'	=> (bool) $saved_mailing_list->get_list_id(),
+			'checked'	=> FALSE,
 			'id' 		=> "mailing_lists[{$list_id}][checked]",
 			'name' 		=> "mailing_lists[{$list_id}][checked]",
 			'tabindex'	=> $tabindex += 10,
@@ -58,7 +43,7 @@ if ($mailing_lists)
 		$trigger_field = form_dropdown(
 			"mailing_lists[{$list_id}][trigger_field]",
 			array_merge(array('' => lang('lbl_no_trigger_field')), $member_fields_dd_data),
-			$saved_mailing_list->get_trigger_field(),
+			$mailing_list->get_trigger_field(),
 			"id='mailing_lists[{$list_id}][trigger_field]' tabindex='" .($tabindex += 10) ."'"
 		);
 		
@@ -68,7 +53,7 @@ if ($mailing_lists)
 			'class'		=> 'field',
 			'name'		=> "mailing_lists[{$list_id}][trigger_value]",
 			'tabindex'	=> $tabindex += 10,
-			'value' 	=> $saved_mailing_list->get_trigger_value()
+			'value' 	=> $mailing_list->get_trigger_value()
 		));
 		
 		// Custom fields.
@@ -78,12 +63,12 @@ if ($mailing_lists)
 			
 			foreach ($list_fields AS $list_field):
 			
-				$cell .= '<label><span>' .$list_field->get_name() .'</span>';
+				$cell .= '<label><span>' .$list_field->get_label() .'</span>';
 				$cell .= form_dropdown(
-					"mailing_lists[{$list_id}][custom_fields][{$list_field->get_sanitized_key()}]",
+					"mailing_lists[{$list_id}][custom_fields][{$list_field->get_sanitized_cm_key()}]",
 					array_merge(array('' => lang('lbl_no_custom_field')), $member_fields_dd_data),
 					'',
-					"id='mailing_lists[{$list_id}][custom_fields][{$list_field->get_sanitized_key()}]' tabindex='" .($tabindex += 10) ."'"
+					"id='mailing_lists[{$list_id}][custom_fields][{$list_field->get_sanitized_cm_key()}]' tabindex='" .($tabindex += 10) ."'"
 				);
 				$cell .= '</label>';
 			

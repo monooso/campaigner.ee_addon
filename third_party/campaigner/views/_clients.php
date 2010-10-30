@@ -8,7 +8,7 @@ if ($clients):
 	$client_options = array('' => lang('lbl_select_client'));
 	
 	foreach ($clients AS $client):
-		$client_options[$client->get_id()] = $client->get_name();
+		$client_options[$client->get_client_id()] = $client->get_client_name();
 	endforeach;
 	
 	$this->table->add_row(array(
