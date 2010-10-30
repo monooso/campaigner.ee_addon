@@ -286,11 +286,7 @@ class Campaigner_ext {
 			// Retrieve all the available mailing lists from the API.
 			$mailing_lists = $model->get_mailing_lists_from_api($this->settings->get_client_id());
 			
-			/**
-			 * Loop through the mailing lists. If we have settings for this
-			 * list, make a note of them.
-			 */
-			
+			// Loop through the mailing lists. If we have settings for a list, make a note of them.
 			foreach ($mailing_lists AS $mailing_list)
 			{
 				if (($saved_mailing_list = $this->settings->get_mailing_list_by_id($mailing_list->get_list_id())))
@@ -299,6 +295,16 @@ class Campaigner_ext {
 					$mailing_list->set_trigger_value($saved_mailing_list->get_trigger_value());
 					
 					// Custom fields.
+					if (($custom_fields = $mailing_list->get_custom_fields()))
+					{
+						foreach ($custom_fields AS $custom_field)
+						{
+							if (($saved_custom_field = $saved_mailing_list->get_custom_field_by_cm_key($custom_field->get_cm_key())))
+							{
+								$custom_field->set_member_field_id($saved_custom_field->get_member_field_id());
+							}
+						}
+					}
 				}
 			}
 			

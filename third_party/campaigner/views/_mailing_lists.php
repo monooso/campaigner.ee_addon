@@ -57,35 +57,39 @@ if ($mailing_lists)
 		));
 		
 		// Custom fields.
-		if (($list_fields = $mailing_list->get_custom_fields())):
-		
-			$cell = '';
+		if (($custom_fields = $mailing_list->get_custom_fields()))
+		{
+			$custom_fields_cell = '';
 			
-			foreach ($list_fields AS $list_field):
-			
-				$cell .= '<label><span>' .$list_field->get_label() .'</span>';
-				$cell .= form_dropdown(
-					"mailing_lists[{$list_id}][custom_fields][{$list_field->get_sanitized_cm_key()}]",
-					array_merge(array('' => lang('lbl_no_custom_field')), $member_fields_dd_data),
-					'',
-					"id='mailing_lists[{$list_id}][custom_fields][{$list_field->get_sanitized_cm_key()}]' tabindex='" .($tabindex += 10) ."'"
-				);
-				$cell .= '</label>';
-			
-			endforeach;
+			foreach ($custom_fields AS $custom_field)
+			{
+				$custom_fields_cell .= '<label><span>' .$custom_field->get_label() .'</span>';
 				
-		else:
-			
-			$cell = '<p>' .lang('msg_no_custom_fields') .'</p>';
-	
-		endif;
+				$custom_fields_cell .= form_dropdown(
+					"mailing_lists[{$list_id}][custom_fields][{$custom_field->get_sanitized_cm_key()}]",
+					array_merge(array('' => lang('lbl_no_custom_field')), $member_fields_dd_data),
+					$custom_field->get_member_field_id(),
+					"id='mailing_lists[{$list_id}][custom_fields][{$custom_field->get_sanitized_cm_key()}]' tabindex='" .($tabindex += 10) ."'"
+				);
+				
+				$custom_fields_cell .= '</label>';
+			}
+		}
+		else
+		{
+			$custom_fields_cell = '<p>' .lang('msg_no_custom_fields') .'</p>';
+		}
 		
-		$custom_fields = array('class' => 'stacked', 'data' => $cell);
+		$mailing_list_custom_fields = array('class' => 'stacked', 'data' => $custom_fields_cell);
 		
-		// Build the row.
-		$row = array($checkbox, $label, $trigger_field, $trigger_value, $custom_fields);
-		
-		$this->table->add_row($row);
+		// Add the row to the table.
+		$this->table->add_row(array(
+			$checkbox,
+			$label,
+			$trigger_field,
+			$trigger_value,
+			$mailing_list_custom_fields
+		));
 	
 	} // End of mailing lists loop.
 	
