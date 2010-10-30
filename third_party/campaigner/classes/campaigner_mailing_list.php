@@ -22,7 +22,7 @@ class Campaigner_mailing_list {
 	 * @access	private
 	 * @var		array
 	 */
-	private $_custom_fields = array();
+	private $_custom_fields;
 	
 	/**
 	 * List ID.
@@ -30,7 +30,16 @@ class Campaigner_mailing_list {
 	 * @access	private
 	 * @var		string
 	 */
-	private $_list_id = '';
+	private $_list_id;
+	
+	/**
+	 * List name.
+	 *
+	 * @access	private
+	 * @var		string
+	 */
+	private $_list_name;
+	
 	
 	/**
 	 * Trigger field.
@@ -38,7 +47,7 @@ class Campaigner_mailing_list {
 	 * @access	private
 	 * @var		string
 	 */
-	private $_trigger_field = '';
+	private $_trigger_field;
 	
 	/**
 	 * Trigger value.
@@ -46,7 +55,7 @@ class Campaigner_mailing_list {
 	 * @access	private
 	 * @var		string
 	 */
-	private $_trigger_value = '';
+	private $_trigger_value;
 	
 	
 	
@@ -63,6 +72,8 @@ class Campaigner_mailing_list {
 	 */
 	public function __construct(Array $properties = array())
 	{
+		$this->reset();
+		
 		foreach ($properties AS $property => $value)
 		{
 			$method_name = 'set_' .$property;
@@ -140,6 +151,18 @@ class Campaigner_mailing_list {
 	
 	
 	/**
+	 * Returns the list name.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function get_list_name()
+	{
+		return $this->_list_name;
+	}
+	
+	
+	/**
 	 * Returns the trigger field.
 	 *
 	 * @access	public
@@ -160,6 +183,19 @@ class Campaigner_mailing_list {
 	public function get_trigger_value()
 	{
 		return $this->_trigger_value;
+	}
+	
+	
+	/**
+	 * Resets the instance variables.
+	 *
+	 * @access	public
+	 * @return	Campaigner_mailing_list
+	 */
+	public function reset()
+	{
+		$this->_custom_fields = array();
+		return $this;
 	}
 	
 	
@@ -194,6 +230,24 @@ class Campaigner_mailing_list {
 	{
 		$this->_list_id = $list_id;
 		return $this->get_list_id();
+	}
+	
+	
+	/**
+	 * Sets the list name.
+	 *
+	 * @access	public
+	 * @param 	string		$list_name		The list name.
+	 * @return	string
+	 */
+	public function set_list_name($list_name)
+	{
+		if (is_string($list_name))
+		{
+			$this->_list_name = $list_name;
+		}
+		
+		return $this->get_list_name();
 	}
 	
 	
@@ -236,6 +290,7 @@ class Campaigner_mailing_list {
 		$return_data = array(
 			'custom_fields'		=> array(),
 			'list_id'			=> $this->get_list_id(),
+			'list_name'			=> $this->get_list_name(),
 			'trigger_field'		=> $this->get_trigger_field(),
 			'trigger_value'		=> $this->get_trigger_value()
 		);

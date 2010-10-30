@@ -43,6 +43,7 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 		$this->_props = array(
 			'custom_fields'	=> array(new Campaigner_custom_field()),
 			'list_id'		=> 'LIST_ID',
+			'list_name'		=> 'Example Mailing List',
 			'trigger_field'	=> 'm_field_id_10',
 			'trigger_value'	=> 'y'
 		);
