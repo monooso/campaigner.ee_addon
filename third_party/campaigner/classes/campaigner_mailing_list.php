@@ -17,6 +17,14 @@ class Campaigner_mailing_list {
 	 * ------------------------------------------------------------ */
 	
 	/**
+	 * Active list?
+	 *
+	 * @access	private
+	 * @var		bool
+	 */
+	private $_active;
+	
+	/**
 	 * Custom fields.
 	 *
 	 * @access	private
@@ -97,6 +105,18 @@ class Campaigner_mailing_list {
 	{
 		$this->_custom_fields[] = $custom_field;
 		return $this->get_custom_fields();
+	}
+	
+	
+	/**
+	 * Returns whether the list is active.
+	 *
+	 * @access	public
+	 * @return	bool
+	 */
+	public function get_active()
+	{
+		return $this->_active;
 	}
 	
 	
@@ -194,8 +214,28 @@ class Campaigner_mailing_list {
 	 */
 	public function reset()
 	{
-		$this->_custom_fields = array();
+		$this->_active 			= FALSE;
+		$this->_custom_fields	= array();
+		
 		return $this;
+	}
+	
+	
+	/**
+	 * Sets whether the list is active.
+	 *
+	 * @access	public
+	 * @param 	bool		$active		Is the list active?
+	 * @return	bool
+	 */
+	public function set_active($active)
+	{
+		if (is_bool($active))
+		{
+			$this->_active = $active;
+		}
+		
+		return $this->get_active();
 	}
 	
 	
@@ -288,6 +328,7 @@ class Campaigner_mailing_list {
 	public function to_array()
 	{
 		$return_data = array(
+			'active'			=> $this->get_active(),
 			'custom_fields'		=> array(),
 			'list_id'			=> $this->get_list_id(),
 			'list_name'			=> $this->get_list_name(),

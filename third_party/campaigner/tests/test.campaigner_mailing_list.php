@@ -41,6 +41,7 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 		parent::setUp();
 		
 		$this->_props = array(
+			'active'		=> TRUE,
 			'custom_fields'	=> array(new Campaigner_custom_field()),
 			'list_id'		=> 'LIST_ID',
 			'list_name'		=> 'Example Mailing List',
@@ -120,6 +121,17 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 		
 		$list = new Campaigner_mailing_list($this->_props);
 		$this->assertIdentical(FALSE, $list->get_custom_field_by_cm_key('wibble'));
+	}
+	
+	
+	public function test_set_active__invalid_values()
+	{
+		$list = new Campaigner_mailing_list($this->_props);
+		
+		$this->assertIdentical($this->_props['active'], $list->set_active(0));
+		$this->assertIdentical($this->_props['active'], $list->set_active('y'));
+		$this->assertIdentical($this->_props['active'], $list->set_active(NULL));
+		$this->assertIdentical($this->_props['active'], $list->set_active(new StdClass()));
 	}
 	
 	
