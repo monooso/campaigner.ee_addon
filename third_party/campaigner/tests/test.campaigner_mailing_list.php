@@ -17,12 +17,12 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * The mailing list.
+	 * Properties.
 	 *
 	 * @access	private
-	 * @var		Campaigner_mailing_list
+	 * @var		array
 	 */
-	private $_list;
+	private $_props;
 	
 	
 	
@@ -40,6 +40,13 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 	{
 		parent::setUp();
 		
+		$this->_props = array(
+			'custom_fields'	=> array(new Campaigner_custom_field()),
+			'list_id'		=> 'LIST_ID',
+			'trigger_field'	=> 'm_field_id_10',
+			'trigger_value'	=> 'y'
+		);
+		
 		$this->_list = new Campaigner_mailing_list();
 	}
 	
@@ -48,132 +55,93 @@ class Test_campaigner_mailing_list extends Testee_unit_test_case {
 	 * TEST METHODS
 	 * ------------------------------------------------------------ */
 	
-	public function test_constructor()
+	public function test_constructor__success()
 	{
-		$list_id 		= 'List ID';
-		$trigger_field 	= 'Trigger field';
-		$trigger_value	= 'Trigger value';
-		$custom_fields	= array(new Campaigner_custom_field());
+		$list = new Campaigner_mailing_list($this->_props);
 		
-		$data = array(
-			'custom_fields'	=> $custom_fields,
-			'list_id'		=> $list_id,
-			'trigger_field'	=> $trigger_field,
-			'trigger_value'	=> $trigger_value
-		);
+		foreach ($this->_props AS $key => $val)
+		{
+			$method = 'get_' .$key;
+			$this->assertIdentical($val, $list->$method());
+		}
+	}
+	
+	
+	public function test_constructor__invalid_property()
+	{
+		$this->_props['INVALID'] = 'INVALID';
 		
-		$list = new Campaigner_mailing_list($data);
-		
-		$this->assertIdentical($list_id, $list->get_list_id());
-		$this->assertIdentical($custom_fields, $list->get_custom_fields());
-		$this->assertIdentical($trigger_field, $list->get_trigger_field());
-		$this->assertIdentical($trigger_value, $list->get_trigger_value());
-	}
-	
-	
-	public function test_set_list_id()
-	{
-		$list_id = 'List ID';
-		$this->assertIdentical($list_id, $this->_list->set_list_id($list_id));
-	}
-	
-	
-	public function test_set_trigger_field()
-	{
-		$field_id = 'm_field_id_20';
-		$this->assertIdentical($field_id, $this->_list->set_trigger_field($field_id));
-	}
-	
-	
-	public function test_set_trigger_value()
-	{
-		$trigger_value = 'Spamalot';
-		$this->assertIdentical($trigger_value, $this->_list->set_trigger_value($trigger_value));
-	}
-	
-	
-	public function test_add_custom_field__success()
-	{
-		$custom_field = new Campaigner_custom_field();
-		$this->assertIdentical(array($custom_field), $this->_list->add_custom_field($custom_field));
+		// No error means it worked.
+		new Campaigner_mailing_list($this->_props);
 	}
 	
 	
 	public function test_add_custom_field__failure()
 	{
+		$list = new Campaigner_mailing_list($this->_props);
 		$this->expectError(new PatternExpectation('/must be an instance of Campaigner_custom_field/i'));
-		$this->_list->add_custom_field('Invalid');
-	}
-	
-	
-	public function test_set_custom_fields__success()
-	{
-		$custom_field = new Campaigner_custom_field();
-		$custom_fields = array($custom_field, $custom_field, $custom_field);
-		
-		$this->assertIdentical($custom_fields, $this->_list->set_custom_fields($custom_fields));
+		$list->add_custom_field('Invalid');
 	}
 	
 	
 	public function test_set_custom_fields__failure()
 	{
+		$list = new Campaigner_mailing_list($this->_props);
+		
 		$custom_field = new Campaigner_custom_field();
 		$custom_fields = array($custom_field, 'Invalid', $custom_field);
 		
 		$this->expectError(new PatternExpectation('/must be an instance of Campaigner_custom_field/i'));
-		$this->_list->set_custom_fields($custom_fields);
+		$list->set_custom_fields($custom_fields);
 	}
 	
 	
 	public function test_get_custom_field_by_cm_key__success()
 	{
-		$custom_fields = array();
+		$this->_props['custom_fields'] = array();
 		
 		for ($count = 1; $count < 10; $count++)
 		{
-			$custom_fields[] = new Campaigner_custom_field(array('cm_key' => 'cm_id_' .$count));
+			$this->_props['custom_fields'][] = new Campaigner_custom_field(array('cm_key' => 'cm_id_' .$count));
 		}
 		
-		$this->_list->set_custom_fields($custom_fields);
-		$this->assertIsA($this->_list->get_custom_field_by_cm_key('cm_id_5'), 'Campaigner_custom_field');
+		$list = new Campaigner_mailing_list($this->_props);
+		$this->assertIsA($list->get_custom_field_by_cm_key('cm_id_5'), 'Campaigner_custom_field');
 	}
 	
 	
 	public function test_get_custom_field_by_cm_key__failure()
 	{
-		$custom_fields = array();
+		$this->_props['custom_fields'] = array();
 		
 		for ($count = 1; $count < 10; $count++)
 		{
-			$custom_fields[] = new Campaigner_custom_field(array('cm_key' => 'cm_id_' .$count));
+			$this->_props['custom_fields'][] = new Campaigner_custom_field(array('cm_key' => 'cm_id_' .$count));
 		}
 		
-		$this->_list->set_custom_fields($custom_fields);
-		$this->assertIdentical(FALSE, $this->_list->get_custom_field_by_cm_key('wibble'));
+		$list = new Campaigner_mailing_list($this->_props);
+		$this->assertIdentical(FALSE, $list->get_custom_field_by_cm_key('wibble'));
 	}
 	
 	
-	public function test_to_array()
+	public function test_to_array__success()
 	{
-		$list_id 			= 'List ID';
-		$trigger_field 		= 'Trigger field';
-		$trigger_value		= 'Trigger value';
-		$custom_field 		= new Campaigner_custom_field();
-		$custom_fields		= array($custom_field);
+		$list = new Campaigner_mailing_list($this->_props);
+		$list_array = $list->to_array();
 		
-		$data = array(
-			'custom_fields'	=> array($custom_field->to_array()),
-			'list_id'		=> $list_id,
-			'trigger_field'	=> $trigger_field,
-			'trigger_value'	=> $trigger_value
-		);
+		$custom_fields = $this->_props['custom_fields'];
+		$this->_props['custom_fields'] = array();
 		
-		$this->_list->set_custom_fields($custom_fields);
-		$this->_list->set_list_id($list_id);
-		$this->_list->set_trigger_field($trigger_field);
-		$this->_list->set_trigger_value($trigger_value);
+		foreach ($custom_fields AS $custom_field)
+		{
+			$this->_props['custom_fields'][] = $custom_field->to_array();
+		}
 		
-		$this->assertIdentical($data, $this->_list->to_array());
+		ksort($this->_props);
+		ksort($list_array);
+		
+		// Tests.
+		$this->assertIdentical($this->_props, $list_array);
 	}
 	
 }
