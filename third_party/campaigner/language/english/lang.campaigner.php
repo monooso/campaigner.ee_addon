@@ -27,10 +27,13 @@ $lang = array(
  * EXTENSION : SETTINGS
  * ------------------------------------------------------------ */
 'hd_api_title'				=> 'API Settings',
+'hd_clients'				=> 'Clients',
+'hd_no_clients'				=> 'No Clients',
+'hd_no_mailing_lists'		=> 'No Mailing Lists',
+
 'lbl_api_key'				=> 'API Key',
 'lbl_get_clients'			=> 'Get Clients',
 
-'hd_clients'				=> 'Clients',
 'lbl_client'				=> 'Client',
 'lbl_get_lists'				=> 'Get Mailing Lists',
 'lbl_select_client'			=> '&mdash; Select a client &mdash;',
@@ -59,6 +62,7 @@ $lang = array(
 /* --------------------------------------------------------------
  * API ERRORS
  * ------------------------------------------------------------ */
+'hd_api_error'						=> 'API Error',
 'api_error_missing_root_preamble'	=> 'The Campaign Monitor API response is missing the root node: ',
 'api_error_preamble'				=> 'The Campaign Monitor API reported the following error: ',
 'api_error_unknown'					=> 'An unknown problem occurred when contacting the Campaign Monitor API.',

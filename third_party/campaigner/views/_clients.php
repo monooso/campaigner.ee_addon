@@ -1,10 +1,11 @@
 <?php
 
 $this->table->set_template($cp_pad_table_template);
-$this->table->set_heading(array('colspan' => '3', 'data' => lang('hd_clients')));
 
 if ($clients):
-
+	
+	$this->table->set_heading(array('colspan' => '3', 'data' => lang('hd_clients')));
+	
 	$client_options = array('' => lang('lbl_select_client'));
 	
 	foreach ($clients AS $client):
@@ -34,8 +35,9 @@ if ($clients):
 	));
 	
 else:
-
-	$this->table->add_row(array('colspan' => '3', 'data' => lang('msg_no_clients')));
+	
+	$this->table->set_heading(lang('hd_no_clients'));
+	$this->table->add_row(lang('msg_no_clients'));
 
 endif;
 

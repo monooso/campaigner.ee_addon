@@ -4,16 +4,16 @@ $tabindex = 50;
 
 $this->table->set_template($cp_pad_table_template);
 
-$this->table->set_heading(
-	array('data' => '', 'style' => 'width : 4%'),
-	array('data' => lang('tbl_hd_list_name'), 'style' => 'width : 21%'),
-	lang('tbl_hd_trigger_field'),
-	array('data' => lang('tbl_hd_trigger_value'), 'style' => 'width : 20%'),
-	array('data' => lang('tbl_hd_custom_fields'), 'style' => 'width : 35%;')
-);
-
 if ($mailing_lists)
 {
+	$this->table->set_heading(
+		array('data' => '', 'style' => 'width : 4%'),
+		array('data' => lang('tbl_hd_list_name'), 'style' => 'width : 21%'),
+		lang('tbl_hd_trigger_field'),
+		array('data' => lang('tbl_hd_trigger_value'), 'style' => 'width : 20%'),
+		array('data' => lang('tbl_hd_custom_fields'), 'style' => 'width : 35%;')
+	);
+	
 	// Loop through all the available mailing lists.
 	foreach ($mailing_lists AS $mailing_list)
 	{
@@ -88,7 +88,8 @@ if ($mailing_lists)
 }
 else
 {
-	$this->table->add_row(array('colspan' => '5', 'data' => lang('msg_no_mailing_lists')));
+	$this->table->set_heading(lang('hd_no_mailing_lists'));
+	$this->table->add_row(lang('msg_no_mailing_lists'));
 }
 
 echo $this->table->generate();

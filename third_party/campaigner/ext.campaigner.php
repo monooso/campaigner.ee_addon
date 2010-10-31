@@ -270,7 +270,7 @@ class Campaigner_ext {
 				'message'	=> $e->getMessage()
 			)));
 			
-			$view_name = '_clients_api_error';
+			$view_name = '_api_error';
 		}
 		
 		return $this->_ee->load->view($view_name, $view_vars, TRUE);
@@ -340,7 +340,7 @@ class Campaigner_ext {
 		catch (Exception $e)
 		{
 			$view_vars = array('api_error' => new Campaigner_api_error(array('code' => $e->getCode(), 'message' => $e->getMessage())));
-			$view_name = '_mailing_lists_api_error';
+			$view_name = '_api_error';
 		}
 		
 		return $this->_ee->load->view($view_name, $view_vars, TRUE);
