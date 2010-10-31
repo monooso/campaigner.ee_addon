@@ -737,7 +737,17 @@ class Campaigner_model extends CI_Model {
 		 * We just let it bubble.
 		 */
 		
-		$this->_validate_api_response($api_result, $root_node);
+		$this->_validate_api_response($api_result);
+		
+		/**
+		 * If the root node does not exist, the call returned
+		 * no results.
+		 */
+		
+		if ( ! isset($api_result['anyType']) OR ! isset($api_result['anyType'][$root_node]))
+		{
+			return array();
+		}
 		
 		// Fix the result array structure, if required.
 		$api_result = $this->_fix_api_response_structure($api_result, $root_node);
@@ -1096,21 +1106,11 @@ class Campaigner_model extends CI_Model {
 	 *
 	 * @access	private
 	 * @param	array		$api_response	The API response.
-	 * @param 	string 		$root_node		The expected root node (optional).
 	 * @return	bool
 	 */
-	private function _validate_api_response(Array $api_response = array(), $root_node = '')
+	private function _validate_api_response(Array $api_response = array())
 	{
-		// Check for catastrophic failure.
-		if ( ! isset($api_response['anyType']))
-		{
-			$error_code 	= 0;
-			$error_message	= $this->_ee->lang->line('api_error_unknown');
-			
-			throw new Exception($error_message, $error_code);
-		}
-		
-		// Check for known error types.
+		// Check for errors.
 		if (isset($api_response['anyType']['Code']))
 		{
 			$error_code = (int) $api_response['anyType']['Code'];
@@ -1118,15 +1118,6 @@ class Campaigner_model extends CI_Model {
 			$error_message = isset($api_response['anyType']['Message'])
 				? $this->_ee->lang->line('api_error_preamble') .$api_response['anyType']['Message']
 				: $this->_ee->lang->line('api_error_unknown');
-			
-			throw new Exception($error_message, $error_code);
-		}
-		
-		// Check for the root node, if required.
-		if ($root_node && ! isset($api_response['anyType'][$root_node]))
-		{
-			$error_code 	= 0;
-			$error_message	= $this->_ee->lang->line('api_error_missing_root_preamble') .$root_node;
 			
 			throw new Exception($error_message, $error_code);
 		}
