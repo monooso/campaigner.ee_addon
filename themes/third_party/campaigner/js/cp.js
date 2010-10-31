@@ -109,12 +109,16 @@
 	 */
 	function handleGetClientsResponse(response) {
 		$('#campaigner_clients').html(eval(response));
+		$('#campaigner_lists').empty();
+		
 		iniGetListsLink();
 		stopLoading();
 		
 		if (firstRun) {
 			firstRun = false;
 			autoLoadLists();
+		} else {
+			$('#client_id').val('');	// Clear the client selection.
 		}
 	}
 	
