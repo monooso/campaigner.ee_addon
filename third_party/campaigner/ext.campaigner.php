@@ -159,6 +159,36 @@ class Campaigner_ext {
 	
 	
 	/**
+	 * Displays the 'error log' page.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function display_error_log()
+	{
+		// Shortcuts.
+		$cp		= $this->_ee->cp;
+		$lang	= $this->_ee->lang;
+		$model	= $this->_ee->campaigner_model;
+		
+		// View variables.
+		$view_vars = array(
+			'cp_page_title'		=> $lang->line('extension_name'),
+			'error_log'			=> $model->get_error_log()
+		);
+		
+		// Theme URL.
+		$theme_url = $model->get_theme_url();
+		
+		// Add the CSS.
+		$cp->add_to_foot('<link media="screen, projection" rel="stylesheet" type="text/css" href="' .$theme_url .'css/cp.css" />');
+		
+		// Load the view.
+		return $this->_ee->load->view('error_log', $view_vars, TRUE);
+	}
+	
+	
+	/**
 	 * Displays the 'settings' page.
 	 *
 	 * @access	public
@@ -404,7 +434,7 @@ class Campaigner_ext {
 		switch ($this->_ee->input->get('tab'))
 		{
 			case 'errors':
-				return $this->display_errors();
+				return $this->display_error_log();
 				break;
 				
 			case 'help':

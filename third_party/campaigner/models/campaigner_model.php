@@ -161,6 +161,7 @@ class Campaigner_model extends CI_Model {
 		// Table data.
 		$fields = array(
 			'error_log_id' => array(
+				'auto_increment' => TRUE,
 				'constraint'	=> 10,
 				'type'			=> 'int',
 				'unsigned'		=> TRUE
@@ -368,10 +369,9 @@ class Campaigner_model extends CI_Model {
 	{
 		$error_log = array();
 		
-		$db_log = $this->_ee->db->select('error_code, error_date, error_log_id, error_message')->get_where(
-			'campaigner_error_log',
-			array('site_id' => $this->get_site_id())
-		);
+		$db_log = $this->_ee->db->select('error_code, error_date, error_log_id, error_message')
+			->order_by('error_date desc')
+			->get_where('campaigner_error_log', array('site_id' => $this->get_site_id()));
 		
 		foreach ($db_log->result_array() AS $db_log_entry)
 		{

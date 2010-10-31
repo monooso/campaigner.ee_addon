@@ -194,26 +194,6 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_display_settings()
-	{
-		// Settings are loaded in constructor.
-		
-		// If the API key is set, retrieve the clients.
-		
-		// If the API key and Client ID are set, retrieve mailing lists.
-		
-		// Standard request : load "base" settings form.
-		
-		// AJAX request : load settings form fragment, based on request.
-	}
-	
-	
-	public function test_display_settings_base__success()
-	{
-		
-	}
-	
-	
 	public function test_display_settings_clients__success()
 	{
 		// Shortcuts.

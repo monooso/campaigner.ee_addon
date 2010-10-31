@@ -194,6 +194,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		// Dummy data.
 		$fields = array(
 			'error_log_id' => array(
+				'auto_increment' => TRUE,
 				'constraint'	=> 10,
 				'type'			=> 'int',
 				'unsigned'		=> TRUE
@@ -425,16 +426,16 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		$db_rows = array(
 			array(
-				'error_code'	=> '10',
-				'error_date'	=> '12345',
-				'error_log_id'	=> '1',
-				'error_message'	=> 'First error message'
-			),
-			array(
 				'error_code'	=> '20',
 				'error_date'	=> '23456',
 				'error_log_id'	=> '2',
 				'error_message'	=> 'Second error message'
+			),
+			array(
+				'error_code'	=> '10',
+				'error_date'	=> '12345',
+				'error_log_id'	=> '1',
+				'error_message'	=> 'First error message'
 			)
 		);
 		
@@ -445,6 +446,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		// Expectations.
 		$db->expectOnce('select', array('error_code, error_date, error_log_id, error_message'));
+		$db->expectOnce('order_by', array('error_date desc'));
 		$db->expectOnce('get_where', array('campaigner_error_log', array('site_id' => $site_id)));
 		
 		// Return values.

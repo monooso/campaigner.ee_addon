@@ -5,13 +5,6 @@ echo form_open($action_url, '', $hidden_fields);
 $this->table->set_template($cp_pad_table_template);
 $this->table->set_heading(array('colspan' => '3', 'data' => lang('hd_api_title')));
 
-/*
-$this->table->set_heading(array(
-	array('data' => lang('setting_heading'), 'style' => 'width : 25%'),
-	lang('value_heading')
-));
-*/
-
 $this->table->add_row(array(
 	array(
 		'data' 	=> lang('lbl_api_key', 'api_key'),

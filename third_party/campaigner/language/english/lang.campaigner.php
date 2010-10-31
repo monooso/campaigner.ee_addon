@@ -77,6 +77,16 @@ $lang = array(
 'mbr_url'			=> 'URL',
 'mbr_username'		=> 'Username',
 
+/* --------------------------------------------------------------
+ * ERROR LOG
+ * ------------------------------------------------------------ */
+'tbl_hd_error_code'			=> 'Error Code',
+'tbl_hd_error_date'			=> 'Date',
+'tbl_hd_error_message'		=> 'Error Message',
+
+'tbl_hd_error_log_empty'	=> 'Error Log',
+'msg_error_log_empty'		=> 'No errors have been logged.',
+
 // All done.
 '' => ''
 
