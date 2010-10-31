@@ -287,9 +287,10 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		$db->expectOnce('delete', array('extensions', array('class' => $this->_model->get_extension_class())));
 		
-		$dbf->expectCallCount('drop_table', 2);
-		$dbf->expectAt(0, 'drop_table', array('campaigner_settings'));
-		$dbf->expectAt(1, 'drop_table', array('campaigner_mailing_lists'));
+		$dbf->expectCallCount('drop_table', 3);
+		$dbf->expectAt(0, 'drop_table', array('campaigner_error_log'));
+		$dbf->expectAt(1, 'drop_table', array('campaigner_settings'));
+		$dbf->expectAt(2, 'drop_table', array('campaigner_mailing_lists'));
 		
 		$this->_model->disable_extension();
 	}

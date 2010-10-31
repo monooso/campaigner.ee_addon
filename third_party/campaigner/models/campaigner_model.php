@@ -316,6 +316,7 @@ class Campaigner_model extends CI_Model {
 		$this->_ee->db->delete('extensions', array('class' => $this->get_extension_class()));
 		
 		$this->_ee->load->dbforge();
+		$this->_ee->dbforge->drop_table('campaigner_error_log');
 		$this->_ee->dbforge->drop_table('campaigner_settings');
 		$this->_ee->dbforge->drop_table('campaigner_mailing_lists');
 	}
