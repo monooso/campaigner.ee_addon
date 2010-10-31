@@ -10,6 +10,7 @@
 
 require_once PATH_THIRD .'campaigner/classes/campaigner_client' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_error_log_entry' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
@@ -354,6 +355,30 @@ class Campaigner_model extends CI_Model {
 		}
 		
 		return $clients;
+	}
+	
+	
+	/**
+	 * Returns the full error log from the database.
+	 *
+	 * @access	public
+	 * @return	array
+	 */
+	public function get_error_log()
+	{
+		$error_log = array();
+		
+		$db_log = $this->_ee->db->select('error_code, error_date, error_log_id, error_message')->get_where(
+			'campaigner_error_log',
+			array('site_id' => $this->get_site_id())
+		);
+		
+		foreach ($db_log->result_array() AS $db_log_entry)
+		{
+			$error_log[] = new Campaigner_error_log_entry($db_log_entry);
+		}
+		
+		return $error_log;
 	}
 	
 	

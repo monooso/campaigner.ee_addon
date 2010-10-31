@@ -413,6 +413,81 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	 * DATABASE TESTS
 	 * ------------------------------------------------------------ */
 	
+	public function test_get_error_log__success()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$db 	= $this->_ee->db;
+		
+		// Dummy values.
+		$site_id	= '10';
+		$db_result 	= $this->_get_mock('db_query');
+		
+		$db_rows = array(
+			array(
+				'error_code'	=> '10',
+				'error_date'	=> '12345',
+				'error_log_id'	=> '1',
+				'error_message'	=> 'First error message'
+			),
+			array(
+				'error_code'	=> '20',
+				'error_date'	=> '23456',
+				'error_log_id'	=> '2',
+				'error_message'	=> 'Second error message'
+			)
+		);
+		
+		$dummy_errors = array(
+			new Campaigner_error_log_entry($db_rows[0]),
+			new Campaigner_error_log_entry($db_rows[1])
+		);
+		
+		// Expectations.
+		$db->expectOnce('select', array('error_code, error_date, error_log_id, error_message'));
+		$db->expectOnce('get_where', array('campaigner_error_log', array('site_id' => $site_id)));
+		
+		// Return values.
+		$config->setReturnValue('item', $site_id, array('site_id'));
+		$db->setReturnReference('get_where', $db_result);
+		$db_result->setReturnValue('num_rows', count($db_rows));
+		$db_result->setReturnValue('result_array', $db_rows);
+		
+		// Tests.
+		$errors = $this->_model->get_error_log();
+		
+		$this->assertIsA($errors, 'Array');
+		$this->assertIdentical(count($dummy_errors), count($errors));
+		
+		for ($count = 0; $count < count($errors); $count++)
+		{
+			$this->assertIdentical($dummy_errors[$count], $errors[$count]);
+		}
+	}
+	
+	
+	public function test_get_error_log__empty()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$db 	= $this->_ee->db;
+		
+		// Dummy values.
+		$site_id	= '10';
+		$db_result 	= $this->_get_mock('db_query');
+		$db_rows 	= array();
+		
+		// Return values.
+		$config->setReturnValue('item', $site_id, array('site_id'));
+		$db->setReturnReference('get_where', $db_result);
+		$db_result->setReturnValue('num_rows', count($db_rows));
+		$db_result->setReturnValue('result_array', $db_rows);
+		
+		// Tests.
+		$this->assertIdentical(array(), $this->_model->get_error_log());
+	}
+	
+	
 	public function test_get_member_by_id__success()
 	{
 		// Shortcuts.
