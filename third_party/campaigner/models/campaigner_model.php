@@ -405,15 +405,14 @@ class Campaigner_model extends CI_Model {
 	 * CampaignMonitor::clientGetLists method.
 	 *
 	 * @access	public
-	 * @param	string		$client_id		The client ID.
+	 * @param	string		$client_id					The client ID.
+	 * @param	string		$include_custom_fields		Automatically retrieve the list custom fields?
 	 * @return	array
 	 */
-	public function get_mailing_lists_from_api($client_id)
+	public function get_mailing_lists_from_api($client_id, $include_custom_fields = TRUE)
 	{
-		$lists		= array();
-		$root_node	= 'List';
-		
-		$api_lists = $this->prep_api_response($this->make_api_call('clientGetLists', array($client_id)), $root_node);
+		$mailing_lists	= array();
+		$api_lists		= $this->prep_api_response($this->make_api_call('clientGetLists', array($client_id)), 'List');
 		
 		foreach ($api_lists AS $api_list)
 		{
@@ -427,14 +426,20 @@ class Campaigner_model extends CI_Model {
 				continue;
 			}
 			
-			$lists[] = new Campaigner_mailing_list(array(
+			$mailing_list = new Campaigner_mailing_list(array(
 				'list_id'		=> $api_list['ListID'],
-				'list_name'		=> $api_list['Name'],
-				'custom_fields'	=> $this->get_mailing_list_custom_fields_from_api($api_list['ListID'])
+				'list_name'		=> $api_list['Name']
 			));
+			
+			if ($include_custom_fields)
+			{
+				$mailing_list->set_custom_fields($this->get_mailing_list_custom_fields_from_api($api_list['ListID']));
+			}
+			
+			$mailing_lists[] = $mailing_list;
 		}
 		
-		return $lists;
+		return $mailing_lists;
 	}
 	
 	
@@ -917,7 +922,7 @@ class Campaigner_model extends CI_Model {
 			{
 				$this->unsubscribe_member_from_all_mailing_lists(
 					$member_data,
-					$this->get_mailing_lists_from_api($this->_settings->get_client_id())
+					$this->get_mailing_lists_from_api($this->_settings->get_client_id(), FALSE)
 				);
 			}
 			

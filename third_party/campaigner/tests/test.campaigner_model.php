@@ -1302,6 +1302,29 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
+	public function test_get_mailing_lists_from_api__no_custom_fields()
+	{
+		// Dummy values.
+		$client_id	= 'ABC123';
+		$list_id	= 'LIST_ID';
+		$list_name	= 'LIST_NAME';
+		$api_result = array('anyType' => array('List' => array('ListID' => $list_id, 'Name' => $list_name)));
+		
+		// Set the API connector.
+		$this->_model->set_api_connector($this->_api_connector);
+		
+		// Expectations.
+		$this->_api_connector->expectOnce('clientGetLists', array($client_id));
+		$this->_api_connector->expectNever('listGetCustomFields');
+		
+		// Return values.
+		$this->_api_connector->setReturnValue('clientGetLists', $api_result);
+		
+		// Tests.
+		$this->_model->get_mailing_lists_from_api($client_id, FALSE);
+	}
+	
+	
 	public function test_get_mailing_list_custom_fields_from_api__success()
 	{
 		// Dummy values.
