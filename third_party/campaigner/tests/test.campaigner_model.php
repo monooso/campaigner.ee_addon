@@ -185,6 +185,51 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
+	public function test_activate_extension_error_log_table__success()
+	{
+		// Shortcuts.
+		$dbf	= $this->_ee->dbforge;
+		$loader	= $this->_ee->load;
+		
+		// Dummy data.
+		$fields = array(
+			'error_log_id' => array(
+				'constraint'	=> 10,
+				'type'			=> 'int',
+				'unsigned'		=> TRUE
+			),
+			'site_id' => array(
+				'constraint'	=> 5,
+				'type'			=> 'int',
+				'unsigned'		=> TRUE
+			),
+			'error_date' => array(
+				'constraint'	=> 10,
+				'type'			=> 'int',
+				'unsigned'		=> TRUE
+			),
+			'error_code' => array(
+				'constraint'	=> 3,
+				'type'			=> 'int',
+				'unsigned'		=> TRUE
+			),
+			'error_message' => array(
+				'constraint'	=> 255,
+				'type'			=> 'varchar'
+			)
+		);
+		
+		// Expectations.
+		$dbf->expectOnce('add_field', array($fields));
+		$dbf->expectOnce('add_key', array('error_log_id', TRUE));
+		$dbf->expectOnce('create_table', array('campaigner_error_log'));
+		$loader->expectOnce('dbforge', array());
+		
+		// Tests.
+		$this->_model->activate_extension_error_log_table();
+	}
+	
+	
 	public function test_activate_extension_register_hooks__success()
 	{
 		// Shortcuts.
