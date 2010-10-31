@@ -112,13 +112,14 @@
 		$('#campaigner_lists').empty();
 		
 		iniGetListsLink();
-		stopLoading();
 		
 		if (firstRun) {
-			firstRun = false;
+			firstRun	= false;
+			loading		= false;		// Prevents the "two-step loading" appearance.
 			autoLoadLists();
 		} else {
 			$('#client_id').val('');	// Clear the client selection.
+			stopLoading();
 		}
 	}
 	
