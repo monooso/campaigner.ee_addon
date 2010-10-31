@@ -284,7 +284,7 @@ class Campaigner_model extends CI_Model {
 	public function get_clients_from_api()
 	{
 		$root_node		= 'Client';
-		$api_clients 	= $this->prep_api_response($this->make_api_call('userGetClients', array(), $root_node), $root_node);
+		$api_clients 	= $this->prep_api_response($this->make_api_call('userGetClients', array()), $root_node);
 		$clients		= array();
 		
 		foreach ($api_clients AS $api_client)
@@ -376,10 +376,7 @@ class Campaigner_model extends CI_Model {
 		$fields		= array();
 		$root_node	= 'ListCustomField';
 		
-		$api_fields = $this->prep_api_response(
-			$this->make_api_call('listGetCustomFields', array($list_id), $root_node),
-			$root_node
-		);
+		$api_fields = $this->prep_api_response($this->make_api_call('listGetCustomFields', array($list_id)), $root_node);
 		
 		foreach ($api_fields AS $api_field)
 		{
@@ -416,10 +413,7 @@ class Campaigner_model extends CI_Model {
 		$lists		= array();
 		$root_node	= 'List';
 		
-		$api_lists = $this->prep_api_response(
-			$this->make_api_call('clientGetLists', array($client_id), $root_node),
-			$root_node
-		);
+		$api_lists = $this->prep_api_response($this->make_api_call('clientGetLists', array($client_id)), $root_node);
 		
 		foreach ($api_lists AS $api_list)
 		{
@@ -700,10 +694,9 @@ class Campaigner_model extends CI_Model {
 	 * @access	public
 	 * @param	string		$method			The method to call.
 	 * @param	array		$params			The method parameters.
-	 * @param	string		$root_node		The result root node.
 	 * @return	array
 	 */
-	public function make_api_call($method, $params = array(), $root_node)
+	public function make_api_call($method, $params = array())
 	{
 		// Can't do anything without an API connector.
 		if ( ! $this->_api_connector)
@@ -885,13 +878,13 @@ class Campaigner_model extends CI_Model {
 	 *
 	 * @access	public
 	 * @param	int|string		$member_id		The member ID.
+	 * @param	bool			$update 		Are we updating a member's subscription preferences?
 	 * @return	void
 	 */
-	public function subscribe_member($member_id)
+	public function subscribe_member($member_id, $update = FALSE)
 	{
 		// Get out early.
-		if ( ! valid_int($member_id, 1)
-			OR ! ($member_data = $this->get_member_by_id($member_id)))
+		if ( ! valid_int($member_id, 1) OR ! ($member_data = $this->get_member_by_id($member_id)))
 		{
 			return;
 		}
@@ -899,11 +892,47 @@ class Campaigner_model extends CI_Model {
 		// Ensure that the extension settings are loaded.
 		$this->get_extension_settings();
 		
-		// Determine which mailing lists to process, and do so.
-		$this->subscribe_member_to_mailing_lists(
-			$member_data,
-			$this->get_member_mailing_lists_to_process($member_data, $this->_settings->get_mailing_lists())
-		);
+		/**
+		 * Any exceptions bubble up to this point, and are ignored. We can't "solve" the problem,
+		 * and the error logging is handled elsewhere.
+		 */
+		
+		try
+		{
+			/**
+			 * If we're updating a member's existing preferences, we also need to unsubscribe
+			 * him from any lists which he has not explicitly joined.
+			 *
+			 * This is the easy way to accomplish that goal. We just unsubscribe the member from
+			 * _all_ of the mailing lists, and then resubscribe him to only those he has explicitly
+			 * opted-in to.
+			 *
+			 * It's not the most efficient solution, but it's the quickest, the easiest, and it's
+			 * unlikely to make any difference to the end user.
+			 *
+			 * In other words, it will do for now.
+			 */
+			
+			if ($update)
+			{
+				$this->unsubscribe_member_from_all_mailing_lists(
+					$member_data,
+					$this->get_mailing_lists_from_api($this->_settings->get_client_id())
+				);
+			}
+			
+			// Determine which mailing lists to process, and do so.
+			$this->subscribe_member_to_mailing_lists(
+				$member_data,
+				$this->get_member_mailing_lists_to_process($member_data, $this->_settings->get_mailing_lists()),
+				$update
+			);
+			
+		}
+		catch (Exception $e)
+		{
+			// Do nothing.
+		}
 	}
 	
 	
@@ -913,10 +942,15 @@ class Campaigner_model extends CI_Model {
 	 * @access	public
 	 * @param	array		$member_data		The member data.
 	 * @param	array		$mailing_lists		The mailing lists.
+	 * @param	bool		$update 			Are we updating a member's subscription preferences?
 	 * @return	void
 	 */
-	public function subscribe_member_to_mailing_lists(Array $member_data, Array $mailing_lists)
+	public function subscribe_member_to_mailing_lists(Array $member_data, Array $mailing_lists, $update = FALSE)
 	{
+		// Do it once.
+		$email = $member_data['email'];
+		$screen_name = utf8_decode($member_data['screen_name']);
+		
 		foreach ($mailing_lists AS $mailing_list)
 		{
 			// Custom fields.
@@ -930,15 +964,35 @@ class Campaigner_model extends CI_Model {
 				}
 			}
 			
-			$params = array(
-				$member_data['email'],
-				utf8_decode($member_data['screen_name']),
+			$this->make_api_call('subscriberAddWithCustomFields', array(
+				$email,
+				$screen_name,
 				$custom_field_data,
 				$mailing_list->get_list_id(),
-				FALSE		// Resubscribe.
-			);
-			
-			$this->make_api_call('subscriberAddWithCustomFields', $params, 'SubscriberAddWithCustomFields');
+				$update
+			));
+		}
+	}
+	
+	
+	/**
+	 * Unsubscribes the specified member from the specified mailing lists.
+	 *
+	 * @access	public
+	 * @param	array		$member_data		The member data.
+	 * @param	array		$mailing_lists		The mailing lists.
+	 * @return	void
+	 */
+	public function unsubscribe_member_from_mailing_lists(Array $member_data, Array $mailing_lists)
+	{
+		$email = $member_data['email'];
+		
+		foreach ($mailing_lists AS $mailing_list)
+		{
+			$this->make_api_call('subscriberUnsubscribe', array(
+				$email,
+				$mailing_list->get_list_id()
+			));
 		}
 	}
 	

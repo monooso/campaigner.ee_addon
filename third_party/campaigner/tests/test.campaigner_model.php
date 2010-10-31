@@ -1130,7 +1130,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$this->_model->set_api_connector($this->_api_connector);
 		
 		// Expectations.
-		$this->_api_connector->expectOnce('subscriberAddWithCustomFields', array(
+		$this->_api_connector->expectAt(0, 'subscriberAddWithCustomFields', array(
 			$member_data['email'],					// Email
 			$member_data['screen_name'],			// Name
 			array('[Location]' => 'Hicksville'),	// Custom fields
@@ -1138,15 +1138,24 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			FALSE									// Resubscribe?
 		));
 		
+		$this->_api_connector->expectAt(1, 'subscriberAddWithCustomFields', array(
+			$member_data['email'],					// Email
+			$member_data['screen_name'],			// Name
+			array('[Location]' => 'Hicksville'),	// Custom fields
+			'LIST_ID',								// List ID
+			TRUE									// Resubscribe?
+		));
+		
 		// Tests.
-		$this->_model->subscribe_member_to_mailing_lists($member_data, $mailing_lists);
+		$this->_model->subscribe_member_to_mailing_lists($member_data, $mailing_lists);			// Subscribe.
+		$this->_model->subscribe_member_to_mailing_lists($member_data, $mailing_lists, TRUE);	// Update.
 	}
 	
 	
 	public function test_subscribe_member_to_mailing_lists__no_mailing_lists()
 	{
 		// Dummy data.
-		$member_data 	= array();
+		$member_data 	= array('email' => 'me@here.com', 'screen_name' => 'Nobody Girl');
 		$mailing_lists 	= array();
 		
 		// Set the API connector.
@@ -1160,11 +1169,36 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
+	public function test_unsubscribe_member_from_mailing_lists__success()
+	{
+		// Dummy data.
+		$email 			= 'me@here.com';
+		$list_id_a		= 'LIST_ID_A';
+		$list_id_b		= 'LIST_ID_B';
+		$member_data 	= array('email' => $email);
+		$mailing_lists	= array(
+			new Campaigner_mailing_list(array('list_id' => $list_id_a)),
+			new Campaigner_mailing_list(array('list_id' => $list_id_b))
+		);
+		
+		// Set the API connector.
+		$this->_model->set_api_connector($this->_api_connector);
+		
+		// Expectations.
+		$this->_api_connector->expectCallCount('subscriberUnsubscribe', count($mailing_lists));
+		$this->_api_connector->expectAt(0, 'subscriberUnsubscribe', array($email, $list_id_a));
+		$this->_api_connector->expectAt(1, 'subscriberUnsubscribe', array($email, $list_id_b));
+		
+		// Tests.
+		$this->_model->unsubscribe_member_from_mailing_lists($member_data, $mailing_lists);
+	}
+	
+	
 	public function test_make_api_call__api_connector_not_set()
 	{
 		try
 		{
-			$this->_model->make_api_call('METHOD', array(), 'ROOT_NODE');
+			$this->_model->make_api_call('METHOD', array());
 			$this->fail();
 		}
 		catch (Exception $e)
