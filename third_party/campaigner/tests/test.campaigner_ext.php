@@ -443,7 +443,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$member_custom_data	= array();
 		
 		// Expectations.
-		$this->_ee->campaigner_model->expectOnce('subscribe_member', array($member_id));
+		$this->_ee->campaigner_model->expectOnce('subscribe_member', array($member_id, TRUE));
 		
 		// Tests.
 		$ext->on_user_edit_end($member_id, $member_data, $member_custom_data);
