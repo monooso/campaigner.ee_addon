@@ -231,7 +231,16 @@ class Campaigner_ext {
 				'missingClientId'	=> $lang->line('msg_missing_client_id')
 		));
 		
-		// $js->set_global('campaigner.memberFields', $js->generate_json($member_fields->to_array()));
+		// Prepare the member fields.
+		$member_fields = $model->get_member_fields();
+		$js_member_fields = array();
+		
+		foreach ($member_fields AS $member_field)
+		{
+			$js_member_fields[$member_field->get_id()] = $member_field->to_array();
+		}
+		
+		$js->set_global('campaigner.memberFields', $js->generate_json($js_member_fields));
 
 		$js->set_global('campaigner.ajaxUrl',
 			str_replace(AMP, '&', BASE) .'&C=addons_extensions&M=extension_settings&file=' .$lower_package_name

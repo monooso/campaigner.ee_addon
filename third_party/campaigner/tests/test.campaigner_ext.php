@@ -252,7 +252,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		)));
 		
 		// Expectations.
-		$loader->expectOnce('view', array('_clients_api_error', $view_vars, TRUE));
+		$loader->expectOnce('view', array('_api_error', $view_vars, TRUE));
 		$model->expectOnce('get_clients_from_api');
 		
 		// Return values.
@@ -314,7 +314,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$model->throwOn('get_mailing_lists_from_api', $exception);
 		
 		// Expectations.
-		$loader->expectOnce('view', array('_mailing_lists_api_error', $view_vars, TRUE));
+		$loader->expectOnce('view', array('_api_error', $view_vars, TRUE));
 		$model->expectOnce('get_mailing_lists_from_api');
 		
 		// Tests.
