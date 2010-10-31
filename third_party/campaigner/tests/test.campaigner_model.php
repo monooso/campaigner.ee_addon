@@ -309,10 +309,129 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
+	public function test_get_member_mailing_lists_to_process__success()
+	{
+		// Dummy data.
+		$member_data = array(
+			'email'			=> 'billy.bob@chickslovehicks.com',
+			'group_id'		=> '8',
+			'location'		=> 'Hicksville',
+			'member_id'		=> '10',
+			'occupation'	=> 'Hick',
+			'screen_name'	=> 'Billy Bob',
+			'url'			=> 'http://example.com/',
+			'username'		=> 'Billy Bob',
+			'm_field_id_1'	=> 'No',
+			'm_field_id_2'	=> 'Yes'
+		);
+		
+		$mailing_list_a = new Campaigner_mailing_list(array(
+			'active'		=> TRUE,
+			'custom_fields'	=> array(),
+			'list_id'		=> 'LIST_ID_A',
+			'list_name'		=> 'List A',
+			'trigger_field'	=> 'm_field_id_1',
+			'trigger_value'	=> 'Yes'
+		));
+		
+		$mailing_list_b = new Campaigner_mailing_list(array(
+			'active'		=> TRUE,
+			'custom_fields'	=> array(),
+			'list_id'		=> 'LIST_ID_B',
+			'list_name'		=> 'List B',
+			'trigger_field'	=> 'm_field_id_2',
+			'trigger_value'	=> 'Yes'
+		));
+		
+		$mailing_lists 		= array($mailing_list_a, $mailing_list_b);
+		$lists_to_process	= array($mailing_list_b);
+		
+		// Tests.
+		$this->assertIdentical($lists_to_process, $this->_model->get_member_mailing_lists_to_process($member_data, $mailing_lists));
+	}
+	
+	
+	public function test_get_member_mailing_lists_to_process__no_mailing_lists()
+	{
+		// Dummy data.
+		$member_data	= array();
+		$mailing_lists	= array();
+		
+		// Tests.
+		$this->assertIdentical(array(), $this->_model->get_member_mailing_lists_to_process($member_data, $mailing_lists));
+	}
+	
+	
 	
 	/* --------------------------------------------------------------
 	 * DATABASE TESTS
 	 * ------------------------------------------------------------ */
+	
+	public function test_get_member_by_id__success()
+	{
+		// Shortcuts.
+		$db = $this->_ee->db;
+		
+		// Dummy values.
+		$member_id	= 10;
+		$db_result	= $this->_get_mock('db_query');
+		$db_row		= array(
+			'email'			=> 'billy.bob@chickslovehicks.com',
+			'group_id'		=> '8',
+			'location'		=> 'Hicksville',
+			'member_id'		=> '10',
+			'occupation'	=> 'Hick',
+			'screen_name'	=> 'Billy Bob',
+			'url'			=> 'http://example.com/',
+			'username'		=> 'Billy Bob',
+			'm_field_id_1'	=> 'No',
+			'm_field_id_2'	=> 'Yes'
+		);
+		
+		// Expectations.
+		$db->expectOnce('select', array('members.email, members.group_id, members.location, members.member_id, members.occupation, members.screen_name, members.url, members.username, member_data.*'));
+		$db->expectOnce('join', array('member_data', 'member_data.member_id = members.member_id', 'inner'));
+		$db->expectOnce('get_where', array('members', array('members.member_id' => $member_id), 1));
+		
+		$db_result->expectOnce('num_rows');
+		$db_result->expectOnce('row_array');
+		
+		// Returns values.
+		$db->setReturnReference('get_where', $db_result);
+		$db_result->setReturnValue('num_rows', 1);
+		$db_result->setReturnValue('row_array', $db_row);
+		
+		// Tests.
+		$this->assertIdentical($db_row, $this->_model->get_member_by_id($member_id));
+	}
+	
+	
+	public function test_get_member_by_id__no_member()
+	{
+		// Dummy values.
+		$db_result = $this->_get_mock('db_query');
+		
+		// Expectations.
+		$db_result->expectNever('row_array');
+		
+		// Return values.
+		$this->_ee->db->setReturnReference('get_where', $db_result);
+		$db_result->setReturnValue('num_rows', 0);
+		
+		// Tests.
+		$this->assertIdentical(array(), $this->_model->get_member_by_id(10));
+	}
+	
+	
+	public function test_get_member_by_id__invalid_member()
+	{
+		// Expectations.
+		$this->_ee->db->expectNever('get_where');
+		
+		// Tests.
+		$this->_model->get_member_by_id(NULL);
+	}
+	
 	
 	public function test_get_member_fields__success()
 	{
@@ -973,6 +1092,73 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	/* --------------------------------------------------------------
 	 * API TESTS
 	 * ------------------------------------------------------------ */
+	
+	public function test_subscribe_member_to_mailing_lists__success()
+	{
+		// Dummy data.
+		$member_data = array(
+			'email'			=> 'billy.bob@chickslovehicks.com',
+			'group_id'		=> '8',
+			'location'		=> 'Hicksville',
+			'member_id'		=> '10',
+			'occupation'	=> 'Hick',
+			'screen_name'	=> 'Billy Bob',
+			'url'			=> 'http://example.com/',
+			'username'		=> 'Billy Bob',
+			'm_field_id_1'	=> 'No',
+			'm_field_id_2'	=> 'Yes'
+		);
+		
+		$mailing_lists = array(
+			new Campaigner_mailing_list(array(
+				'active'		=> TRUE,
+				'custom_fields'	=> array(
+					new Campaigner_custom_field(array(
+						'cm_key'			=> '[Location]',
+						'label'				=> 'Location',
+						'member_field_id'	=> 'location'
+					))
+				),
+				'list_id'		=> 'LIST_ID',
+				'list_name'		=> 'Example List',
+				'trigger_field'	=> 'm_field_id_2',
+				'trigger_value'	=> 'Yes'
+			))
+		);
+		
+		// Set the API connector.
+		$this->_model->set_api_connector($this->_api_connector);
+		
+		// Expectations.
+		$this->_api_connector->expectOnce('subscriberAddWithCustomFields', array(
+			$member_data['email'],					// Email
+			$member_data['screen_name'],			// Name
+			array('[Location]' => 'Hicksville'),	// Custom fields
+			'LIST_ID',								// List ID
+			FALSE									// Resubscribe?
+		));
+		
+		// Tests.
+		$this->_model->subscribe_member_to_mailing_lists($member_data, $mailing_lists);
+	}
+	
+	
+	public function test_subscribe_member_to_mailing_lists__no_mailing_lists()
+	{
+		// Dummy data.
+		$member_data 	= array();
+		$mailing_lists 	= array();
+		
+		// Set the API connector.
+		$this->_model->set_api_connector($this->_api_connector);
+		
+		// Expectations.
+		$this->_api_connector->expectNever('subscriberAddWithCustomFields');
+		
+		// Tests.
+		$this->_model->subscribe_member_to_mailing_lists($member_data, $mailing_lists);
+	}
+	
 	
 	public function test_make_api_call__api_connector_not_set()
 	{

@@ -13,6 +13,7 @@ require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
+require_once PATH_THIRD .'campaigner/helpers/EI_number_helper' .EXT;
 require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
 
 class Campaigner_model extends CI_Model {
@@ -484,6 +485,40 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
+	 * Retrieves the information about the specified member from the database.
+	 *
+	 * @todo 	Use a 'member' object, instead of the raw array.
+	 * @access	public
+	 * @param	int|string	$member_id	The member ID.
+	 * @return	array
+	 */
+	public function get_member_by_id($member_id)
+	{
+		$member_data = array();
+		
+		// Get out early.
+		if ( ! valid_int($member_id, 1))
+		{
+			return $member_data;
+		}
+		
+		// Construct the query.
+		$db_member = $this->_ee->db
+			->select('members.email, members.group_id, members.location, members.member_id, members.occupation, members.screen_name, members.url, members.username, member_data.*')
+			->join('member_data', 'member_data.member_id = members.member_id', 'inner')
+			->get_where('members', array('members.member_id' => $member_id), 1);
+		
+		// Retrieve the member data.
+		if ($db_member->num_rows())
+		{
+			$member_data = $db_member->row_array();
+		}
+		
+		return $member_data;
+	}
+	
+	
+	/**
 	 * Retrieves the member fields from the database.
 	 *
 	 * @access	public
@@ -525,6 +560,40 @@ class Campaigner_model extends CI_Model {
 		}
 		
 		return $member_fields;
+	}
+	
+	
+	/**
+	 * Filters the supplied mailing lists, and returns only those to which
+	 * the specified member should be subscribed.
+	 *
+	 * @access	public
+	 * @param	array		$member_data		The member data.
+	 * @param 	array 		$mailing_lists		The mailing lists.
+	 * @return	array
+	 */
+	public function get_member_mailing_lists_to_process(Array $member_data, Array $mailing_lists)
+	{
+		$lists_to_process = array();
+		
+		foreach ($mailing_lists AS $mailing_list)
+		{
+			// Check the trigger.
+			if ( ! $mailing_list->get_trigger_field() OR ! $mailing_list->get_trigger_value())
+			{
+				$lists_to_process[] = $mailing_list;
+				continue;
+			}
+			
+			// We have a trigger.
+			if (isset($member_data[$mailing_list->get_trigger_field()])
+				&& $member_data[$mailing_list->get_trigger_field()] == $mailing_list->get_trigger_value())
+			{
+				$lists_to_process[] = $mailing_list;
+			}
+		}
+		
+		return $lists_to_process;
 	}
 	
 	
@@ -798,6 +867,69 @@ class Campaigner_model extends CI_Model {
 	public function set_api_connector(CampaignMonitor $api_connector)
 	{
 		$this->_api_connector = $api_connector;
+	}
+	
+	
+	/**
+	 * Subscribes the specified member to the configured mailing lists.
+	 *
+	 * @access	public
+	 * @param	int|string		$member_id		The member ID.
+	 * @return	void
+	 */
+	public function subscribe_member($member_id)
+	{
+		// Get out early.
+		if ( ! valid_int($member_id, 1)
+			OR ! ($member_data = $this->get_member_by_id($member_id)))
+		{
+			return;
+		}
+		
+		// Ensure that the extension settings are loaded.
+		$this->get_extension_settings();
+		
+		// Determine which mailing lists to process, and do so.
+		$this->subscribe_member_to_mailing_lists(
+			$member_data,
+			$this->get_member_mailing_lists_to_process($member_data, $this->_settings->get_mailing_lists())
+		);
+	}
+	
+	
+	/**
+	 * Subscribes the specified member to the specified mailing lists.
+	 *
+	 * @access	public
+	 * @param	array		$member_data		The member data.
+	 * @param	array		$mailing_lists		The mailing lists.
+	 * @return	void
+	 */
+	public function subscribe_member_to_mailing_lists(Array $member_data, Array $mailing_lists)
+	{
+		foreach ($mailing_lists AS $mailing_list)
+		{
+			// Custom fields.
+			$custom_field_data = array();
+			
+			foreach ($mailing_list->get_custom_fields() AS $custom_field)
+			{
+				if (isset($member_data[$custom_field->get_member_field_id()]))
+				{
+					$custom_field_data[$custom_field->get_cm_key()] = utf8_decode($member_data[$custom_field->get_member_field_id()]);
+				}
+			}
+			
+			$params = array(
+				$member_data['email'],
+				utf8_decode($member_data['screen_name']),
+				$custom_field_data,
+				$mailing_list->get_list_id(),
+				FALSE		// Resubscribe.
+			);
+			
+			$this->make_api_call('subscriberAddWithCustomFields', $params, 'SubscriberAddWithCustomFields');
+		}
 	}
 	
 	
