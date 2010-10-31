@@ -40,6 +40,7 @@ class Mock_campaigner_model {
 	public function save_mailing_lists_to_db($settings) {}
 	public function save_settings_to_db($settings) {}
 	public function set_api_connector($api_connector) {}
+	public function subscribe_member($member_id) {}
 	public function update_basic_settings_from_input($settings) {}
 	public function update_extension($installed_version = '', $package_version = '') {}
 	public function update_extension_settings_from_input($settings) {}

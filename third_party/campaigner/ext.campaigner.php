@@ -95,6 +95,13 @@ class Campaigner_ext {
 	{
 		$this->_ee =& get_instance();
 		
+		if( ! class_exists('EE_Logger') )
+		{
+		   require APPPATH . 'libraries/Logger' . EXT;
+		}
+
+		$this->_ee->logger = new EE_Logger;
+		
 		// Load the model.
 		$this->_ee->load->add_package_path(PATH_THIRD .'campaigner/');
 		$this->_ee->load->model('campaigner_model');
@@ -422,7 +429,8 @@ class Campaigner_ext {
 	 * ------------------------------------------------------------ */
 
 	/**
-	 * Handles the `cp_members_member_create` hook.
+	 * Handles the `cp_members_member_create` hook. Used when a member is created via
+	 * the control panel.
 	 *
 	 * @see		http://expressionengine.com/developers/extension_hooks/cp_members_member_create/
 	 * @access	public
@@ -432,12 +440,13 @@ class Campaigner_ext {
 	 */
 	public function on_cp_members_member_create($member_id, Array $member_data)
 	{
-		
+		$this->_ee->campaigner_model->subscribe_member($member_id);
 	}
 	
 	
 	/**
-	 * Handles the `cp_members_validate_members` hook.
+	 * Handles the `cp_members_validate_members` hook. Used when the membership preferences
+	 * are set to "Manual activation by an administrator" (i.e. req_mbr_activation = 'manual').
 	 *
 	 * @see		http://expressionengine.com/developers/extension_hooks/cp_members_validate_members/
 	 * @access	public
@@ -445,26 +454,43 @@ class Campaigner_ext {
 	 */
 	public function on_cp_members_validate_members()
 	{
+		if ($this->_ee->config->item('req_mbr_activation') != 'manual'
+			OR ! ($member_ids = $this->_ee->input->post('toggle')))
+		{
+			return;
+		}
 		
+		foreach ($member_ids AS $member_id)
+		{
+			$this->_ee->campaigner_model->subscribe_member($member_id);
+		}
 	}
 	
 	
 	/**
-	 * Handles the `member_member_register` hook.
+	 * Handles the `member_member_register` hook. Used when the membership preferences
+	 * are set to "No activation required" (i.e. req_mbr_activation = 'none').
 	 *
 	 * @see		http://expressionengine.com/developers/extension_hooks/member_member_register/
 	 * @access	public
 	 * @param	array 			$member_data		Member data.
+	 * @param 	int|string		$member_id			The member ID (added in 2.0.1).
 	 * @return	void
 	 */
-	public function on_member_member_register(Array $member_data)
+	public function on_member_member_register(Array $member_data, $member_id)
 	{
+		if ($this->_ee->config->item('req_mbr_activation') != 'none')
+		{
+			return;
+		}
 		
+		$this->_ee->campaigner_model->subscribe_member($member_id);
 	}
 	
 	
 	/**
-	 * Handles the `member_register_validate_members` hook.
+	 * Handles the `member_register_validate_members` hook. Used when the membership
+	 * preferences are set to "Self-activation via email" (i.e. req_mbr_activation = 'email').
 	 *
 	 * @see		http://expressionengine.com/developers/extension_hooks/member_register_validate_members/
 	 * @access	public
@@ -473,7 +499,12 @@ class Campaigner_ext {
 	 */
 	public function on_member_register_validate_members($member_id)
 	{
+		if ($this->_ee->config->item('req_mbr_activation') != 'email')
+		{
+			return;
+		}
 		
+		$this->_ee->campaigner_model->subscribe_member($member_id);
 	}
 	
 	
@@ -489,7 +520,7 @@ class Campaigner_ext {
 	 */
 	public function on_user_edit_end($member_id, Array $member_data, Array $member_custom_data)
 	{
-		
+		$this->_ee->campaigner_model->subscribe_member($member_id);
 	}
 	
 	
@@ -504,7 +535,7 @@ class Campaigner_ext {
 	 */
 	public function on_user_register_end($user, $member_id)
 	{
-		
+		$this->_ee->campaigner_model->subscribe_member($member_id);
 	}
 	
 }

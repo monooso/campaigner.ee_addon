@@ -271,13 +271,15 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$model	= $this->_ee->campaigner_model;
 		
 		// Dummy values.
-		$lists			= array();
-		$member_fields	= array();
+		$lists					= array();
+		$member_fields			= array();
+		$member_fields_dd_data	= array();
 		
 		$view_vars = array(
-			'mailing_lists'	=> $lists,
-			'member_fields'	=> $member_fields,
-			'settings'		=> $this->_ext_settings
+			'mailing_lists'			=> $lists,
+			'member_fields'			=> $member_fields,
+			'member_fields_dd_data' => $member_fields_dd_data,
+			'settings'				=> $this->_ext_settings
 		);
 		
 		// Expectations.
@@ -317,6 +319,220 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		
 		// Tests.
 		$ext->display_settings_mailing_lists();
+	}
+	
+	
+	public function test_on_cp_members_member_create__success()
+	{
+		$ext = $this->_get_ext();
+		
+		// Dummy values.
+		$member_id		= 10;
+		$member_data 	= array();
+		
+		// Expectations.
+		$this->_ee->campaigner_model->expectOnce('subscribe_member', array($member_id));
+		
+		// Tests.
+		$ext->on_cp_members_member_create($member_id, $member_data);
+	}
+	
+	
+	public function test_on_cp_members_validate_members__success()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$input 	= $this->_ee->input;
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy values.
+		$member_ids = array(10, 20, 30);
+		
+		// Expectations.
+		$input->expectOnce('post', array('toggle'));
+		$model->expectCallCount('subscribe_member', count($member_ids));
+		
+		for ($count = 0; $count < count($member_ids); $count++)
+		{
+			$model->expectAt($count, 'subscribe_member', array($member_ids[$count]));
+		}
+		
+		// Return values.
+		$config->setReturnValue('item', 'manual', array('req_mbr_activation'));
+		$input->setReturnValue('post', $member_ids, array('toggle'));
+		
+		// Tests.
+		$ext->on_cp_members_validate_members();
+	}
+	
+	
+	public function test_on_member_register_validate_members__success()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy values.
+		$member_id = 10;
+		
+		// Expectations.
+		$model->expectOnce('subscribe_member', array($member_id));
+		
+		// Return values.
+		$config->setReturnValue('item', 'email', array('req_mbr_activation'));
+		
+		// Tests.
+		$ext->on_member_register_validate_members($member_id);
+	}
+	
+	
+	public function test_on_member_register_validate_members__no_activation()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy values.
+		$member_id = 10;
+		
+		// Expectations.
+		$model->expectNever('subscribe_member');
+		
+		// Return values.
+		$config->setReturnValue('item', 'none', array('req_mbr_activation'));
+		
+		// Tests.
+		$ext->on_member_register_validate_members($member_id);
+	}
+	
+	
+	public function test_on_member_register_validate_members__manual_activation()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy values.
+		$member_id = 10;
+		
+		// Expectations.
+		$model->expectNever('subscribe_member');
+		
+		// Return values.
+		$config->setReturnValue('item', 'manual', array('req_mbr_activation'));
+		
+		// Tests.
+		$ext->on_member_register_validate_members($member_id);
+	}
+	
+	
+	public function test_on_user_edit_end__success()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy values.
+		$member_id			= 10;
+		$member_data 		= array();
+		$member_custom_data	= array();
+		
+		// Expectations.
+		$this->_ee->campaigner_model->expectOnce('subscribe_member', array($member_id));
+		
+		// Tests.
+		$ext->on_user_edit_end($member_id, $member_data, $member_custom_data);
+	}
+	
+	
+	public function test_on_user_register_end__success()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy values.
+		$member_id		= 10;
+		$user 			= new StdClass();		// Not really important what this is.
+		
+		// Expectations.
+		$this->_ee->campaigner_model->expectOnce('subscribe_member', array($member_id));
+		
+		// Tests.
+		$ext->on_user_register_end($user, $member_id);
+	}
+	
+	
+	public function test_on_member_member_register__success()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext 	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy data.
+		$member_data	= array();
+		$member_id		= 10;
+		
+		// Expectations.
+		$config->expectOnce('item', array('req_mbr_activation'));
+		$model->expectOnce('subscribe_member', array($member_id));
+		
+		// Return values.
+		$config->setReturnValue('item', 'none', array('req_mbr_activation'));
+		
+		// Tests.
+		$ext->on_member_member_register($member_data, $member_id);
+	}
+	
+	
+	public function test_on_member_member_register__email_activation()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy data.
+		$member_data 	= array();
+		$member_id		= 10;
+		
+		// Expectations.
+		$model->expectNever('subscribe_member');
+		
+		// Return values.
+		$config->setReturnValue('item', 'email', array('req_mbr_activation'));
+		
+		// Tests.
+		$ext->on_member_member_register($member_data, $member_id);
+	}
+	
+	
+	public function test_on_member_member_register__manual_activation()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy data.
+		$member_data 	= array();
+		$member_id		= 10;
+		
+		// Expectations.
+		$model->expectNever('subscribe_member');
+		
+		// Return values.
+		$config->setReturnValue('item', 'manual', array('req_mbr_activation'));
+		
+		// Tests.
+		$ext->on_member_member_register($member_data, $member_id);
 	}
 	
 }

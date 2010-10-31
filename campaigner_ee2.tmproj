@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>third_party/campaigner/tests/test.campaigner_model.php</string>
+	<string>third_party/campaigner/tests/test.campaigner_ext.php</string>
 	<key>documents</key>
 	<array>
 		<dict>
@@ -21,69 +21,70 @@
 	<integer>325</integer>
 	<key>metaData</key>
 	<dict>
-		<key>third_party/campaigner/libraries/CMBase.php</key>
+		<key>third_party/campaigner/ext.campaigner.php</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>88</integer>
 				<key>line</key>
-				<integer>1082</integer>
+				<integer>454</integer>
 			</dict>
+			<key>columnSelection</key>
+			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>1052</integer>
+			<integer>452</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>10</integer>
+				<key>line</key>
+				<integer>454</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>88</integer>
+				<key>line</key>
+				<integer>454</integer>
+			</dict>
 		</dict>
-		<key>third_party/campaigner/models/campaigner_model.php</key>
+		<key>third_party/campaigner/tests/mocks/mock.campaigner_model.php</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>2</integer>
+				<integer>48</integer>
 				<key>line</key>
-				<integer>238</integer>
-			</dict>
-			<key>firstVisibleColumn</key>
-			<integer>0</integer>
-			<key>firstVisibleLine</key>
-			<integer>209</integer>
-		</dict>
-		<key>third_party/campaigner/tests/mocks/mock.cmbase.php</key>
-		<dict>
-			<key>caret</key>
-			<dict>
-				<key>column</key>
-				<integer>67</integer>
-				<key>line</key>
-				<integer>15</integer>
+				<integer>42</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
 			<integer>0</integer>
 		</dict>
-		<key>third_party/campaigner/tests/test.campaigner_model.php</key>
+		<key>third_party/campaigner/tests/test.campaigner_ext.php</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>2</integer>
+				<integer>95</integer>
 				<key>line</key>
-				<integer>812</integer>
+				<integer>412</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>760</integer>
+			<integer>363</integer>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
-		<string>third_party/campaigner/tests/test.campaigner_model.php</string>
-		<string>third_party/campaigner/tests/mocks/mock.cmbase.php</string>
-		<string>third_party/campaigner/models/campaigner_model.php</string>
-		<string>third_party/campaigner/libraries/CMBase.php</string>
+		<string>third_party/campaigner/ext.campaigner.php</string>
+		<string>third_party/campaigner/tests/test.campaigner_ext.php</string>
+		<string>third_party/campaigner/tests/mocks/mock.campaigner_model.php</string>
 	</array>
 	<key>showFileHierarchyDrawer</key>
 	<false/>
@@ -97,6 +98,44 @@
 			<true/>
 			<key>subItems</key>
 			<dict>
+				<key>themes</key>
+				<dict>
+					<key>isExpanded</key>
+					<true/>
+					<key>subItems</key>
+					<dict>
+						<key>third_party</key>
+						<dict>
+							<key>isExpanded</key>
+							<true/>
+							<key>subItems</key>
+							<dict>
+								<key>campaigner</key>
+								<dict>
+									<key>isExpanded</key>
+									<true/>
+									<key>subItems</key>
+									<dict>
+										<key>css</key>
+										<dict>
+											<key>isExpanded</key>
+											<true/>
+											<key>subItems</key>
+											<dict/>
+										</dict>
+										<key>js</key>
+										<dict>
+											<key>isExpanded</key>
+											<true/>
+											<key>subItems</key>
+											<dict/>
+										</dict>
+									</dict>
+								</dict>
+							</dict>
+						</dict>
+					</dict>
+				</dict>
 				<key>third_party</key>
 				<dict>
 					<key>isExpanded</key>
@@ -130,13 +169,6 @@
 											<dict/>
 										</dict>
 									</dict>
-								</dict>
-								<key>libraries</key>
-								<dict>
-									<key>isExpanded</key>
-									<true/>
-									<key>subItems</key>
-									<dict/>
 								</dict>
 								<key>models</key>
 								<dict>
@@ -175,6 +207,6 @@
 		</dict>
 	</dict>
 	<key>windowFrame</key>
-	<string>{{4, 0}, {1916, 1178}}</string>
+	<string>{{5, -1}, {1676, 1028}}</string>
 </dict>
 </plist>
