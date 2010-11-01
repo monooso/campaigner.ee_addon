@@ -9,7 +9,7 @@
 (function($) {
 	
 	var loading 	= false;
-	var firstRun	= true;
+	var initialLoad	= true;
 	
 	/**
 	 * Checks if an API key is already set. If so, an AJAX call is
@@ -33,6 +33,8 @@
 	function autoLoadLists() {
 		if ($('#api_key').val() && $('#client_id').val()) {
 			getLists();
+		} else {
+			stopLoading();
 		}
 	}
 	
@@ -71,7 +73,6 @@
 	 * @return	void
 	 */
 	function getLists() {
-		
 		if (loading) return;
 		
 		apiKey = $('#api_key').val();
@@ -113,12 +114,12 @@
 		
 		iniGetListsLink();
 		
-		if (firstRun) {
-			firstRun	= false;
-			loading		= false;		// Prevents the "two-step loading" appearance.
+		if (initialLoad) {
+			initialLoad = false;
+			loading = false;			// Fudge. Calling stopLoading causes an unpleasant two-step loading "flash".
 			autoLoadLists();
 		} else {
-			$('#client_id').val('');	// Clear the client selection.
+			$('#client_id').val('');	// Reset the selected client.
 			stopLoading();
 		}
 	}
