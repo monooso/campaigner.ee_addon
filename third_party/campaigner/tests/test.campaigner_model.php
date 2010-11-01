@@ -414,6 +414,37 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	 * DATABASE TESTS
 	 * ------------------------------------------------------------ */
 	
+	public function test_log_error__success()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$db		= $this->_ee->db;
+		
+		// Dummy values.
+		$site_id 		= 10;
+		$insert_data	= array(
+			'error_code'	=> 10,
+			'error_date'	=> time(),
+			'error_message'	=> 'Example error message',
+			'site_id'		=> $site_id
+		);
+		
+		$api_error = new Campaigner_api_error(array(
+			'code'		=> $insert_data['error_code'],
+			'message'	=> $insert_data['error_message']
+		));
+		
+		// Expectations.
+		$db->expectOnce('insert', array('campaigner_error_log', $insert_data));
+		
+		// Return values.
+		$config->setReturnValue('item', $site_id, array('site_id'));
+		
+		// Tests.
+		$this->_model->log_error($api_error);
+	}
+	
+	
 	public function test_get_error_log__success()
 	{
 		// Shortcuts.
@@ -421,7 +452,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$db 	= $this->_ee->db;
 		
 		// Dummy values.
-		$site_id	= '10';
+		$site_id	= 10;
 		$db_result 	= $this->_get_mock('db_query');
 		
 		$db_rows = array(

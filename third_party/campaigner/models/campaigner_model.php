@@ -8,6 +8,7 @@
  * @package			: Campaigner
  */
 
+require_once PATH_THIRD .'campaigner/classes/campaigner_api_error' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_client' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_error_log_entry' .EXT;
@@ -763,6 +764,26 @@ class Campaigner_model extends CI_Model {
 		}
 		
 		return $this->_theme_url;
+	}
+	
+	
+	/**
+	 * Writes an error to the error log.
+	 *
+	 * @access	public
+	 * @param	Campaigner_api_error	$error		The error to log.
+	 * @return	void
+	 */
+	public function log_error(Campaigner_api_error $error)
+	{
+		$insert_data = array(
+			'error_code'	=> $error->get_code(),
+			'error_date'	=> time(),
+			'error_message'	=> $error->get_message(),
+			'site_id'		=> $this->get_site_id()
+		);
+		
+		$this->_ee->db->insert('campaigner_error_log', $insert_data);
 	}
 	
 	
