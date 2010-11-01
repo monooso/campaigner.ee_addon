@@ -800,13 +800,19 @@ class Campaigner_model extends CI_Model {
 		// Can't do anything without an API connector.
 		if ( ! $this->_api_connector)
 		{
-			throw new Exception('API connector not set.');
+			$error_message = 'API connector not set.';
+			
+			$this->log_error(new Campaigner_api_error(array('code' => 0, 'message' => $error_message)));
+			throw new Exception($error_message);
 		}
 		
 		// Confirm that the method exists.
 		if ( ! method_exists($this->_api_connector, $method))
 		{
-			throw new Exception('Unknown API method: ' .$method);
+			$error_message = 'Unknown API method: ' .$method;
+			
+			$this->log_error(new Campaigner_api_error(array('code' => 0, 'message' => $error_message)));
+			throw new Exception($error_message);
 		}
 		
 		// Call the API method.
@@ -1272,6 +1278,7 @@ class Campaigner_model extends CI_Model {
 				? $this->_ee->lang->line('api_error_preamble') .$api_response['anyType']['Message']
 				: $this->_ee->lang->line('api_error_unknown');
 			
+			$this->log_error(new Campaigner_api_error(array('code' => $error_code, 'message' => $error_message)));
 			throw new Exception($error_message, $error_code);
 		}
 		
