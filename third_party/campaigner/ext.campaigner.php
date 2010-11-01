@@ -128,7 +128,13 @@ class Campaigner_ext {
 			// If the API key has been set, initialise the API connector.
 			if ($this->settings->get_api_key())
 			{
-				$model->set_api_connector(new CampaignMonitor($this->settings->get_api_key()));
+				$model->set_api_connector(new CampaignMonitor(
+					$this->settings->get_api_key(),		// API key.
+					NULL,								// Client ID.
+					NULL,								// Campaign ID.
+					NULL,								// List ID.
+					'soap'								// Method.
+				));
 			}
 		}
 	}

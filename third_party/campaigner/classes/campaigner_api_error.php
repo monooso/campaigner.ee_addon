@@ -22,7 +22,7 @@ class Campaigner_api_error {
 	 * @access	private
 	 * @var		int
 	 */
-	private $_code = 0;
+	private $_code;
 	
 	/**
 	 * API error message.
@@ -47,6 +47,8 @@ class Campaigner_api_error {
 	 */
 	public function __construct(Array $properties = array())
 	{
+		$this->reset();
+		
 		foreach ($properties AS $property => $value)
 		{
 			$method_name = 'set_' .$property;
@@ -80,6 +82,21 @@ class Campaigner_api_error {
 	public function get_message()
 	{
 		return $this->_message;
+	}
+	
+	
+	/**
+	 * Resets the instance variables.
+	 *
+	 * @access	public
+	 * @return	Campaigner_api_error
+	 */
+	public function reset()
+	{
+		$this->_code 	= 999;
+		$this->_message	= '';
+		
+		return $this;
 	}
 	
 	

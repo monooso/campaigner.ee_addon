@@ -299,13 +299,33 @@ class CMBase
 			if ( $this->method == 'soap' )
 			{
 				$tmp = $this->xml2array( $res, '/soap:Envelope/soap:Body' );
+				
 				if ( !is_array( $tmp ) )
+				{
 					return $tmp;
+				}
 				else
-					return $tmp[$action.'Response'][$action.'Result'];
+				{
+					/**
+					 * @author	Stephen Lewis <stephen@experienceinternet.co.uk>
+					 * @since 	2010-11-01
+					 *
+					 * Previously, there was no check to ensure the array keys existed.
+					 * 
+					 * Empty responses (for example, if a list had no custom fields) do
+					 * not include the [$action .'Result'] key, which resulted in PHP
+					 * warnings, and everything going tits-up.
+					 */
+					
+					return isset($tmp[$action .'Response']) && isset($tmp[$action .'Response'][$action .'Result'])
+						? $tmp[$action .'Response'][$action .'Result']
+						: array();
+				}
 			}
 			else
+			{
 				return $this->xml2array($res);
+			}
 		}
 		else
 			return null;

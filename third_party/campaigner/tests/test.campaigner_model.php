@@ -1367,7 +1367,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		// Dummy values.
 		$client_id		= 'CLIENT_ID';
 		$client_name	= 'CLIENT_NAME';
-		$api_result 	= array('anyType' => array('Client' => array('ClientID' => $client_id, 'Name' => $client_name)));
+		$api_result 	= array('Client' => array('ClientID' => $client_id, 'Name' => $client_name));
 		$clients		= array(new Campaigner_client(array('client_id' => $client_id, 'client_name' => $client_name)));
 		
 		// Set the API connector.
@@ -1387,7 +1387,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	public function test_get_clients_from_api__no_clients()
 	{
 		// Dummy values.
-		$api_result	= array('anyType' => array('Client' => array()));
+		$api_result	= '';
 		
 		// Set the API connector.
 		$this->_model->set_api_connector($this->_api_connector);
@@ -1407,16 +1407,13 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$list_id	= 'LIST_ID';
 		$list_name	= 'LIST_NAME';
 		
-		$api_list_result = array(
-			'anyType' => array(
-				'List' => array(
-					array('ListID' => $list_id, 'Name' => $list_name),
-					array('ListID' => $list_id, 'Name' => $list_name)
-				)
+		$api_list_result = array('List' => array(
+				array('ListID' => $list_id, 'Name' => $list_name),
+				array('ListID' => $list_id, 'Name' => $list_name)
 			)
 		);
 		
-		$api_field_result = array('anyType' => array('ListCustomField' => array()));
+		$api_field_result = array('ListCustomField' => array());
 		
 		$lists = array(
 			new Campaigner_mailing_list(array('list_id' => $list_id, 'list_name' => $list_name)),
@@ -1443,7 +1440,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	{
 		// Dummy values.
 		$client_id	= 'ABC123';
-		$api_result	= array('anyType' => array('List' => array()));
+		$api_result	= '';
 		
 		// Set the API connector.
 		$this->_model->set_api_connector($this->_api_connector);
@@ -1462,7 +1459,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$client_id	= 'ABC123';
 		$list_id	= 'LIST_ID';
 		$list_name	= 'LIST_NAME';
-		$api_result = array('anyType' => array('List' => array('ListID' => $list_id, 'Name' => $list_name)));
+		$api_result = array('List' => array('ListID' => $list_id, 'Name' => $list_name));
 		
 		// Set the API connector.
 		$this->_model->set_api_connector($this->_api_connector);
@@ -1485,39 +1482,37 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$list_id = 'ABC123';
 		
 		$api_result = array(
-			'anyType' => array(
-				'ListCustomField' => array(
-					array(
-						'DataType'		=> 'Text',
-						'FieldName'		=> 'Example Text Field',
-						'FieldOptions'	=> array(),
-						'Key'			=> '[ExampleTextField]'
-					),
-					array(
-						'DataType'		=> 'Number',
-						'FieldName'		=> 'Example Number Field',
-						'FieldOptions'	=> array(),
-						'Key'			=> '[ExampleNumberField]'
-					),
-					array(
-						'DataType'		=> 'MultiSelectOne',
-						'FieldName'		=> 'Example Multi-Select One Field',
-						'FieldOptions'	=> array('Red', 'Green', 'Blue'),
-						'Key'			=> '[ExampleMultiSelectOneField]'
-					),
-					array(
-						'DataType'		=> 'MultiSelectMany',
-						'FieldName'		=> 'Example Multi-Select Many Field',
-						'FieldOptions'	=> array('Red', 'Green', 'Blue'),
-						'Key'			=> '[ExampleMultiSelectManyField]'
-					)
+			'ListCustomField' => array(
+				array(
+					'DataType'		=> 'Text',
+					'FieldName'		=> 'Example Text Field',
+					'FieldOptions'	=> array(),
+					'Key'			=> '[ExampleTextField]'
+				),
+				array(
+					'DataType'		=> 'Number',
+					'FieldName'		=> 'Example Number Field',
+					'FieldOptions'	=> array(),
+					'Key'			=> '[ExampleNumberField]'
+				),
+				array(
+					'DataType'		=> 'MultiSelectOne',
+					'FieldName'		=> 'Example Multi-Select One Field',
+					'FieldOptions'	=> array('Red', 'Green', 'Blue'),
+					'Key'			=> '[ExampleMultiSelectOneField]'
+				),
+				array(
+					'DataType'		=> 'MultiSelectMany',
+					'FieldName'		=> 'Example Multi-Select Many Field',
+					'FieldOptions'	=> array('Red', 'Green', 'Blue'),
+					'Key'			=> '[ExampleMultiSelectManyField]'
 				)
 			)
 		);
 		
 		$custom_fields = array();
 		
-		foreach ($api_result['anyType']['ListCustomField'] AS $custom_field_data)
+		foreach ($api_result['ListCustomField'] AS $custom_field_data)
 		{
 			$custom_fields[] = new Campaigner_custom_field(array(
 				'label'		=> $custom_field_data['FieldName'],
@@ -1543,7 +1538,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	{
 		// Dummy values.
 		$list_id = 'ABC123';
-		$api_result = array('anyType' => array('ListCustomField' => array()));
+		$api_result = '';
 		
 		// Set the API connector.
 		$this->_model->set_api_connector($this->_api_connector);

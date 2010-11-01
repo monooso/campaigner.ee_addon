@@ -802,7 +802,7 @@ class Campaigner_model extends CI_Model {
 		{
 			$error_message = 'API connector not set.';
 			
-			$this->log_error(new Campaigner_api_error(array('code' => 0, 'message' => $error_message)));
+			$this->log_error(new Campaigner_api_error(array('message' => $error_message)));
 			throw new Exception($error_message);
 		}
 		
@@ -811,12 +811,12 @@ class Campaigner_model extends CI_Model {
 		{
 			$error_message = 'Unknown API method: ' .$method;
 			
-			$this->log_error(new Campaigner_api_error(array('code' => 0, 'message' => $error_message)));
+			$this->log_error(new Campaigner_api_error(array('message' => $error_message)));
 			throw new Exception($error_message);
 		}
 		
 		// Call the API method.
-		return call_user_func_array(array($this->_api_connector, $method), $params);
+	 	return call_user_func_array(array($this->_api_connector, $method), $params);
 	}
 	
 	
@@ -828,8 +828,18 @@ class Campaigner_model extends CI_Model {
 	 * @param	string		$root_node		The result root node.
 	 * @return	array
 	 */
-	public function prep_api_response($api_result, $root_node)
+	public function prep_api_response($api_result, $root_node = '')
 	{
+		/**
+		 * If the API result is not an array, is an empty array, or the
+		 * root node does not exist, the method call returned no results.
+		 */
+		
+		if ( ! $api_result OR ! is_array($api_result) OR ($root_node && ! isset($api_result[$root_node])))
+		{
+			return array();
+		}
+		
 		/**
 		 * Validate the result. Throws an exception if it's invalid.
 		 * We just let it bubble.
@@ -837,21 +847,16 @@ class Campaigner_model extends CI_Model {
 		
 		$this->_validate_api_response($api_result);
 		
-		/**
-		 * If the root node does not exist, the call returned
-		 * no results.
-		 */
-		
-		if ( ! isset($api_result['anyType']) OR ! isset($api_result['anyType'][$root_node]))
+		if ($root_node)
 		{
-			return array();
+			// Fix the result array structure.
+			$api_result = $this->_fix_api_response_structure($api_result, $root_node);
+			return $api_result[$root_node];
 		}
-		
-		// Fix the result array structure, if required.
-		$api_result = $this->_fix_api_response_structure($api_result, $root_node);
-		
-		// Retrieve the root node, and return the data structure.
-		return $api_result['anyType'][$root_node];
+		else
+		{
+			return $api_result;
+		}
 	}
 	
 	
@@ -1069,13 +1074,13 @@ class Campaigner_model extends CI_Model {
 				}
 			}
 			
-			$this->make_api_call('subscriberAddWithCustomFields', array(
+			$this->prep_api_response($this->make_api_call('subscriberAddWithCustomFields', array(
 				$email,
 				$screen_name,
 				$custom_field_data,
 				$mailing_list->get_list_id(),
 				$update
-			));
+			)));
 		}
 	}
 	
@@ -1094,10 +1099,10 @@ class Campaigner_model extends CI_Model {
 		
 		foreach ($mailing_lists AS $mailing_list)
 		{
-			$this->make_api_call('subscriberUnsubscribe', array(
+			$this->prep_api_response($this->make_api_call('subscriberUnsubscribe', array(
 				$email,
 				$mailing_list->get_list_id()
-			));
+			)));
 		}
 	}
 	
@@ -1243,16 +1248,16 @@ class Campaigner_model extends CI_Model {
 	 */
 	private function _fix_api_response_structure(Array $api_result = array(), $root_node)
 	{
-		if ( ! isset($api_result['anyType'][$root_node][0]))
+		if ( ! isset($api_result[$root_node][0]))
 		{
 			$fake_item = array();
 			
-			foreach ($api_result['anyType'][$root_node] AS $key => $val)
+			foreach ($api_result[$root_node] AS $key => $val)
 			{
 				$fake_item[$key] = $val;
 			}
 			
-			$api_result['anyType'][$root_node] = array($fake_item);
+			$api_result[$root_node] = array($fake_item);
 		}
 		
 		return $api_result;
@@ -1270,15 +1275,19 @@ class Campaigner_model extends CI_Model {
 	private function _validate_api_response(Array $api_response = array())
 	{
 		// Check for errors.
-		if (isset($api_response['anyType']['Code']))
+		if (isset($api_response['Code']) && $api_response['Code'] != '0')
 		{
-			$error_code = (int) $api_response['anyType']['Code'];
+			$error_code = (int) $api_response['Code'];
 			
-			$error_message = isset($api_response['anyType']['Message'])
-				? $this->_ee->lang->line('api_error_preamble') .$api_response['anyType']['Message']
+			$error_message = isset($api_response['Message'])
+				? $this->_ee->lang->line('api_error_preamble') .$api_response['Message']
 				: $this->_ee->lang->line('api_error_unknown');
 			
-			$this->log_error(new Campaigner_api_error(array('code' => $error_code, 'message' => $error_message)));
+			$this->log_error(new Campaigner_api_error(array(
+				'code'		=> $error_code,
+				'message'	=> $error_message
+			)));
+			
 			throw new Exception($error_message, $error_code);
 		}
 		

@@ -129,7 +129,7 @@ class Campaigner_error_log_entry {
 	 * Resets the instance variables.
 	 *
 	 * @access	public
-	 * @return	void
+	 * @return	Campaigner_error_log_entry
 	 */
 	public function reset()
 	{
@@ -137,6 +137,8 @@ class Campaigner_error_log_entry {
 		$this->_error_date 		= 0;
 		$this->_error_log_id	= 0;
 		$this->_error_message	= '';
+		
+		return $this;
 	}
 	
 	
