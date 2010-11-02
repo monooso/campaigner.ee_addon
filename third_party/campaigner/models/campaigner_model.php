@@ -1,7 +1,7 @@
 <?php if ( ! defined('EXT')) exit('Invalid file request.');
 
 /**
- * Example add-on model.
+ * Campaigner add-on model.
  *
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
