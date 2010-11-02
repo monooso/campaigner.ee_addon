@@ -1340,8 +1340,12 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		// Expectations.
 		$this->_api_connector->expectCallCount('subscriberUnsubscribe', count($mailing_lists));
+		$this->_api_connector->expectCallCount('subscribersGetIsSubscribed', count($mailing_lists));
 		$this->_api_connector->expectAt(0, 'subscriberUnsubscribe', array($email, $list_id_a));
 		$this->_api_connector->expectAt(1, 'subscriberUnsubscribe', array($email, $list_id_b));
+		
+		// Return values.
+		$this->_api_connector->setReturnValue('subscribersGetIsSubscribed', 'True');
 		
 		// Tests.
 		$this->_model->unsubscribe_member_from_mailing_lists($member_data, $mailing_lists);
@@ -1551,10 +1555,10 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_member_is_subscribed_to_mailing_list__success()
+	public function test_get_member_is_subscribed_to_mailing_list__subscribed()
 	{
 		// Dummy values.
-		$api_result 	= array('True');
+		$api_result 	= 'True';
 		$list_id 		= 'ABC123';
 		$member_data 	= array('email' => 'me@here.com');
 		
@@ -1569,6 +1573,27 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		// Tests.
 		$this->assertIdentical(TRUE, $this->_model->get_member_is_subscribed_to_mailing_list($member_data, $list_id));
+	}
+	
+	
+	public function test_get_member_is_subscribed_to_mailing_list__not_subscribed()
+	{
+		// Dummy values.
+		$api_result 	= 'False';
+		$list_id 		= 'ABC123';
+		$member_data 	= array('email' => 'me@here.com');
+		
+		// Set the API connector.
+		$this->_model->set_api_connector($this->_api_connector);
+		
+		// Expectations.
+		$this->_api_connector->expectOnce('subscribersGetIsSubscribed', array($member_data['email'], $list_id));
+		
+		// Return values.
+		$this->_api_connector->setReturnValue('subscribersGetIsSubscribed', $api_result);
+		
+		// Tests.
+		$this->assertIdentical(FALSE, $this->_model->get_member_is_subscribed_to_mailing_list($member_data, $list_id));
 	}
 	
 	

@@ -442,7 +442,55 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$user 			= new StdClass();		// Not really important what this is.
 		
 		// Expectations.
+		$config->expectOnce('item', array('req_mbr_activation'));
 		$this->_ee->campaigner_model->expectOnce('subscribe_member', array($member_id));
+		
+		// Returns values.
+		$config->setReturnValue('item', 'none', array('req_mbr_activation'));
+		
+		// Tests.
+		$ext->on_user_register_end($user, $member_id);
+	}
+	
+	
+	public function test_on_user_register_end__email_activation()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy values.
+		$member_id		= 10;
+		$user 			= new StdClass();		// Not really important what this is.
+		
+		// Expectations.
+		$this->_ee->campaigner_model->expectNever('subscribe_member');
+		
+		// Returns values.
+		$config->setReturnValue('item', 'email', array('req_mbr_activation'));
+		
+		// Tests.
+		$ext->on_user_register_end($user, $member_id);
+	}
+	
+	
+	public function test_on_user_register_end__manual_activation()
+	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$ext	= $this->_get_ext();
+		$model	= $this->_ee->campaigner_model;
+		
+		// Dummy values.
+		$member_id		= 10;
+		$user 			= new StdClass();		// Not really important what this is.
+		
+		// Expectations.
+		$this->_ee->campaigner_model->expectNever('subscribe_member');
+		
+		// Returns values.
+		$config->setReturnValue('item', 'manual', array('req_mbr_activation'));
 		
 		// Tests.
 		$ext->on_user_register_end($user, $member_id);
