@@ -570,7 +570,9 @@ class Campaigner_ext {
 	
 	
 	/**
-	 * Handles the `user_register_end` hook.
+	 * Handles the `user_register_end` hook. Used when registering via the User module's
+	 * {exp:user:register} form, with the membership preferences set to "No activation
+	 * required" (i.e. req_mbr_activation = 'none').
 	 *
 	 * @see		http://www.solspace.com/docs/detail/user_user_register_end/
 	 * @access	public
@@ -580,6 +582,11 @@ class Campaigner_ext {
 	 */
 	public function on_user_register_end($user, $member_id)
 	{
+		if ($this->_ee->config->item('req_mbr_activation') != 'none')
+		{
+			return;
+		}
+		
 		$this->_ee->campaigner_model->subscribe_member($member_id);
 	}
 	

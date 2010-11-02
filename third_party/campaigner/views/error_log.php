@@ -13,7 +13,7 @@ if ($error_log)
 	foreach ($error_log AS $error)
 	{
 		$this->table->add_row(array(
-			date('jS F, Y', $error->get_error_date()),
+			date('Y-m-d H:i:s', $error->get_error_date()),
 			$error->get_error_code(),
 			$error->get_error_message()
 		));

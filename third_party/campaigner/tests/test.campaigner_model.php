@@ -1551,6 +1551,27 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
+	public function test_get_member_is_subscribed_to_mailing_list__success()
+	{
+		// Dummy values.
+		$api_result 	= array('True');
+		$list_id 		= 'ABC123';
+		$member_data 	= array('email' => 'me@here.com');
+		
+		// Set the API connector.
+		$this->_model->set_api_connector($this->_api_connector);
+		
+		// Expectations.
+		$this->_api_connector->expectOnce('subscribersGetIsSubscribed', array($member_data['email'], $list_id));
+		
+		// Return values.
+		$this->_api_connector->setReturnValue('subscribersGetIsSubscribed', $api_result);
+		
+		// Tests.
+		$this->assertIdentical(TRUE, $this->_model->get_member_is_subscribed_to_mailing_list($member_data, $list_id));
+	}
+	
+	
 	
 	/* --------------------------------------------------------------
 	 * OBSOLETE TESTS

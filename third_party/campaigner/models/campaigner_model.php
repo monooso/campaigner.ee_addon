@@ -637,6 +637,22 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
+	 * Determines whether the specified member is subscribed to the specified
+	 * mailing list.
+	 *
+	 * @access	public
+	 * @param	array		$member_data		The member data.
+	 * @param	string		$list_id			The mailing list ID.
+	 * @return	bool
+	 */
+	public function get_member_is_subscribed_to_mailing_list(Array $member_data, $list_id)
+	{
+		$api_result = $this->make_api_call('subscribersGetIsSubscribed', array($member_data['email'], $list_id));
+		return (is_string($api_result) && strtolower($api_result) == 'true');
+	}
+	
+	
+	/**
 	 * Filters the supplied mailing lists, and returns only those to which
 	 * the specified member should be subscribed.
 	 *
@@ -996,6 +1012,7 @@ class Campaigner_model extends CI_Model {
 		// Get out early.
 		if ( ! valid_int($member_id, 1) OR ! ($member_data = $this->get_member_by_id($member_id)))
 		{
+			error_log('Invalid member ID "' .$member_id .'" in subscribe_member');
 			return;
 		}
 		
@@ -1014,18 +1031,13 @@ class Campaigner_model extends CI_Model {
 			 * him from any lists which he has not explicitly joined.
 			 *
 			 * This is the easy way to accomplish that goal. We just unsubscribe the member from
-			 * _all_ of the mailing lists, and then resubscribe him to only those he has explicitly
-			 * opted-in to.
-			 *
-			 * It's not the most efficient solution, but it's the quickest, the easiest, and it's
-			 * unlikely to make any difference to the end user.
-			 *
-			 * In other words, it will do for now.
+			 * _all_ of the mailing lists to which he is currently subscribed, and then resubscribe
+			 * him to only those he has explicitly opted-in to.
 			 */
 			
 			if ($update)
 			{
-				$this->unsubscribe_member_from_all_mailing_lists(
+				$this->unsubscribe_member_from_mailing_lists(
 					$member_data,
 					$this->get_mailing_lists_from_api($this->_settings->get_client_id(), FALSE)
 				);
@@ -1042,6 +1054,7 @@ class Campaigner_model extends CI_Model {
 		catch (Exception $e)
 		{
 			// Do nothing.
+			error_log('Exception: ' .$e->getMessage() .' (' .$e->getCode .')');
 		}
 	}
 	
@@ -1099,10 +1112,21 @@ class Campaigner_model extends CI_Model {
 		
 		foreach ($mailing_lists AS $mailing_list)
 		{
-			$this->prep_api_response($this->make_api_call('subscriberUnsubscribe', array(
-				$email,
-				$mailing_list->get_list_id()
-			)));
+			/**
+			 * We need to check that the member is subscribed to the mailing list before attempting
+			 * to unsubscribe him, otherwise Campaign Monitor reports an API error, which triggers
+			 * an exception in our code, which causes all subsequent actions to stop.
+			 *
+			 * Which would be bad.
+			 */
+			
+			if ($this->get_member_is_subscribed_to_mailing_list($member_data, $mailing_list->get_list_id()))
+			{
+				$this->prep_api_response($this->make_api_call('subscriberUnsubscribe', array(
+					$email,
+					$mailing_list->get_list_id()
+				)));
+			}
 		}
 	}
 	
