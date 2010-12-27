@@ -112,7 +112,7 @@ class Campaigner_model extends CI_Model {
 	 */
 	public function __construct()
 	{
-		parent::CI_Model();
+		parent::__construct();
 
 		$this->_ee =& get_instance();
 		
