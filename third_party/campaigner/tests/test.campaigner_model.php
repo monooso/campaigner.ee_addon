@@ -8,9 +8,7 @@
  * @copyright	Experience Internet
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 require_once PATH_THIRD .'campaigner/models/campaigner_model' .EXT;
-require_once PATH_THIRD .'campaigner/tests/mocks/mock.cmbase' .EXT;
 
 class Test_campaigner_model extends Testee_unit_test_case {
 	
@@ -49,11 +47,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	public function setUp()
 	{
 		parent::setUp();
-		
-		Mock::generate('Mock_CampaignMonitor', 'CampaignMonitor');
-		
-		$this->_api_connector	= new CampaignMonitor();
-		$this->_model 			= new Campaigner_model();
+		$this->_model = new Campaigner_model();
 	}
 	
 	
@@ -356,7 +350,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_member_mailing_lists_to_process__success()
+	public function xtest_get_member_mailing_lists_to_process__success()
 	{
 		// Dummy data.
 		$member_data = array(
@@ -398,7 +392,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_member_mailing_lists_to_process__no_mailing_lists()
+	public function xtest_get_member_mailing_lists_to_process__no_mailing_lists()
 	{
 		// Dummy data.
 		$member_data	= array();
@@ -407,12 +401,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		// Tests.
 		$this->assertIdentical(array(), $this->_model->get_member_mailing_lists_to_process($member_data, $mailing_lists));
 	}
-	
-	
-	
-	/* --------------------------------------------------------------
-	 * DATABASE TESTS
-	 * ------------------------------------------------------------ */
+
 	
 	public function test_log_error__success()
 	{
@@ -792,7 +781,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
-			$data = array('field_id' => 'm_field_id_' .$list_count, 'id' => 'merge_var_id_' .$list_count);
+			$data = array('member_field_id' => 'm_field_id_' .$list_count, 'cm_key' => 'cm_key_' .$list_count);
 			
 			$custom_fields_data[] 	= $data;
 			$custom_fields[] 		= new Campaigner_custom_field($data);
@@ -806,7 +795,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		
 		for ($list_count = 0; $list_count < 10; $list_count++)
 		{
-			$data = array(
+			$db_rows[] = array(
 				'site_id'		=> $site_id,
 				'custom_fields'	=> $custom_fields_data,
 				'list_id'		=> 'list_id_' .$list_count,
@@ -814,10 +803,13 @@ class Test_campaigner_model extends Testee_unit_test_case {
 				'trigger_value'	=> 'trigger_value_' .$list_count
 			);
 			
-			$db_rows[] = $data;
-			
-			$data['custom_fields']	= $custom_fields;
-			$mailing_lists[]		= new Campaigner_mailing_list($data);
+			$mailing_lists[] = new Campaigner_mailing_list(array(
+				'site_id'		=> $site_id,
+				'custom_fields'	=> $custom_fields,
+				'list_id'		=> 'list_id_' .$list_count,
+				'trigger_field'	=> 'm_field_id_' .$list_count,
+				'trigger_value'	=> 'trigger_value_' .$list_count
+			));
 		}
 		
 		// Return values.
@@ -1109,12 +1101,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 				: $this->fail();
 		}
 	}
-	
-	
-	
-	/* --------------------------------------------------------------
-	 * UPDATE FROM INPUT TESTS
-	 * ------------------------------------------------------------ */
+
 	
 	public function test_update_basic_settings_from_input__success()
 	{
@@ -1240,503 +1227,277 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			$this->assertIdentical($mailing_lists[$count], $updated_mailing_lists[$count]);
 		}
 	}
-	
-	
-	
-	/* --------------------------------------------------------------
-	 * API TESTS
-	 * ------------------------------------------------------------ */
-	
-	public function test_subscribe_member_to_mailing_lists__success()
+
+
+	public function test_get_api_connector__success()
 	{
-		// Dummy data.
-		$member_data = array(
-			'email'			=> 'billy.bob@chickslovehicks.com',
+		// Shortcuts.
+		$config		= $this->_ee->config;
+		$db			= $this->_ee->db;
+
+		// Dummy values.
+		$site_id		= '10';
+		$api_key		= 'api_key';
+		$client_id		= 'client_id';
+		$db_lists		= $this->_get_mock('db_query');
+		$db_settings 	= $this->_get_mock('db_query');
+
+		$db_settings_row = array(
+			'site_id'	=> $site_id,
+			'api_key'	=> $api_key,
+			'client_id'	=> $client_id
+		);
+
+		/**
+		 * The `get_api_connector` method calls `get_extension_settings`,
+		 * so we need to mock the database return values.
+		 */
+		
+		// Return values.
+		$config->setReturnValue('item', $site_id, array('site_id'));
+
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 1);
+		$db_settings->setReturnValue('row_array', $db_settings_row);
+
+		$db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+
+		$db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+		
+		// Run the test.
+		$this->assertIdentical(
+			new Campaigner_cm_api_connector($api_key),
+			$this->_model->get_api_connector()
+		);
+	}
+
+
+	public function test_get_api_connector__no_settings()
+	{
+		// Shortcuts.
+		$config		= $this->_ee->config;
+		$db			= $this->_ee->db;
+
+		// Dummy values.
+		$site_id		= '10';
+		$db_lists		= $this->_get_mock('db_query');
+		$db_settings 	= $this->_get_mock('db_query');
+
+		// Return values.
+		$config->setReturnValue('item', $site_id, array('site_id'));
+
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 0);
+
+		$db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+
+		$db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+
+		// Tests.
+		$this->assertIdentical(FALSE, $this->_model->get_api_connector());
+	}
+
+
+	public function test_get_member_as_subscriber__success()
+	{
+		// Shortcuts.
+		$db = $this->_ee->db;
+
+		// Dummy values.
+		$list_id	= 'abcdefgh12345678';
+		$member_id	= 20;
+		$name		= 'John Doe';
+		$email		= 'john@doe.com';
+
+		$db_result	= $this->_get_mock('db_query');
+		$db_row		= array(
+			'email'			=> $email,
 			'group_id'		=> '8',
 			'location'		=> 'Hicksville',
 			'member_id'		=> '10',
 			'occupation'	=> 'Hick',
-			'screen_name'	=> 'Billy Bob',
+			'screen_name'	=> $name,
 			'url'			=> 'http://example.com/',
-			'username'		=> 'Billy Bob',
+			'username'		=> $name,
 			'm_field_id_1'	=> 'No',
 			'm_field_id_2'	=> 'Yes'
 		);
-		
-		$mailing_lists = array(
-			new Campaigner_mailing_list(array(
-				'active'		=> TRUE,
-				'custom_fields'	=> array(
-					new Campaigner_custom_field(array(
-						'cm_key'			=> '[Location]',
-						'label'				=> 'Location',
-						'member_field_id'	=> 'location'
-					))
-				),
-				'list_id'		=> 'LIST_ID',
-				'list_name'		=> 'Example List',
-				'trigger_field'	=> 'm_field_id_2',
-				'trigger_value'	=> 'Yes'
-			))
-		);
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
+
+
+		/**
+		 * The method calls other methods for most of the heavy lifting.
+		 * Don't really want to be writing a massive test covering multiple
+		 * methods, so we do the bare minimum.
+		 *
+		 * For reference, the methods called are:
+		 * - get_member_by_id
+		 * - get_mailing_list_by_id
+		 */
+
 		
 		// Expectations.
-		$this->_api_connector->expectAt(0, 'subscriberAddWithCustomFields', array(
-			$member_data['email'],					// Email
-			$member_data['screen_name'],			// Name
-			array('[Location]' => 'Hicksville'),	// Custom fields
-			'LIST_ID',								// List ID
-			FALSE									// Resubscribe?
+
+		/**
+		 * Return values.
+		 */
+		
+		// get_member_by_id
+		$db->setReturnReference('get_where', $db_result);
+		$db_result->setReturnValue('num_rows', 1);
+		$db_result->setReturnValue('row_array', $db_row);
+
+
+		// + Get member data.
+		// - Get list data (custom fields).
+		// - Map member data to list custom fields.
+
+		// Return values.
+
+	
+		// Tests.
+		$subscriber = new Campaigner_subscriber(array(
+			'email'			=> $email,
+			'name'			=> $name,
+			'custom_data'	=> array()
 		));
-		
-		$this->_api_connector->expectAt(1, 'subscriberAddWithCustomFields', array(
-			$member_data['email'],					// Email
-			$member_data['screen_name'],			// Name
-			array('[Location]' => 'Hicksville'),	// Custom fields
-			'LIST_ID',								// List ID
-			TRUE									// Resubscribe?
+
+		$this->assertIdentical($subscriber, $this->_model->get_member_as_subscriber($member_id, $list_id));
+	}
+
+
+	public function test_convert_mailing_list_row_to_object__success()
+	{
+		// Dummy values.
+		$fields_data 	= array();
+		$fields			= array();
+
+		for ($count = 1; $count <= 10; $count++)
+		{
+			$data 			= array('member_field_id' => 'm_field_id_' .$count, 'cm_key' => 'cm_key_' .$count);
+			$fields_data[]	= $data;
+			$fields[]		= new Campaigner_custom_field($data);
+		}
+
+		$list_row = array(
+			'custom_fields'		=> serialize($fields_data),
+			'list_id'			=> 'abc123',
+			'site_id'			=> '1',
+			'trigger_field'		=> 'm_field_id_10',
+			'trigger_value'		=> 'y'
+		);
+
+		$list_object = new Campaigner_mailing_list(array(
+			'custom_fields'		=> $fields,
+			'list_id'			=> $list_row['list_id'],
+			'trigger_field'		=> $list_row['trigger_field'],
+			'trigger_value'		=> $list_row['trigger_value']
 		));
-		
+	
 		// Tests.
-		$this->_model->subscribe_member_to_mailing_lists($member_data, $mailing_lists);			// Subscribe.
-		$this->_model->subscribe_member_to_mailing_lists($member_data, $mailing_lists, TRUE);	// Update.
+		$this->assertIdentical($list_object, $this->_model->convert_mailing_list_row_to_object($list_row));
 	}
-	
-	
-	public function test_subscribe_member_to_mailing_lists__no_mailing_lists()
+
+
+	public function test_convert_mailing_row_to_object__missing_keys()
 	{
-		// Dummy data.
-		$member_data 	= array('email' => 'me@here.com', 'screen_name' => 'Nobody Girl');
-		$mailing_lists 	= array();
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
-		// Expectations.
-		$this->_api_connector->expectNever('subscriberAddWithCustomFields');
-		
-		// Tests.
-		$this->_model->subscribe_member_to_mailing_lists($member_data, $mailing_lists);
-	}
-	
-	
-	public function test_unsubscribe_member_from_mailing_lists__success()
-	{
-		// Dummy data.
-		$email 			= 'me@here.com';
-		$list_id_a		= 'LIST_ID_A';
-		$list_id_b		= 'LIST_ID_B';
-		$member_data 	= array('email' => $email);
-		$mailing_lists	= array(
-			new Campaigner_mailing_list(array('list_id' => $list_id_a)),
-			new Campaigner_mailing_list(array('list_id' => $list_id_b))
+		// Dummy values.
+		$list_row = array(
+			'custom_fields'		=> '',
+			'site_id'			=> '1',
+			'trigger_value'		=> 'y'
 		);
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
-		// Expectations.
-		$this->_api_connector->expectCallCount('subscriberUnsubscribe', count($mailing_lists));
-		$this->_api_connector->expectCallCount('subscribersGetIsSubscribed', count($mailing_lists));
-		$this->_api_connector->expectAt(0, 'subscriberUnsubscribe', array($email, $list_id_a));
-		$this->_api_connector->expectAt(1, 'subscriberUnsubscribe', array($email, $list_id_b));
-		
-		// Return values.
-		$this->_api_connector->setReturnValue('subscribersGetIsSubscribed', 'True');
-		
+
+		$list_object = new Campaigner_mailing_list(array(
+			'trigger_value'		=> $list_row['trigger_value']
+		));
+	
 		// Tests.
-		$this->_model->unsubscribe_member_from_mailing_lists($member_data, $mailing_lists);
+		$this->assertIdentical($list_object, $this->_model->convert_mailing_list_row_to_object($list_row));
 	}
-	
-	
-	public function test_make_api_call__api_connector_not_set()
+
+
+	public function test_get_mailing_list_by_id__success()
 	{
-		try
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$db 	= $this->_ee->db;
+
+		// Dummy values.
+		$db_result		= $this->_get_mock('db_query');
+		$fields_data 	= array();
+		$fields			= array();
+		$list_id		= 'abc123';
+		$site_id		= 10;
+
+		for ($count = 1; $count <= 10; $count++)
 		{
-			$this->_model->make_api_call('METHOD', array());
-			$this->fail();
+			$data 			= array('member_field_id' => 'm_field_id_' .$count, 'cm_key' => 'cm_key_' .$count);
+			$fields_data[]	= $data;
+			$fields[]		= new Campaigner_custom_field($data);
 		}
-		catch (Exception $e)
-		{
-			$this->assertPattern('#api connector not set#i', $e->getMessage());
-		}
-	}
-	
-	
-	public function test_get_clients_from_api__success()
-	{
-		// Dummy values.
-		$client_id		= 'CLIENT_ID';
-		$client_name	= 'CLIENT_NAME';
-		$api_result 	= array('Client' => array('ClientID' => $client_id, 'Name' => $client_name));
-		$clients		= array(new Campaigner_client(array('client_id' => $client_id, 'client_name' => $client_name)));
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
-		// Expectations.
-		$this->_api_connector->expectOnce('userGetClients');
-		
-		// Return values.
-		$this->_api_connector->setReturnValue('userGetClients', $api_result);
-		
-		// Tests.
-		$this->assertIdentical($clients, $this->_model->get_clients_from_api());
-	}
-	
-	
-	public function test_get_clients_from_api__no_clients()
-	{
-		// Dummy values.
-		$api_result	= '';
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
-		// Return values.
-		$this->_api_connector->setReturnValue('userGetClients', $api_result);
-		
-		// Tests.
-		$this->assertIdentical(array(), $this->_model->get_clients_from_api());
-	}
-	
-	
-	public function test_get_mailing_lists_from_api__success()
-	{
-		// Dummy values.
-		$client_id	= 'ABC123';
-		$list_id	= 'LIST_ID';
-		$list_name	= 'LIST_NAME';
-		
-		$api_list_result = array('List' => array(
-				array('ListID' => $list_id, 'Name' => $list_name),
-				array('ListID' => $list_id, 'Name' => $list_name)
-			)
+
+		$db_row = array(
+			'custom_fields'		=> serialize($fields_data),
+			'list_id'			=> $list_id,
+			'site_id'			=> '1',
+			'trigger_field'		=> 'm_field_id_10',
+			'trigger_value'		=> 'y'
 		);
-		
-		$api_field_result = array('ListCustomField' => array());
-		
-		$lists = array(
-			new Campaigner_mailing_list(array('list_id' => $list_id, 'list_name' => $list_name)),
-			new Campaigner_mailing_list(array('list_id' => $list_id, 'list_name' => $list_name))
-		);
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
+
+		$list_object = new Campaigner_mailing_list(array(
+			'custom_fields'		=> $fields,
+			'list_id'			=> $db_row['list_id'],
+			'trigger_field'		=> $db_row['trigger_field'],
+			'trigger_value'		=> $db_row['trigger_value']
+		));
+	
 		// Expectations.
-		$this->_api_connector->expectOnce('clientGetLists', array($client_id));
-		$this->_api_connector->expectCallCount('listGetCustomFields', count($lists));
-		
+		$db->expectOnce('select', array('custom_fields, list_id, site_id, trigger_field, trigger_value'));
+		$db->expectOnce('get_where', array('campaigner_mailing_lists', array('list_id' => $list_id, 'site_id' => $site_id), 1));
+		$db_result->expectOnce('num_rows');
+		$db_result->expectOnce('row_array');
+
 		// Return values.
-		$this->_api_connector->setReturnValue('clientGetLists', $api_list_result);
-		$this->_api_connector->setReturnValue('listGetCustomFields', $api_field_result);
-		
+		$config->setReturnValue('item', $site_id, array('site_id'));
+		$db->setReturnReference('get_where', $db_result);
+		$db_result->setReturnReference('row_array', $db_row);
+		$db_result->setReturnValue('num_rows', 1);
+
 		// Tests.
-		$this->assertIdentical($lists, $this->_model->get_mailing_lists_from_api($client_id));
+		$this->assertIdentical($list_object, $this->_model->get_mailing_list_by_id($list_id));
 	}
-	
-	
-	public function test_get_mailing_lists_from_api__no_mailing_lists()
+
+
+	public function test_get_mailing_list_by_id__no_matching_list()
 	{
+		// Shortcuts.
+		$config	= $this->_ee->config;
+		$db 	= $this->_ee->db;
+
 		// Dummy values.
-		$client_id	= 'ABC123';
-		$api_result	= '';
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
-		// Return values.
-		$this->_api_connector->setReturnValue('clientGetLists', $api_result);
-		
-		// Tests.
-		$this->assertIdentical(array(), $this->_model->get_mailing_lists_from_api($client_id));
-	}
+		$db_result		= $this->_get_mock('db_query');
+		$list_id		= 'abc123';
+		$site_id		= 10;
+
+		$db_row = array();
 	
-	
-	public function test_get_mailing_lists_from_api__no_custom_fields()
-	{
-		// Dummy values.
-		$client_id	= 'ABC123';
-		$list_id	= 'LIST_ID';
-		$list_name	= 'LIST_NAME';
-		$api_result = array('List' => array('ListID' => $list_id, 'Name' => $list_name));
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
 		// Expectations.
-		$this->_api_connector->expectOnce('clientGetLists', array($client_id));
-		$this->_api_connector->expectNever('listGetCustomFields');
-		
+		$db_result->expectOnce('num_rows');
+		$db_result->expectNever('row_array');
+
 		// Return values.
-		$this->_api_connector->setReturnValue('clientGetLists', $api_result);
-		
+		$config->setReturnValue('item', $site_id, array('site_id'));
+		$db->setReturnReference('get_where', $db_result);
+		$db_result->setReturnValue('num_rows', 0);
+
 		// Tests.
-		$this->_model->get_mailing_lists_from_api($client_id, FALSE);
-	}
-	
-	
-	public function test_get_mailing_list_custom_fields_from_api__success()
-	{
-		// Dummy values.
-		$list_id = 'ABC123';
-		
-		$api_result = array(
-			'ListCustomField' => array(
-				array(
-					'DataType'		=> 'Text',
-					'FieldName'		=> 'Example Text Field',
-					'FieldOptions'	=> array(),
-					'Key'			=> '[ExampleTextField]'
-				),
-				array(
-					'DataType'		=> 'Number',
-					'FieldName'		=> 'Example Number Field',
-					'FieldOptions'	=> array(),
-					'Key'			=> '[ExampleNumberField]'
-				),
-				array(
-					'DataType'		=> 'MultiSelectOne',
-					'FieldName'		=> 'Example Multi-Select One Field',
-					'FieldOptions'	=> array('Red', 'Green', 'Blue'),
-					'Key'			=> '[ExampleMultiSelectOneField]'
-				),
-				array(
-					'DataType'		=> 'MultiSelectMany',
-					'FieldName'		=> 'Example Multi-Select Many Field',
-					'FieldOptions'	=> array('Red', 'Green', 'Blue'),
-					'Key'			=> '[ExampleMultiSelectManyField]'
-				)
-			)
-		);
-		
-		$custom_fields = array();
-		
-		foreach ($api_result['ListCustomField'] AS $custom_field_data)
-		{
-			$custom_fields[] = new Campaigner_custom_field(array(
-				'label'		=> $custom_field_data['FieldName'],
-				'cm_key'	=> $custom_field_data['Key']
-			));
-		}
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
-		// Expectations.
-		$this->_api_connector->expectOnce('listGetCustomFields', array($list_id));
-		
-		// Return values.
-		$this->_api_connector->setReturnValue('listGetCustomFields', $api_result);
-		
-		// Tests.
-		$this->assertIdentical($custom_fields, $this->_model->get_mailing_list_custom_fields_from_api($list_id));
-	}
-	
-	
-	public function test_get_mailing_list_custom_fields_from_api__no_custom_fields()
-	{
-		// Dummy values.
-		$list_id = 'ABC123';
-		$api_result = '';
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
-		// Return values.
-		$this->_api_connector->setReturnValue('listGetCustomFields', $api_result);
-		
-		// Tests.
-		$this->assertIdentical(array(), $this->_model->get_mailing_list_custom_fields_from_api($list_id));
-	}
-	
-	
-	public function test_get_member_is_subscribed_to_mailing_list__subscribed()
-	{
-		// Dummy values.
-		$api_result 	= 'True';
-		$list_id 		= 'ABC123';
-		$member_data 	= array('email' => 'me@here.com');
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
-		// Expectations.
-		$this->_api_connector->expectOnce('subscribersGetIsSubscribed', array($member_data['email'], $list_id));
-		
-		// Return values.
-		$this->_api_connector->setReturnValue('subscribersGetIsSubscribed', $api_result);
-		
-		// Tests.
-		$this->assertIdentical(TRUE, $this->_model->get_member_is_subscribed_to_mailing_list($member_data, $list_id));
-	}
-	
-	
-	public function test_get_member_is_subscribed_to_mailing_list__not_subscribed()
-	{
-		// Dummy values.
-		$api_result 	= 'False';
-		$list_id 		= 'ABC123';
-		$member_data 	= array('email' => 'me@here.com');
-		
-		// Set the API connector.
-		$this->_model->set_api_connector($this->_api_connector);
-		
-		// Expectations.
-		$this->_api_connector->expectOnce('subscribersGetIsSubscribed', array($member_data['email'], $list_id));
-		
-		// Return values.
-		$this->_api_connector->setReturnValue('subscribersGetIsSubscribed', $api_result);
-		
-		// Tests.
-		$this->assertIdentical(FALSE, $this->_model->get_member_is_subscribed_to_mailing_list($member_data, $list_id));
+		$this->assertIdentical(FALSE, $this->_model->get_mailing_list_by_id($list_id));
 	}
 	
 	
 	
-	/* --------------------------------------------------------------
-	 * OBSOLETE TESTS
-	 * --------------------------------------------------------------
-	 * The methods referenced by these methods have since been made
-	 * private. The tests are included here for convenience, in case
-	 * they are required for future testing and debugging.
-	 * ------------------------------------------------------------ */
-	
-	public function xtest_validate_api_response__valid()
-	{
-		// Dummy values.
-		$api_response = array(
-			'anyType' => array('List' => array('ListID' => '123456', 'Name' => 'List Name'))
-		);
-		
-		// Tests. If no exception is thrown, we're good.
-		$this->assertIdentical(TRUE, $this->_model->validate_api_response($api_response), 'List');
-	}
 	
 	
-	public function xtest_validate_api_response__missing_root_node()
-	{
-		// Dummy values.
-		$root_node = 'ROOT_NODE';
-		$api_response = array('anyType' => array('List' => array('ListID' => '123456', 'Name' => 'List Name')));
-		
-		// Tests.
-		try
-		{
-			$this->_model->validate_api_response($api_response, $root_node);
-			$this->fail('Expected exception when validating API response.');
-		}
-		catch (Exception $e)
-		{
-			$this->assertIdentical(0, $e->getCode());
-			$this->assertPattern('/' .$root_node .'/', $e->getMessage());
-		}
-	}
-	
-	
-	public function xtest_validate_api_response__invalid_structure()
-	{
-		// Dummy values.
-		$root_node		= 'ROOT_NODE';
-		$api_response	= array('anyType' => array('NodeId' => 'NODE_ID', 'NodeName' => 'NODE_NAME'));
-		
-		// Tests.
-		try
-		{
-			$this->_model->validate_api_response($api_response, $root_node);
-			$this->fail('Expected exception when validating API response.');
-		}
-		catch (Exception $e)
-		{
-			$this->assertIdentical(0, $e->getCode());
-			$this->assertPattern('/' .$root_node .'/', $e->getMessage());
-		}
-	}
-	
-	
-	public function xtest_validate_api_response__unknown_error()
-	{
-		// Dummy values.
-		$api_response = array();
-		
-		// Tests.
-		try
-		{
-			$this->_model->validate_api_response($api_response);
-			$this->fail('Expected exception when validating API response.');
-		}
-		catch (Exception $e)
-		{
-			$this->assertIdentical(0, $e->getCode());
-		}
-	}
-	
-	
-	public function xtest_validate_api_response__known_error()
-	{
-		// Dummy values.
-		$error_code 	= 100;
-		$error_message	= 'ERROR_MESSAGE';
-		
-		$api_response = array(
-			'anyType' => array(
-				'Code'		=> $error_code,
-				'Message'	=> $error_message
-			)
-		);
-		
-		// Tests.
-		try
-		{
-			$this->_model->validate_api_response($api_response);
-		}
-		catch (Exception $e)
-		{
-			$this->assertIdentical($error_code, $e->getCode());
-			$this->assertIdentical($error_message, $e->getMessage());
-		}
-	}
-	
-	
-	public function xtest_fix_api_response__no_fix_required()
-	{
-		// Dummy values.
-		$root_node = 'Root';
-		
-		$api_response = array(
-			'anyType' => array(
-				$root_node => array(
-					array('NodeId' => 'NODE_ID', 'NodeName' => 'NODE_NAME'),
-					array('NodeId' => 'NODE_ID', 'NodeName' => 'NODE_NAME')
-				)
-			)
-		);
-		
-		// Tests.
-		$this->assertIdentical($api_response, $this->_model->fix_api_response($api_response, $root_node));
-	}
-	
-	
-	public function xtest_fix_api_response__fix_required()
-	{
-		// Dummy values.
-		$root_node = 'Root';
-		
-		$api_response = array('anyType' => array($root_node => array('NodeId' => 'NODE_ID', 'NodeName' => 'NODE_NAME')));
-		
-		$fixed_response = array(
-			'anyType' => array(
-				$root_node => array(array('NodeId' => 'NODE_ID', 'NodeName' => 'NODE_NAME'))
-			)
-		);
-		
-		// Tests.
-		$this->assertIdentical($fixed_response, $this->_model->fix_api_response($api_response, $root_node));
-	}
 	
 }
 

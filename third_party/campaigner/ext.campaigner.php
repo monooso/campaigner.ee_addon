@@ -9,13 +9,23 @@
  */
 
 require_once PATH_THIRD .'campaigner/classes/campaigner_api_error' .EXT;
-require_once PATH_THIRD .'campaigner/libraries/CMBase' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
 
 class Campaigner_ext {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES
 	 * ------------------------------------------------------------ */
+
+	/**
+	  * API connector.
+	  *
+	  * @access	private
+	  * @var	Campaigner_api_connector
+	  */
+	private $_connector;
 	
 	/**
 	 * ExpressionEngine object reference.
@@ -120,23 +130,16 @@ class Campaigner_ext {
 		$this->version		= $model->get_package_version();
 		
 		// Is the extension installed?
-		if ($model->get_installed_extension_version())
+		if ( ! $model->get_installed_extension_version())
 		{
-			// Load the settings from the database, and update them with any input data.
-			$this->settings = $model->update_extension_settings_from_input($model->get_extension_settings());
-			
-			// If the API key has been set, initialise the API connector.
-			if ($this->settings->get_api_key())
-			{
-				$model->set_api_connector(new CampaignMonitor(
-					$this->settings->get_api_key(),		// API key.
-					NULL,								// Client ID.
-					NULL,								// Campaign ID.
-					NULL,								// List ID.
-					'soap'								// Method.
-				));
-			}
+			return;
 		}
+
+		// Load the settings from the database, and update them with any input data.
+		$this->settings = $model->update_extension_settings_from_input($model->get_extension_settings());
+
+		// Retrieve the API connector.
+		$this->_connector = $model->get_api_connector();
 	}
 	
 	
@@ -161,6 +164,25 @@ class Campaigner_ext {
 	public function disable_extension()
 	{
 		$this->_ee->campaigner_model->disable_extension();
+	}
+
+
+	/**
+	 * Displays the 'error message' view.
+	 *
+	 * @access	public
+	 * @param	string		$error_message		The error message.
+ 	 * @param	string		$error_code			The error code.
+	 * @return	string
+	 */
+	public function display_error($error_message = '', $error_code = '')
+	{
+		$view_vars = array(
+			'error_code'	=> $error_code,
+			'error_message'	=> $error_message ? $error_message : $this->_ee->lang->line('error__unknown_error')
+		);
+
+		return $this->_ee->load->view('_error', $view_vars, TRUE);
 	}
 	
 	
@@ -208,7 +230,20 @@ class Campaigner_ext {
 			return $this->display_settings_base();
 		}
 		
-		// Handle AJAX requests.
+		/**
+		 * Handle AJAX requests. Both types of AJAX request require
+		 * valid API connector, so we perform that check here.
+		 */
+
+		if ( ! $this->_connector)
+		{
+			$this->_ee->output->send_ajax_response(
+				$this->display_error($this->_ee->lang->line('error__missing_api_connector'))
+			);
+
+			return;
+		}
+
 		switch (strtolower($this->_ee->input->get('request')))
 		{
 			case 'get_clients':
@@ -291,7 +326,8 @@ class Campaigner_ext {
 	
 	
 	/**
-	 * Displays the "clients" settings form fragment.
+	 * Displays the "clients" settings form fragment. Should only ever be called from the
+	 * display_settings method, which takes care of testing for a valid API connector.
 	 *
 	 * @access	public
 	 * @return	string
@@ -301,29 +337,24 @@ class Campaigner_ext {
 		try
 		{
 			$view_vars = array(
-				'clients'	=> $this->_ee->campaigner_model->get_clients_from_api(),
+				'clients'	=> $this->_connector->get_clients(),
 				'settings'	=> $this->settings
-			);
-			
+			);	
+
 			$view_name = '_clients';
+			return $this->_ee->load->view($view_name, $view_vars, TRUE);
+
 		}
-		catch (Exception $e)
+		catch (Campaigner_api_exception $e)
 		{
-			// Something went wrong with the API call.
-			$view_vars = array('api_error' => new Campaigner_api_error(array(
-				'code'		=> $e->getCode(),
-				'message'	=> $e->getMessage()
-			)));
-			
-			$view_name = '_api_error';
+			return $this->display_error($e->getMessage(), $e->getCode());
 		}
-		
-		return $this->_ee->load->view($view_name, $view_vars, TRUE);
 	}
 	
 	
 	/**
-	 * Displays the "mailing lists" settings form fragment.
+	 * Displays the "mailing lists" settings form fragment. Should only ever be called from
+	 * the display_settings method, which takes care of testing for a valid API connector.
 	 *
 	 * @access	public
 	 * @return	string
@@ -333,60 +364,67 @@ class Campaigner_ext {
 		// Shortcut.
 		$model = $this->_ee->campaigner_model;
 		
+		// Retrieve all the available mailing lists from the API.
 		try
 		{
-			// Retrieve all the available mailing lists from the API.
-			$mailing_lists = $model->get_mailing_lists_from_api($this->settings->get_client_id());
+			$lists = $this->_connector->get_client_lists($this->settings->get_client_id());
+		}
+		catch (Campaigner_api_exception $e)
+		{
+			return $this->display_error($e->getMessage(), $e->getCode());
+		}
 			
-			// Loop through the mailing lists. If we have settings for a list, make a note of them.
-			foreach ($mailing_lists AS $mailing_list)
+		// Loop through the mailing lists. If we have settings for a list, make a note of them.
+		foreach ($lists AS $list)
+		{
+			// If this list has not been previously saved, we're done.
+			if ( ! ($saved_list = $this->settings->get_mailing_list_by_id($list->get_list_id())))
 			{
-				if (($saved_mailing_list = $this->settings->get_mailing_list_by_id($mailing_list->get_list_id())))
+				continue;
+			}
+
+			// Restore the saved list settings.
+			$list->set_active(TRUE);
+			$list->set_trigger_field($saved_list->get_trigger_field());
+			$list->set_trigger_value($saved_list->get_trigger_value());
+
+			// If this list has no custom fields, we're done.
+			if ( ! ($fields = $list->get_custom_fields()))
+			{
+				continue;
+			}
+
+			// Restore the saved custom field settings.
+			foreach ($fields AS $field)
+			{
+				if (($saved_field = $saved_list->get_custom_field_by_cm_key($field->get_cm_key())))
 				{
-					$mailing_list->set_active(TRUE);
-					$mailing_list->set_trigger_field($saved_mailing_list->get_trigger_field());
-					$mailing_list->set_trigger_value($saved_mailing_list->get_trigger_value());
-					
-					// Custom fields.
-					if (($custom_fields = $mailing_list->get_custom_fields()))
-					{
-						foreach ($custom_fields AS $custom_field)
-						{
-							if (($saved_custom_field = $saved_mailing_list->get_custom_field_by_cm_key($custom_field->get_cm_key())))
-							{
-								$custom_field->set_member_field_id($saved_custom_field->get_member_field_id());
-							}
-						}
-					}
+					$field->set_member_field_id($saved_field->get_member_field_id());
 				}
 			}
+		}
 			
-			// Retrieve the member fields.
-			$member_fields = $model->get_member_fields();
+		// Retrieve the member fields.
+		$member_fields = $model->get_member_fields();
 			
-			// Prepare the member fields data for use in a dropdown.
-			$member_fields_dd_data = array();
+		// Prepare the member fields data for use in a dropdown.
+		$member_fields_dd_data = array();
 
-			foreach ($member_fields AS $member_field)
-			{
-				$member_fields_dd_data[$member_field->get_id()] = $member_field->get_label();
-			}
-			
-			// Define the view variables.
-			$view_vars = array(
-				'mailing_lists'			=> $mailing_lists,
-				'member_fields'			=> $member_fields,
-				'member_fields_dd_data'	=> $member_fields_dd_data,
-				'settings'				=> $this->settings
-			);
-		
-			$view_name = '_mailing_lists';
-		}
-		catch (Exception $e)
+		foreach ($member_fields AS $member_field)
 		{
-			$view_vars = array('api_error' => new Campaigner_api_error(array('code' => $e->getCode(), 'message' => $e->getMessage())));
-			$view_name = '_api_error';
+			$member_fields_dd_data[$member_field->get_id()] = $member_field->get_label();
 		}
+			
+		// Define the view variables.
+		$view_vars = array(
+			'mailing_lists'			=> $lists,
+			'member_fields'			=> $member_fields,
+			'member_fields_dd_data'	=> $member_fields_dd_data,
+			'settings'				=> $this->settings
+		);
+		
+		$view_name = '_mailing_lists';
+		
 		
 		return $this->_ee->load->view($view_name, $view_vars, TRUE);
 	}
@@ -459,12 +497,12 @@ class Campaigner_ext {
 	 * Updates the extension.
 	 *
 	 * @access	public
-	 * @param	string		$current_version	The current version.
+	 * @param	string		$installed_version		The installed version.
 	 * @return	bool
 	 */
-	public function update_extension($current_version = '')
+	public function update_extension($installed_version = '')
 	{
-		return $this->_ee->campaigner_model->update_extension($current_version, $this->version);
+		return $this->_ee->campaigner_model->update_extension($installed_version, $this->version);
 	}
 	
 	

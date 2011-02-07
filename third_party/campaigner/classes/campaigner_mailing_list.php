@@ -216,6 +216,10 @@ class Campaigner_mailing_list {
 	{
 		$this->_active 			= FALSE;
 		$this->_custom_fields	= array();
+		$this->_list_id 		= '';
+		$this->_list_name		= '';
+		$this->_trigger_field	= '';
+		$this->_trigger_value	= '';
 		
 		return $this;
 	}
