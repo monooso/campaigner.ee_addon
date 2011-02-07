@@ -8,7 +8,7 @@
  * @package			: Campaigner
  */
 
-require_once dirname(__FILE__).'/mock.base_classes.php';
+require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.base_classes.php';
 
 class Mock_CS_REST_General extends Mock_CS_REST_Wrapper_Base {
 	
