@@ -649,7 +649,9 @@ class Campaigner_model extends CI_Model {
 	public function get_member_is_subscribed_to_mailing_list(Array $member_data, $list_id)
 	{
 		$api_result = $this->make_api_call('subscribersGetIsSubscribed', array($member_data['email'], $list_id));
-		return (is_string($api_result) && strtolower($api_result) == 'true');
+
+		return ((is_string($api_result) && strtolower($api_result) == 'true')
+			OR (is_array($api_result) && array_key_exists('anyType', $api_result) && strtolower($api_result['anyType']) == 'true'));
 	}
 	
 	
