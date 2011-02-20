@@ -50,9 +50,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	{
 		parent::setUp();
 		
-		Mock::generate('Mock_CampaignMonitor', 'CampaignMonitor');
+		Mock::generate('Mock_CampaignMonitor', get_class($this) .'_mock_api_connector');
 		
-		$this->_api_connector	= new CampaignMonitor();
+		$this->_api_connector	= $this->_get_mock('api_connector');
 		$this->_model 			= new Campaigner_model();
 	}
 	

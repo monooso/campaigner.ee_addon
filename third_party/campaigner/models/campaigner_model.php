@@ -993,10 +993,10 @@ class Campaigner_model extends CI_Model {
 	 * Sets the API connector object.
 	 *
 	 * @access	public
-	 * @param	CampaignMonitor		$api_connector		The API connector object.
+	 * @param	CampaignMonitor		$api_connector		The API connector object. No argument hinting, to help with testing. Not a great solution.
 	 * @return	void
 	 */
-	public function set_api_connector(CampaignMonitor $api_connector)
+	public function set_api_connector($api_connector)
 	{
 		$this->_api_connector = $api_connector;
 	}
