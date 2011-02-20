@@ -104,13 +104,6 @@ class Campaigner_ext {
 	{
 		$this->_ee =& get_instance();
 		
-		if( ! class_exists('EE_Logger') )
-		{
-		   require APPPATH . 'libraries/Logger' . EXT;
-		}
-
-		$this->_ee->logger = new EE_Logger;
-		
 		// Load the model.
 		$this->_ee->load->add_package_path(PATH_THIRD .'campaigner/');
 		$this->_ee->load->model('campaigner_model');
