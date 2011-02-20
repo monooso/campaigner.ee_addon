@@ -8,7 +8,6 @@
  * @package			: Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_api_error' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;

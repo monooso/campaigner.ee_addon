@@ -9,7 +9,6 @@
  * @version 		: 3.0.2
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_api_error' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_error_log_entry' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
