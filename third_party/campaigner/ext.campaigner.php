@@ -116,7 +116,7 @@ class Campaigner_ext {
 		
 		// Set the instance properties.
 		$this->description	= $this->_ee->lang->line('extension_description');
-		$this->docs_url		= 'http://experienceinternet.co.uk/software/campaigner/';
+		$this->docs_url		= $model->get_docs_url();
 		$this->name			= $this->_ee->lang->line('extension_name');
 		$this->settings		= $settings;
 		$this->version		= $model->get_package_version();

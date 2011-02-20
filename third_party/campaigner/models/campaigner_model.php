@@ -373,6 +373,18 @@ class Campaigner_model extends CI_Model {
 	
 	
 	/**
+	 * Returns the documentation URL.
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function get_docs_url()
+	{
+		return 'http://experienceinternet.co.uk/software/campaigner/docs/';
+	}
+	
+	
+	/**
 	 * Returns the full error log from the database.
 	 *
 	 * @access	public
