@@ -867,6 +867,20 @@ class Campaigner_model extends CI_Model {
 		
 		return (bool) $db->affected_rows();
 	}
+
+
+	/**
+	 * Subscribes the specified member to the configured mailing lists.
+	 *
+	 * @access	public
+	 * @param	int|string		$member_id		The member ID.
+	 * @param	bool			$update			Update a member's existing subscription preferences?
+	 * @return	void
+	 */
+	public function subscribe_member($member_id, $update = FALSE)
+	{
+
+	}
 	
 	
 	/**
@@ -993,6 +1007,19 @@ class Campaigner_model extends CI_Model {
 		return $settings;
 	}
 
+
+	/**
+	 * Updates the specified member's subscriptions. Convenience wrapper for the `subscribe_member`
+	 * method, with the `update` flag set to TRUE.
+	 *
+	 * @access	public
+	 * @param	int|string		$member_id		The member ID.
+	 * @return	void
+	 */
+	public function update_member_subscriptions($member_id)
+	{
+		$this->subscribe_member($member_id, TRUE);
+	}
 }
 
 

@@ -591,7 +591,7 @@ class Campaigner_ext {
 	 */
 	public function on_user_edit_end($member_id, Array $member_data, Array $member_custom_data)
 	{
-		$this->_ee->campaigner_model->subscribe_member($member_id, TRUE);
+		$this->_ee->campaigner_model->update_member_subscriptions($member_id);
 	}
 	
 	
