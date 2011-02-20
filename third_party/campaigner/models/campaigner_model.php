@@ -466,7 +466,7 @@ class Campaigner_model extends CI_Model {
 			->get_where('campaigner_mailing_lists', array('list_id' => $list_id, 'site_id' => $site_id), 1);
 		
 		return $db_list->num_rows()
-			? $this->convert_mailing_list_row_to_object($db_list->row_array())
+			? new Campaigner_mailing_list($db_list->row_array())
 			: FALSE;
 	}
 	
@@ -488,7 +488,7 @@ class Campaigner_model extends CI_Model {
 		
 		foreach ($db_mailing_lists->result_array() AS $db_mailing_list)
 		{
-			$mailing_lists[] = $this->convert_mailing_list_row_to_object($db_mailing_list);
+			$mailing_lists[] = new Campaigner_mailing_list($db_mailing_list);
 		}
 		
 		return $mailing_lists;
