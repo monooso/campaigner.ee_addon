@@ -500,10 +500,9 @@ class Campaigner_model extends CI_Model {
 	 *
 	 * @access	public
 	 * @param	int|string		$member_id		The member ID.
-	 * @param	string			$list_id		The list ID.
 	 * @return	Campaigner_subscriber
 	 */
-	public function get_member_as_subscriber($member_id, $list_id)
+	public function get_member_as_subscriber($member_id)
 	{
 		$member_data = $this->get_member_by_id($member_id);
 
