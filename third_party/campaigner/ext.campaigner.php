@@ -473,10 +473,6 @@ class Campaigner_ext {
 				return $this->display_error_log();
 				break;
 				
-			case 'help':
-				return $this->display_help();
-				break;
-			
 			case 'settings':
 			default:
 				return $this->display_settings();
