@@ -301,35 +301,6 @@ class Campaigner_model extends CI_Model {
 
 
 	/**
-	 * Converts a mailing list database row to a Camapigner_mailing_list object.
-	 *
-	 * @access	public
-	 * @param	array 		$row		The database row.
-	 * @return	Campaigner_mailing_list
-	 */
-	public function convert_mailing_list_row_to_object(Array $row)
-	{
-		$fields = array();
-		$fields_data = unserialize($row['custom_fields']);
-
-		if (is_array($fields_data))
-		{
-			foreach ($fields_data AS $field_data)
-			{
-				$fields[] = new Campaigner_custom_field($field_data);
-			}
-		}
-
-		return new Campaigner_mailing_list(array(
-			'custom_fields'		=> $fields,
-			'list_id'			=> array_key_exists('list_id', $row) ? $row['list_id'] : '',
-			'trigger_field'		=> array_key_exists('trigger_field', $row) ? $row['trigger_field'] : '',
-			'trigger_value'		=> array_key_exists('trigger_value', $row) ? $row['trigger_value'] : ''
-		));
-	}
-	
-	
-	/**
 	 * Disables the extension.
 	 *
 	 * @access	public
@@ -431,7 +402,7 @@ class Campaigner_model extends CI_Model {
 		if ( ! $this->_settings)
 		{
 			$this->_settings = $this->get_settings_from_db();
-			$this->_settings->set_mailing_lists($this->get_mailing_lists_from_db());
+			$this->_settings->set_mailing_lists($this->get_all_mailing_lists());
 		}
 		
 		return $this->_settings;
@@ -462,6 +433,30 @@ class Campaigner_model extends CI_Model {
 
 
 	/**
+	 * Retrieves the mailing lists from the `campaigner_mailing_lists` table.
+	 *
+	 * @access	public
+	 * @return	array
+	 */
+	public function get_all_mailing_lists()
+	{
+		$db_mailing_lists = $this->_ee->db->get_where(
+			'campaigner_mailing_lists',
+			array('site_id' => $this->get_site_id())
+		);
+		
+		$mailing_lists = array();
+		
+		foreach ($db_mailing_lists->result_array() AS $db_mailing_list)
+		{
+			$mailing_lists[] = new Campaigner_mailing_list($db_mailing_list);
+		}
+		
+		return $mailing_lists;
+	}
+
+
+	/**
 	 * Retrieves the mailing list with the specified ID. If no matching mailing
 	 * list is found, returns FALSE.
 	 *
@@ -482,30 +477,6 @@ class Campaigner_model extends CI_Model {
 			: FALSE;
 	}
 	
-	
-	/**
-	 * Retrieves the mailing lists from the `campaigner_mailing_lists` table.
-	 *
-	 * @access	public
-	 * @return	array
-	 */
-	public function get_mailing_lists_from_db()
-	{
-		$db_mailing_lists = $this->_ee->db->get_where(
-			'campaigner_mailing_lists',
-			array('site_id' => $this->get_site_id())
-		);
-		
-		$mailing_lists = array();
-		
-		foreach ($db_mailing_lists->result_array() AS $db_mailing_list)
-		{
-			$mailing_lists[] = new Campaigner_mailing_list($db_mailing_list);
-		}
-		
-		return $mailing_lists;
-	}
-
 
 	/**
 	 * Returns a Campaigner_subscriber object for the specified member and mailing list.
@@ -614,7 +585,7 @@ class Campaigner_model extends CI_Model {
 	public function get_member_subscribe_lists($member_id)
 	{
 		if ( ! ($member_data = $this->get_member_data($member_id))
-			OR ! ($lists = $this->get_mailing_lists_from_db()))
+			OR ! ($lists = $this->get_all_mailing_lists()))
 		{
 			return array();
 		}

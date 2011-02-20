@@ -22,11 +22,14 @@ class Mock_campaigner_model {
 	public function activate_extension_settings_table() {}
 	public function disable_extension() {}
 	public function get_api_connector() {}
+	public function get_docs_url() {}
 	public function get_error_log() {}
 	public function get_extension_class() {}
 	public function get_extension_settings() {}
 	public function get_installed_extension_version() {}
-	public function get_mailing_lists_from_db() {}
+	public function get_all_mailing_lists() {}
+	public function get_mailing_list_by_id() {}
+	public function get_member_as_subscriber($member_id) {}
 	public function get_member_by_id($member_id) {}
 	public function get_member_fields() {}
 	public function get_member_subscribe_lists($member_id) {}
@@ -40,10 +43,12 @@ class Mock_campaigner_model {
 	public function save_extension_settings($settings) {}
 	public function save_mailing_lists_to_db($settings) {}
 	public function save_settings_to_db($settings) {}
-	public function update_basic_settings_from_input($settings) {}
+	public function subscribe_member($member_id) {}
+	public function update_basic_settings_from_input(Campaigner_settings $settings) {}
 	public function update_extension($installed_version = '', $package_version = '') {}
-	public function update_extension_settings_from_input($settings) {}
-	public function update_mailing_list_settings_from_input($settings) {}
+	public function update_extension_settings_from_input(Campaigner_settings $settings) {}
+	public function update_mailing_list_settings_from_input(Campaigner_settings $settings) {}
+	public function update_member_subscriptions($member_id) {}
 	
 }
 
