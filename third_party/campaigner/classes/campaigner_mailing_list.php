@@ -92,18 +92,24 @@ class Campaigner_mailing_list {
 			 * array, and creating the necessary Campaigner_custom_field objects.
 			 */
 
-			if ($property == 'custom_fields' && is_string($property))
+			if ($property == 'custom_fields' && ! is_array($value))
 			{
-				$fields_data	= unserialize($value);
-				$value			= array();
+				$custom_fields = array();
 
-				if (is_array($fields_data))
+				if (is_string($value))
 				{
-					foreach ($fields_data AS $field_data)
+					$fields_data = unserialize($value);
+
+					if (is_array($fields_data))
 					{
-						$value[] = new Campaigner_custom_field($field_data);
+						foreach ($fields_data AS $field_data)
+						{
+							$custom_fields[] = new Campaigner_custom_field($field_data);
+						}
 					}
 				}
+
+				$value = $custom_fields;
 			}
 
 			$method_name = 'set_' .$property;

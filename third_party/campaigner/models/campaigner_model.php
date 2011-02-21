@@ -14,6 +14,10 @@ require_once PATH_THIRD .'campaigner/classes/campaigner_error_log_entry' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 
+require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_clients' .EXT;
+require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_general' .EXT;
+require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_lists' .EXT;
+
 require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
 require_once PATH_THIRD .'campaigner/helpers/EI_number_helper' .EXT;
 require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
@@ -318,6 +322,89 @@ class Campaigner_model extends CI_Model {
 
 
 	/**
+	 * Returns an instance of the CM 'clients' API class. Used by the API connector
+	 * as a rather cumbersome factory, essentially. It will suffice for now.
+	 *
+	 * @access	public
+	 * @param	string		$client_id		The client ID.
+	 * @return	CS_REST_Clients|FALSE
+	 */
+	public function get_api_class_clients($client_id = '')
+	{
+		// Get out early.
+		if ( ! $client_id OR ! is_string($client_id))
+		{
+			return FALSE;
+		}
+
+		$settings = $this->get_extension_settings();
+
+		/**
+		 * Note that this method should only ever be called from
+		 * the API connector object, which wouldn't exist if the
+		 * API key wasn't set. Still, you can't be too careful.
+		 */
+
+		return $settings->get_api_key()
+			? new CS_REST_Clients($client_id, $settings->get_api_key())
+			: FALSE;
+	}
+
+
+	/**
+	 * Returns an instance of the CM 'general' API class. Used by the API connector
+	 * as a rather cumbersome factory, essentially. It will suffice for now.
+	 *
+	 * @access	public
+	 * @return	CS_REST_General|FALSE
+	 */
+	public function get_api_class_general()
+	{
+		$settings = $this->get_extension_settings();
+
+		/**
+		 * Note that this method should only ever be called from
+		 * the API connector object, which wouldn't exist if the
+		 * API key wasn't set. Still, you can't be too careful.
+		 */
+
+		return $settings->get_api_key()
+			? new CS_REST_General($settings->get_api_key())
+			: FALSE;
+	}
+
+
+	/**
+	 * Returns an instance of the CM 'lists' API class. Used by the API connector
+	 * as a rather cumbersome factory, essentially. It will suffice for now.
+	 *
+	 * @access	public
+	 * @param	string		$list_id		The list ID.
+	 * @return	CS_REST_Clients|FALSE
+	 */
+	public function get_api_class_lists($list_id = '')
+	{
+		// Get out early.
+		if ( ! $list_id OR ! is_string($list_id))
+		{
+			return FALSE;
+		}
+
+		$settings = $this->get_extension_settings();
+
+		/**
+		 * Note that this method should only ever be called from
+		 * the API connector object, which wouldn't exist if the
+		 * API key wasn't set. Still, you can't be too careful.
+		 */
+
+		return $settings->get_api_key()
+			? new CS_REST_Lists($list_id, $settings->get_api_key())
+			: FALSE;
+	}
+
+
+	/**
 	 * Returns an API connector. If the API key has not been saved, returns FALSE.
 	 *
 	 * @access	public
@@ -339,7 +426,7 @@ class Campaigner_model extends CI_Model {
 		 * based on the extension settings.
 		 */
 
-		return new Campaigner_cm_api_connector($this->_settings->get_api_key());
+		return new Campaigner_cm_api_connector($this->_settings->get_api_key(), $this);
 	}
 	
 	
@@ -714,15 +801,15 @@ class Campaigner_model extends CI_Model {
 	 * Writes an error to the error log.
 	 *
 	 * @access	public
-	 * @param	Campaigner_api_error	$error		The error to log.
+	 * @param	Campaigner_exception	$error		The error to log.
 	 * @return	void
 	 */
-	public function log_error(Campaigner_api_error $error)
+	public function log_error(Campaigner_exception $error)
 	{
 		$insert_data = array(
-			'error_code'	=> $error->get_code(),
+			'error_code'	=> $error->getCode(),
 			'error_date'	=> time(),
-			'error_message'	=> $error->get_message(),
+			'error_message'	=> $error->getMessage(),
 			'site_id'		=> $this->get_site_id()
 		);
 		

@@ -11,7 +11,7 @@
 require_once PATH_THIRD .'campaigner/classes/campaigner_api_connector' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_client' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
-require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_general' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
 
 class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	
@@ -20,14 +20,13 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * Campaign Monitor API connector classes, from the CreateSend-PHP library.
+	 * Factory.
 	 *
 	 * @access	private
 	 * @var		object
 	 */
-	private $_cm_api_clients;
-	private $_cm_api_general;
-	private $_cm_api_lists;
+	private $_factory;
+
 	
 	
 	/* --------------------------------------------------------------
@@ -39,10 +38,12 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 *
 	 * @access	public
 	 * @param	string		$api_key		The API key.
+	 * @param	object		$factory		Factory used to create the Campaign Monitor API classes, as required.
 	 * @return	void
 	 */
-	public function __construct($api_key)
+	public function __construct($api_key, $factory)
 	{
+		$this->_factory = $factory;
 		parent::__construct($api_key);
 	}
 
@@ -70,12 +71,8 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 */
 	public function get_clients()
 	{
-		if ( ! $this->_cm_api_general)
-		{
-			$this->_cm_api_general = new CS_REST_General($this->_api_key);
-		}
-
-		$result = $this->_cm_api_general->get_clients();
+		$connector	= $this->_factory->get_api_class_general();
+		$result		= $connector->get_clients();
 
 		if ( ! $result->was_successful())
 		{
@@ -106,7 +103,26 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 */
 	public function get_client_lists($client_id, $include_fields = FALSE)
 	{
+		$connector	= $this->_factory->get_api_class_clients($client_id);
+		$result		= $connector->get_lists();
 		
+		if ( ! $result->was_successful())
+		{
+			throw new Campaigner_api_exception($result->response->Message, $result->response->Code);
+		}
+
+		$lists = array();
+
+		foreach ($result->response AS $cm_list)
+		{
+			$lists[] = new Campaigner_mailing_list(array(
+				'custom_fields'	=> $include_fields ? $this->get_list_fields($cm_list->ListID) : array(),
+				'list_id'		=> $cm_list->ListID,
+				'list_name'		=> $cm_list->Name
+			));
+		}
+
+		return $lists;
 	}
 	
 	
@@ -133,7 +149,25 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 */
 	public function get_list_fields($list_id)
 	{
+		$connector	= $this->_factory->get_api_class_lists($list_id);
+		$result		= $connector->get_custom_fields();
 		
+		if ( ! $result->was_successful())
+		{
+			throw new Campaigner_api_exception($result->response->Message, $result->response->Code);
+		}
+
+		$fields = array();
+
+		foreach ($result->response AS $cm_field)
+		{
+			$fields[] = new Campaigner_custom_field(array(
+				'cm_key'	=> $cm_field->Key,
+				'label'		=> $cm_field->FieldName
+			));
+		}
+
+		return $fields;
 	}
 	
 	
@@ -150,22 +184,6 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 		
 	}
 
-
-	/**
-	 * Sets mock API connector classes. Used for testing.
-	 * 
-	 * @access	public
-	 * @param	array		$connectors		The mock API connector classes.
-	 * @return	void
-	 */
-	public function set_mock_api_connectors(Array $connectors = array())
-	{
-		foreach ($connectors AS $key => $val)
-		{
-			$prop_name = '_' .$key;
-			$this->$prop_name = $val;		// No data validation, as this is just for testing.
-		}
-	}
 
 	/**
 	 * Updates the specified list subscriber.

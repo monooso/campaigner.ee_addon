@@ -418,10 +418,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			'site_id'		=> $site_id
 		);
 		
-		$api_error = new Campaigner_api_error(array(
-			'code'		=> $insert_data['error_code'],
-			'message'	=> $insert_data['error_message']
-		));
+		$api_error = new Campaigner_exception($insert_data['error_message'], $insert_data['error_code']);
 		
 		// Expectations.
 		$db->expectOnce('insert', array('campaigner_error_log', $insert_data));
@@ -766,7 +763,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_mailing_lists_from_db__success()
+	public function test_get_all_mailing_lists__success()
 	{
 		$db			= $this->_ee->db;
 		$db_query 	= $this->_get_mock('db_query');
@@ -822,11 +819,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$db->expectOnce('get_where', array('campaigner_mailing_lists', array('site_id' => $site_id)));
 		
 		// Run the test.
-		$this->assertIdentical($mailing_lists, $this->_model->get_mailing_lists_from_db());
+		$this->assertIdentical($mailing_lists, $this->_model->get_all_mailing_lists());
 	}
 	
 	
-	public function test_get_mailing_lists_from_db__no_mailing_lists()
+	public function test_get_all_mailing_lists__no_mailing_lists()
 	{
 		$db = $this->_ee->db;
 		$db_query = $this->_get_mock('db_query');
@@ -836,11 +833,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$db->setReturnReference('get_where', $db_query);
 		
 		// Run the test.
-		$this->assertIdentical(array(), $this->_model->get_mailing_lists_from_db());
+		$this->assertIdentical(array(), $this->_model->get_all_mailing_lists());
 	}
 	
 	
-	public function test_get_mailing_lists_from_db__no_custom_fields()
+	public function test_get_all_mailing_lists__no_custom_fields()
 	{
 		$db			= $this->_ee->db;
 		$db_query 	= $this->_get_mock('db_query');
@@ -872,7 +869,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$db->setReturnReference('get_where', $db_query);
 		
 		// Run the test.
-		$this->assertIdentical($mailing_lists, $this->_model->get_mailing_lists_from_db());
+		$this->assertIdentical($mailing_lists, $this->_model->get_all_mailing_lists());
 	}
 	
 	
@@ -1362,57 +1359,6 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		));
 
 		$this->assertIdentical($subscriber, $this->_model->get_member_as_subscriber($member_id, $list_id));
-	}
-
-
-	public function test_convert_mailing_list_row_to_object__success()
-	{
-		// Dummy values.
-		$fields_data 	= array();
-		$fields			= array();
-
-		for ($count = 1; $count <= 10; $count++)
-		{
-			$data 			= array('member_field_id' => 'm_field_id_' .$count, 'cm_key' => 'cm_key_' .$count);
-			$fields_data[]	= $data;
-			$fields[]		= new Campaigner_custom_field($data);
-		}
-
-		$list_row = array(
-			'custom_fields'		=> serialize($fields_data),
-			'list_id'			=> 'abc123',
-			'site_id'			=> '1',
-			'trigger_field'		=> 'm_field_id_10',
-			'trigger_value'		=> 'y'
-		);
-
-		$list_object = new Campaigner_mailing_list(array(
-			'custom_fields'		=> $fields,
-			'list_id'			=> $list_row['list_id'],
-			'trigger_field'		=> $list_row['trigger_field'],
-			'trigger_value'		=> $list_row['trigger_value']
-		));
-	
-		// Tests.
-		$this->assertIdentical($list_object, $this->_model->convert_mailing_list_row_to_object($list_row));
-	}
-
-
-	public function test_convert_mailing_row_to_object__missing_keys()
-	{
-		// Dummy values.
-		$list_row = array(
-			'custom_fields'		=> '',
-			'site_id'			=> '1',
-			'trigger_value'		=> 'y'
-		);
-
-		$list_object = new Campaigner_mailing_list(array(
-			'trigger_value'		=> $list_row['trigger_value']
-		));
-	
-		// Tests.
-		$this->assertIdentical($list_object, $this->_model->convert_mailing_list_row_to_object($list_row));
 	}
 
 

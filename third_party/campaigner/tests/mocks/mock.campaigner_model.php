@@ -9,6 +9,9 @@
  * @package 	Campaigner
  */
 
+require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
+
 class Mock_campaigner_model {
 	
 	/* --------------------------------------------------------------
@@ -21,6 +24,9 @@ class Mock_campaigner_model {
 	public function activate_extension_register_hooks() {}
 	public function activate_extension_settings_table() {}
 	public function disable_extension() {}
+	public function get_api_class_clients($client_id = '') {}
+	public function get_api_class_general() {}
+	public function get_api_class_lists($list_id = '') {}
 	public function get_api_connector() {}
 	public function get_docs_url() {}
 	public function get_error_log() {}
@@ -39,7 +45,7 @@ class Mock_campaigner_model {
 	public function get_site_id() {}
 	public function get_support_url() {}
 	public function get_theme_url() {}
-	public function log_error(Campaigner_api_error $error) {}
+	public function log_error(Campaigner_exception $error) {}
 	public function save_extension_settings($settings) {}
 	public function save_mailing_lists_to_db($settings) {}
 	public function save_settings_to_db($settings) {}

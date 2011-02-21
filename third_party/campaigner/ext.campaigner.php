@@ -359,7 +359,7 @@ class Campaigner_ext {
 		// Retrieve all the available mailing lists from the API.
 		try
 		{
-			$lists = $this->_connector->get_client_lists($this->settings->get_client_id());
+			$lists = $this->_connector->get_client_lists($this->settings->get_client_id(), TRUE);
 		}
 		catch (Campaigner_api_exception $e)
 		{
