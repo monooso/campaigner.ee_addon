@@ -41,7 +41,7 @@ class Test_campaigner_subscriber_custom_data extends Testee_unit_test_case {
 		parent::setUp();
 		
 		$this->_props = array(
-			'id'	=> 'location',
+			'key'	=> '[location]',
 			'value'	=> 'Caerphilly'
 		);
 	}
