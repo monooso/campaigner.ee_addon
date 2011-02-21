@@ -480,6 +480,29 @@ class Campaigner_ext {
 		}
 	}
 	
+
+	/**
+	 * Subscribes the specified member to the configured mailing lists.
+	 *
+	 * @access	public
+	 * @param	int|string		$member_id		The member ID.
+	 * @return	void
+	 */
+	public function subscribe_member($member_id)
+	{
+		// Shortcuts.
+		$model = $this->_ee->campaigner_model;
+
+		// Retrieve the mailing lists to which the member should be subscribed.
+		$lists = $model->get_member_subscribe_lists($member_id);
+
+		foreach ($lists AS $list)
+		{
+			$subscriber = $model->get_member_as_subscriber($member_id, $list->get_list_id());
+			$this->_connector->add_list_subscriber($list->get_list_id(), $subscriber);
+		}
+	}
+
 	
 	/**
 	 * Updates the extension.
@@ -511,7 +534,7 @@ class Campaigner_ext {
 	 */
 	public function on_cp_members_member_create($member_id, Array $member_data)
 	{
-		$this->_ee->campaigner_model->subscribe_member($member_id);
+		$this->subscribe_member($member_id);
 	}
 	
 	
@@ -533,7 +556,7 @@ class Campaigner_ext {
 		
 		foreach ($member_ids AS $member_id)
 		{
-			$this->_ee->campaigner_model->subscribe_member($member_id);
+			$this->subscribe_member($member_id);
 		}
 	}
 	
@@ -555,7 +578,7 @@ class Campaigner_ext {
 			return;
 		}
 		
-		$this->_ee->campaigner_model->subscribe_member($member_id);
+		$this->subscribe_member($member_id);
 	}
 	
 	
@@ -575,7 +598,7 @@ class Campaigner_ext {
 			return;
 		}
 		
-		$this->_ee->campaigner_model->subscribe_member($member_id);
+		$this->subscribe_member($member_id);
 	}
 	
 	
@@ -613,7 +636,7 @@ class Campaigner_ext {
 			return;
 		}
 		
-		$this->_ee->campaigner_model->subscribe_member($member_id);
+		$this->subscribe_member($member_id);
 	}
 	
 }

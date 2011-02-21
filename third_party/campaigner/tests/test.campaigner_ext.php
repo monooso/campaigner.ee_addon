@@ -307,7 +307,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		);
 		
 		// Expectations.
-		$this->_connector->expectOnce('get_client_lists', array($this->_settings->get_client_id()));
+		$this->_connector->expectOnce('get_client_lists', array($this->_settings->get_client_id(), TRUE));
 		$loader->expectOnce('view', array('_mailing_lists', $view_vars, TRUE));
 		$model->expectOnce('get_member_fields');
 		
@@ -336,11 +336,56 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$this->_connector->throwOn('get_client_lists', $exception);
 		
 		// Expectations.
-		$this->_connector->expectOnce('get_client_lists', array($this->_settings->get_client_id()));
+		$this->_connector->expectOnce('get_client_lists', array($this->_settings->get_client_id(), TRUE));
 		$loader->expectOnce('view', array('_error', $view_vars, TRUE));
 
 		// Tests.
 		$this->_subject->display_settings_mailing_lists();
+	}
+
+
+	public function test__subscribe_member__success()
+	{
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id = 10;
+		$member_subscribe_lists = array(
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'abc123',
+				'list_name'	=> 'LIST A'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'cde456',
+				'list_name'	=> 'LIST B'
+			))
+		);
+
+		$subscriber = new Campaigner_subscriber(array(
+			'email'	=> 'me@here.com',
+			'name'	=> 'John Doe'
+		));
+
+		// Expectations.
+		$model->expectOnce('get_member_subscribe_lists', array($member_id));
+		$model->expectCallCount('get_member_as_subscriber', count($member_subscribe_lists));
+		$this->_connector->expectCallCount('add_list_subscriber', count($member_subscribe_lists));
+
+		$count = 0;
+		foreach ($member_subscribe_lists AS $list)
+		{
+			$model->expectAt($count, 'get_member_as_subscriber', array($member_id, $list->get_list_id()));
+			$this->_connector->expectAt($count, 'add_list_subscriber', array($list->get_list_id(), $subscriber));
+
+			$count++;
+		}
+
+		// Return values.
+		$model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
+		$model->setReturnValue('get_member_as_subscriber', $subscriber);
+
+		// Tests.
+		$this->_subject->subscribe_member($member_id);
 	}
 	
 	

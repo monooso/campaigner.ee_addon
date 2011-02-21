@@ -597,7 +597,7 @@ class Campaigner_model extends CI_Model {
 		// Create the basic subscriber object.
 		$subscriber = new Campaigner_subscriber(array(
 			'email'		=> $member_data['email'],
-			'name'		=> $member_data['screen_name']
+			'name'		=> utf8_decode($member_data['screen_name'])
 		));
 
 		// Add the custom field data.
@@ -609,7 +609,7 @@ class Campaigner_model extends CI_Model {
 				{
 					$subscriber->add_custom_data(new Campaigner_subscriber_custom_data(array(
 						'key'	=> $custom_field->get_cm_key(),
-						'value'	=> $member_data[$custom_field->get_member_field_id()]
+						'value'	=> utf8_decode($member_data[$custom_field->get_member_field_id()])
 					)));
 				}
 			}
@@ -719,7 +719,7 @@ class Campaigner_model extends CI_Model {
 		foreach ($lists AS $list)
 		{
 			// Check the trigger.
-			if ( ! $list->get_trigger_field() OR ! $list->get_trigger_value())
+			if ( ! $list->get_trigger_field())
 			{
 				$subscribe_lists[] = $list;
 				continue;
