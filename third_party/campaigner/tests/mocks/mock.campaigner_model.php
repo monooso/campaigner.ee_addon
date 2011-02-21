@@ -35,7 +35,7 @@ class Mock_campaigner_model {
 	public function get_installed_extension_version() {}
 	public function get_all_mailing_lists() {}
 	public function get_mailing_list_by_id() {}
-	public function get_member_as_subscriber($member_id) {}
+	public function get_member_as_subscriber($member_id, $list_id) {}
 	public function get_member_by_id($member_id) {}
 	public function get_member_fields() {}
 	public function get_member_subscribe_lists($member_id) {}
