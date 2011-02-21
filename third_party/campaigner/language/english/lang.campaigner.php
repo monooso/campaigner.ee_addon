@@ -13,8 +13,8 @@ $lang = array(
 /* --------------------------------------------------------------
  * EXTENSION : REQUIRED
  * ------------------------------------------------------------ */
-'extension_name'			=> 'Campaigner',
-'extension_description'		=> 'Effortlessly subscribe members of your site to one or more Campaign Monitor mailing lists.',
+'campaigner_extension_name'			=> 'Campaigner',
+'campaigner_extension_description'	=> 'Effortlessly subscribe members of your site to one or more Campaign Monitor mailing lists.',
 
 /* --------------------------------------------------------------
  * EXTENSION : NAVIGATION
@@ -60,12 +60,13 @@ $lang = array(
 'msg_missing_client_id'		=> 'Please select a client from the list.',
 
 /* --------------------------------------------------------------
- * API ERRORS
+ * ERRORS
  * ------------------------------------------------------------ */
 'hd_api_error'						=> 'API Error',
 'api_error_missing_root_preamble'	=> 'The Campaign Monitor API response is missing the root node: ',
 'api_error_preamble'				=> 'The Campaign Monitor API reported the following error: ',
 'api_error_unknown'					=> 'An unknown problem occurred when contacting the Campaign Monitor API.',
+'error_no_api_connector'			=> 'Unable to create API connector.',
 
 /* --------------------------------------------------------------
  * MEMBER FIELDS
