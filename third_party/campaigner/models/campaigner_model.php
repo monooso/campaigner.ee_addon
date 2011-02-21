@@ -570,16 +570,53 @@ class Campaigner_model extends CI_Model {
 	 *
 	 * @access	public
 	 * @param	int|string		$member_id		The member ID.
-	 * @return	Campaigner_subscriber
+	 * @param	string			$list_id		The list to which the member is being subscribed.
+	 * @return	Campaigner_subscriber|FALSE
 	 */
-	public function get_member_as_subscriber($member_id)
+	public function get_member_as_subscriber($member_id, $list_id)
 	{
-		$member_data = $this->get_member_by_id($member_id);
+		if ( ! $member_data = $this->get_member_by_id($member_id)
+			OR ! $list = $this->get_mailing_list_by_id($list_id))
+		{
+			return FALSE;
+		}
 
-		return new Campaigner_subscriber(array(
+		// Does this list have a trigger field?
+		if ($trigger_field = $list->get_trigger_field())
+		{
+			$trigger_value = $list->get_trigger_value();
+
+			if ( ! array_key_exists($trigger_field, $member_data)
+				OR $member_data[$trigger_field] != $trigger_value)
+			{
+				// The member does not want to subscribe to this list.
+				return FALSE;
+			}
+		}
+
+		// Create the basic subscriber object.
+		$subscriber = new Campaigner_subscriber(array(
 			'email'		=> $member_data['email'],
 			'name'		=> $member_data['screen_name']
 		));
+
+		// Add the custom field data.
+		if ($custom_fields = $list->get_custom_fields())
+		{
+			foreach ($custom_fields AS $custom_field)
+			{
+				if (array_key_exists($custom_field->get_member_field_id(), $member_data))
+				{
+					$subscriber->add_custom_data(new Campaigner_subscriber_custom_data(array(
+						'key'	=> $custom_field->get_cm_key(),
+						'value'	=> $member_data[$custom_field->get_member_field_id()]
+					)));
+				}
+			}
+		}
+
+
+		return $subscriber;
 	}
 	
 	

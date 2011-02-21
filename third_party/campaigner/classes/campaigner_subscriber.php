@@ -8,7 +8,7 @@
  * @package			: Campaigner
  */
 
-require_once dirname(__FILE__) .DIRECTORY_SEPARATOR .'campaigner_subscriber_custom_data' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber_custom_data' .EXT;
 
 class Campaigner_subscriber {
 	

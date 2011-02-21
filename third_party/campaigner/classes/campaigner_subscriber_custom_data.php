@@ -15,12 +15,12 @@ class Campaigner_subscriber_custom_data {
 	 * ------------------------------------------------------------ */
 	
 	/**
-	 * ID.
+	 * The Campaign Monitor custom field key.
 	 *
 	 * @access	private
 	 * @var		string
 	 */
-	private $_id;
+	private $_key;
 	
 	/**
 	 * Value.
@@ -59,14 +59,14 @@ class Campaigner_subscriber_custom_data {
 
 
 	/**
-	 * Returns the ID.
+	 * Returns the key.
 	 *
 	 * @access	public
 	 * @return	string
 	 */
-	public function get_id()
+	public function get_key()
 	{
-		return $this->_id;
+		return $this->_key;
 	}
 
 
@@ -90,7 +90,7 @@ class Campaigner_subscriber_custom_data {
 	 */
 	public function reset()
 	{
-		$this->_id 		= '';
+		$this->_key		= '';
 		$this->_value	= '';
 
 		return $this;
@@ -98,20 +98,20 @@ class Campaigner_subscriber_custom_data {
 	
 	
 	/**
-	 * Sets the ID.
+	 * Sets the key.
 	 *
 	 * @access	public
-	 * @param 	string		$id		The ID.
+	 * @param 	string		$key		The key.
 	 * @return	string
 	 */
-	public function set_id($id)
+	public function set_key($key)
 	{
-		if (is_string($id))
+		if (is_string($key))
 		{
-			$this->_id = $id;
+			$this->_key = $key;
 		}
 
-		return $this->get_id();
+		return $this->get_key();
 	}
 	
 	
@@ -142,7 +142,7 @@ class Campaigner_subscriber_custom_data {
 	public function to_array()
 	{
 		return array(
-			'id'	=> $this->get_id(),
+			'key'	=> $this->get_key(),
 			'value'	=> $this->get_value()
 		);
 	}
