@@ -375,7 +375,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		foreach ($member_subscribe_lists AS $list)
 		{
 			$model->expectAt($count, 'get_member_as_subscriber', array($member_id, $list->get_list_id()));
-			$this->_connector->expectAt($count, 'add_list_subscriber', array($list->get_list_id(), $subscriber));
+			$this->_connector->expectAt($count, 'add_list_subscriber', array($list->get_list_id(), $subscriber, FALSE));
 
 			$count++;
 		}
@@ -387,8 +387,197 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		// Tests.
 		$this->_subject->subscribe_member($member_id);
 	}
+
+
+	public function test__unsubscribe_member__success()
+	{
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id = 10;
+
+		// Retrieve all the mailing lists.
+		$mailing_lists = array(
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'list_a',
+				'list_name'	=> 'LIST A'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'list_b',
+				'list_name'	=> 'LIST B'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'list_c',
+				'list_name'	=> 'LIST C'
+			))
+		);
+
+		$model->expectOnce('get_all_mailing_lists');
+		$model->setReturnValue('get_all_mailing_lists', $mailing_lists);
+
+		// Retrieve the member information.
+		$email = 'me@here.com';
+
+		$member_data = array(
+			'email'		=> $email,
+			'member_id'	=> $member_id
+		);
+
+		$model->expectOnce('get_member_by_id', array($member_id));
+		$model->setReturnValue('get_member_by_id', $member_data);	
+
+		// For each mailing list, determine if the member is subscribed.
+		$this->_connector->expectCallCount('get_is_subscribed', count($mailing_lists));
+		$this->_connector->expectCallCount('remove_list_subscriber', ceil(count($mailing_lists) / 2));
+		$this->_connector->setReturnValue('remove_list_subscriber', TRUE);
+
+		$count = 0;
+		$remove_count = 0;
+
+		foreach ($mailing_lists AS $mailing_list)
+		{
+			$is_subscribed = (bool) $count % 2;
+
+			$this->_connector->expectAt($count, 'get_is_subscribed', array($mailing_list->get_list_id(), $email));
+			$this->_connector->setReturnValueAt($count, 'get_is_subscribed', $is_subscribed);
+
+			if ($is_subscribed)
+			{
+				// Unsubscribe the member.
+				$this->_connector->expectAt($remove_count++, 'remove_list_subscriber', array($mailing_list->get_list_id(), $email));
+			}
+
+			$count++;
+		}
+		
+		// Run the tests.
+		$this->_subject->unsubscribe_member($member_id);
+	}
+
+
+	public function test__unsubscribe_member__invalid_member_id()
+	{
+		// Shortcuts.
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id	= 0;
+		$message	= 'Invalid member ID.';
+
+		// Expectations and return values.
+		$this->_ee->lang->setReturnValue('line', $message, array('error_missing_or_invalid_member_id'));
+
+		$model->expectNever('get_all_mailing_lists');
+		$model->expectNever('get_member_by_id');
+
+		$this->_connector->expectNever('get_is_subscribed');
+		$this->_connector->expectNever('remove_list_subscriber');
+
+		// Run the tests.
+		$this->expectException(new Campaigner_exception($message));
+		$this->_subject->unsubscribe_member($member_id);
+	}
+
+
+	public function test__unsubscribe_member__unknown_member()
+	{
+		// Shortcuts.
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id		= 10;
+		$member_data	= array();
+		$message		= 'Unknown member';
+
+		// Expectations and return values.
+		$this->_ee->lang->setReturnValue('line', $message, array('error_unknown_member'));
+
+		$model->expectOnce('get_member_by_id');
+		$model->setReturnValue('get_member_by_id', $member_data);
+
+		$model->expectNever('get_all_mailing_lists');
+		$this->_connector->expectNever('get_is_subscribed');
+		$this->_connector->expectNever('remove_list_subscriber');
+
+		// Run the tests.
+		$this->expectException(new Campaigner_exception($message));
+		$this->_subject->unsubscribe_member($member_id);
+	}
+		
 	
+	public function test__unsubscribe_member__no_mailing_lists()
+	{
+		// Shortcuts.
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$email			= 'me@here.com';
+		$member_id		= 10;
+		$member_data = array(
+			'email'		=> $email,
+			'member_id'	=> $member_id
+		);
+
+		// Expectations and return values.
+		$model->expectOnce('get_member_by_id');
+		$model->setReturnValue('get_member_by_id', $member_data);
+
+		$model->expectOnce('get_all_mailing_lists');
+		$model->setReturnValue('get_all_mailing_lists', array());
+
+		$this->_connector->expectNever('get_is_subscribed');
+		$this->_connector->expectNever('remove_list_subscriber');
+
+		// Run the tests.
+		$this->_subject->unsubscribe_member($member_id);
+	}
+		
 	
+	public function test__unsubscribe_member__unable_to_unsubscribe()
+	{
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id = 10;
+		$message = 'Unable to unsubscribe member.';
+
+		// Retrieve all the mailing lists.
+		$mailing_lists = array(
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'list_a',
+				'list_name'	=> 'LIST A'
+			))
+		);
+
+		$model->expectOnce('get_all_mailing_lists');
+		$model->setReturnValue('get_all_mailing_lists', $mailing_lists);
+
+		// Retrieve the member information.
+		$email = 'me@here.com';
+
+		$member_data = array(
+			'email'		=> $email,
+			'member_id'	=> $member_id
+		);
+
+		$model->expectOnce('get_member_by_id', array($member_id));
+		$model->setReturnValue('get_member_by_id', $member_data);	
+
+		// Expectations and return values.
+		$this->_connector->expectOnce('get_is_subscribed');
+		$this->_connector->setReturnValue('get_is_subscribed', TRUE);
+
+		$this->_connector->expectOnce('remove_list_subscriber');
+		$this->_connector->setReturnValue('remove_list_subscriber', FALSE);
+
+		$this->_ee->lang->setReturnValue('line', $message, array('api_error_cannot_unsubscribe_member'));
+		
+		// Run the tests.
+		$this->expectException(new Campaigner_api_exception($message));
+		$this->_subject->unsubscribe_member($member_id);
+	}
+
+
 	public function xtest_on_cp_members_member_create__success()
 	{
 		// Shortcuts.
@@ -649,6 +838,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$this->_subject->on_member_member_register($member_data, $member_id);
 	}
 	
+
+
+
 }
 
 

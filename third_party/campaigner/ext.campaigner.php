@@ -8,9 +8,8 @@
  * @package			: Campaigner
  */
 
+require_once PATH_THIRD .'campaigner/helpers/EI_number_helper' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
 
 class Campaigner_ext {
 	
@@ -115,9 +114,9 @@ class Campaigner_ext {
 		$this->_ee->lang->loadfile('campaigner');
 		
 		// Set the instance properties.
-		$this->description	= $this->_ee->lang->line('extension_description');
+		$this->description	= $this->_ee->lang->line('campaigner_extension_description');
 		$this->docs_url		= $model->get_docs_url();
-		$this->name			= $this->_ee->lang->line('extension_name');
+		$this->name			= $this->_ee->lang->line('campaigner_extension_name');
 		$this->settings		= $settings;
 		$this->version		= $model->get_package_version();
 		
@@ -171,7 +170,7 @@ class Campaigner_ext {
 	{
 		$view_vars = array(
 			'error_code'	=> $error_code,
-			'error_message'	=> $error_message ? $error_message : $this->_ee->lang->line('error__unknown_error')
+			'error_message'	=> $error_message ? $error_message : $this->_ee->lang->line('error_unknown')
 		);
 
 		return $this->_ee->load->view('_error', $view_vars, TRUE);
@@ -193,7 +192,7 @@ class Campaigner_ext {
 		
 		// View variables.
 		$view_vars = array(
-			'cp_page_title'		=> $lang->line('extension_name'),
+			'cp_page_title'		=> $lang->line('campaigner_extension_name'),
 			'error_log'			=> $model->get_error_log()
 		);
 		
@@ -229,27 +228,27 @@ class Campaigner_ext {
 
 		if ( ! $this->_connector)
 		{
-			$this->_ee->output->send_ajax_response(
-				$this->display_error($this->_ee->lang->line('error__missing_api_connector'))
-			);
-
-			return;
+			$response = $this->display_error($this->_ee->lang->line('error_no_api_connector'));
 		}
-
-		switch (strtolower($this->_ee->input->get('request')))
+		else
 		{
-			case 'get_clients':
-				$this->_ee->output->send_ajax_response($this->display_settings_clients());
-				break;
+			switch (strtolower($this->_ee->input->get('request')))
+			{
+				case 'get_clients':
+					$response = $this->display_settings_clients();
+					break;
+					
+				case 'get_mailing_lists':
+					$response = $this->display_settings_mailing_lists();
+					break;
 				
-			case 'get_mailing_lists':
-				$this->_ee->output->send_ajax_response($this->display_settings_mailing_lists());
-				break;
-			
-			default:
-				// Unknown request. Do nothing.
-				break;
+				default:
+					$response = $this->display_error($this->_ee->lang->line('error_unknown_ajax_request'));
+					break;
+			}
 		}
+
+		$this->_ee->output->send_ajax_response($response);
 	}
 	
 	
@@ -271,7 +270,7 @@ class Campaigner_ext {
 		// View variables.
 		$view_vars = array(
 			'action_url'		=> 'C=addons_extensions' .AMP .'M=save_extension_settings',
-			'cp_page_title'		=> $lang->line('extension_name'),
+			'cp_page_title'		=> $lang->line('campaigner_extension_name'),
 			'hidden_fields'		=> array('file' => $lower_package_name),
 			'settings'			=> $this->settings		// Loaded in the constructor.
 		);
@@ -485,10 +484,11 @@ class Campaigner_ext {
 	 * Subscribes the specified member to the configured mailing lists.
 	 *
 	 * @access	public
-	 * @param	int|string		$member_id		The member ID.
+	 * @param	int|string		$member_id			The member ID.
+	 * @param	bool			$force_resubscribe	Should we forcibly resubscribe the member?
 	 * @return	void
 	 */
-	public function subscribe_member($member_id)
+	public function subscribe_member($member_id, $force_resubscribe = FALSE)
 	{
 		// Shortcuts.
 		$model = $this->_ee->campaigner_model;
@@ -499,7 +499,51 @@ class Campaigner_ext {
 		foreach ($lists AS $list)
 		{
 			$subscriber = $model->get_member_as_subscriber($member_id, $list->get_list_id());
-			$this->_connector->add_list_subscriber($list->get_list_id(), $subscriber);
+			$this->_connector->add_list_subscriber($list->get_list_id(), $subscriber, $force_resubscribe);
+		}
+	}
+
+
+	/**
+	 * Unsubscribes the specified member from all mailing lists.
+	 *
+	 * @access	public
+	 * @param	int|string		$member_id		The member ID.
+	 * @return	void
+	 */
+	public function unsubscribe_member($member_id)
+	{
+		// Get out early.
+		if ( ! valid_int($member_id, 1))
+		{
+			throw new Campaigner_exception($this->_ee->lang->line('error_missing_or_invalid_member_id'));
+		}
+
+		// Shortcuts.
+		$model = $this->_ee->campaigner_model;
+
+		// Retrieve the member information.
+		if ( ! $member_data = $model->get_member_by_id($member_id))
+		{
+			throw new Campaigner_exception($this->_ee->lang->line('error_unknown_member'));
+		}
+
+		// Retrieve all the mailing lists.
+		$lists = $model->get_all_mailing_lists();
+
+		// For each mailing list, determine if the member is subscribed.
+		$email = $member_data['email'];
+
+		foreach ($lists AS $list)
+		{
+			if ($this->_connector->get_is_subscribed($list->get_list_id(), $email))
+			{
+				// Unsubscribe the member.
+				if ( ! $this->_connector->remove_list_subscriber($list->get_list_id(), $email))
+				{
+					throw new Campaigner_api_exception($this->_ee->lang->line('api_error_cannot_unsubscribe_member'));
+				}
+			}
 		}
 	}
 
@@ -614,7 +658,8 @@ class Campaigner_ext {
 	 */
 	public function on_user_edit_end($member_id, Array $member_data, Array $member_custom_data)
 	{
-		$this->_ee->campaigner_model->update_member_subscriptions($member_id);
+		$this->unsubscribe_member($member_id);
+		$this->subscribe_member($member_id, TRUE);
 	}
 	
 	

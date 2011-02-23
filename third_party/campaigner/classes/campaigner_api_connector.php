@@ -24,6 +24,15 @@ abstract class Campaigner_api_connector {
 	 */
 	protected $_api_key;
 
+	/**
+	 * EE superglobal. Note that this should only ever be used to retrieve
+	 * language strings.
+	 *
+	 * @access	protected
+	 * @var		object
+	 */
+	protected $_ee;
+
 
 
 	/* --------------------------------------------------------------
@@ -40,6 +49,7 @@ abstract class Campaigner_api_connector {
 	public function __construct($api_key)
 	{
 		$this->_api_key = $api_key;
+		$this->_ee		=& get_instance();
 	}
 	
 
@@ -116,18 +126,6 @@ abstract class Campaigner_api_connector {
 	 * @return	bool
 	 */
 	abstract public function remove_list_subscriber($list_id, $email);
-
-
-	/**
-	 * Updates the specified list subscriber.
-	 *
-	 * @abstract
-	 * @access	public
-	 * @param	string						$list_id		The list ID.
-	 * @param	Campaigner_subscriber		$subscriber		The subscriber.
-	 * @return	bool
-	 */
-	abstract public function update_list_subscriber($list_id, Campaigner_subscriber $subscriber);
 
 }
 

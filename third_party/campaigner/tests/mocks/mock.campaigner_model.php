@@ -27,6 +27,7 @@ class Mock_campaigner_model {
 	public function get_api_class_clients($client_id = '') {}
 	public function get_api_class_general() {}
 	public function get_api_class_lists($list_id = '') {}
+	public function get_api_class_subscribers($list_id = '') {}
 	public function get_api_connector() {}
 	public function get_docs_url() {}
 	public function get_error_log() {}

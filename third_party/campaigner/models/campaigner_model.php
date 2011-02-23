@@ -12,15 +12,13 @@
 require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_error_log_entry' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
-
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
+require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_clients' .EXT;
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_general' .EXT;
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_lists' .EXT;
-
-require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
-require_once PATH_THIRD .'campaigner/helpers/EI_number_helper' .EXT;
-require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
 
 class Campaigner_model extends CI_Model {
 	
@@ -114,17 +112,6 @@ class Campaigner_model extends CI_Model {
 		$this->_package_name		= 'Campaigner';
 		$this->_package_version		= '3.0.2';
 		$this->_extension_class 	= $this->get_package_name() .'_ext';
-		
-		/**
-		 * The model is still loaded even if the extension isn't installed.
-		 * If any database action is taking place in the constructor, first
-		 * check to ensure that we're live.
-		 */
-		
-		if ( ! isset($this->_ee->extensions->version_numbers[$this->get_extension_class()]))
-		{
-			return;
-		}
 	}
 	
 	
@@ -254,7 +241,7 @@ class Campaigner_model extends CI_Model {
 			'enabled'	=> 'y',
 			'hook'		=> '',
 			'method'	=> '',
-			'priority'	=> 10,
+			'priority'	=> 5,
 			'settings'	=> '',
 			'version'	=> $this->get_package_version()
 		);
@@ -352,8 +339,7 @@ class Campaigner_model extends CI_Model {
 
 
 	/**
-	 * Returns an instance of the CM 'general' API class. Used by the API connector
-	 * as a rather cumbersome factory, essentially. It will suffice for now.
+	 * Returns an instance of the CM 'general' API class.
 	 *
 	 * @access	public
 	 * @return	CS_REST_General|FALSE
@@ -375,9 +361,8 @@ class Campaigner_model extends CI_Model {
 
 
 	/**
-	 * Returns an instance of the CM 'lists' API class. Used by the API connector
-	 * as a rather cumbersome factory, essentially. It will suffice for now.
-	 *
+	 * Returns an instance of the CM 'lists' API class. 
+	 * 
 	 * @access	public
 	 * @param	string		$list_id		The list ID.
 	 * @return	CS_REST_Clients|FALSE
@@ -865,12 +850,12 @@ class Campaigner_model extends CI_Model {
 	{
 		if ( ! $this->save_settings_to_db($settings))
 		{
-			throw new Exception($this->_ee->lang->line('settings_not_saved'));
+			throw new Campaigner_exception($this->_ee->lang->line('settings_not_saved'));
 		}
 		
 		if ( ! $this->save_mailing_lists_to_db($settings))
 		{
-			throw new Exception($this->_ee->lang->line('mailing_lists_not_saved'));
+			throw new Campaigner_exception($this->_ee->lang->line('mailing_lists_not_saved'));
 		}
 	}
 	
@@ -965,20 +950,6 @@ class Campaigner_model extends CI_Model {
 
 
 	/**
-	 * Subscribes the specified member to the configured mailing lists.
-	 *
-	 * @access	public
-	 * @param	int|string		$member_id		The member ID.
-	 * @param	bool			$update			Update a member's existing subscription preferences?
-	 * @return	void
-	 */
-	public function subscribe_member($member_id, $update = FALSE)
-	{
-
-	}
-	
-	
-	/**
 	 * Updates the basic settings using input data.
 	 *
 	 * @access	public
@@ -1016,6 +987,16 @@ class Campaigner_model extends CI_Model {
 		if ( ! $installed_version OR version_compare($installed_version, $package_version, '>='))
 		{
 			return FALSE;
+		}
+
+		// Version 4.0.
+		if (version_compare($installed_version, '4.0', '<'))
+		{
+			$this->_ee->db->update(
+				'extensions',
+				array('priority' => 5),
+				array('class' => $this->get_extension_class())
+			);
 		}
 		
 		// Update the extension version in the database.
@@ -1102,19 +1083,6 @@ class Campaigner_model extends CI_Model {
 		return $settings;
 	}
 
-
-	/**
-	 * Updates the specified member's subscriptions. Convenience wrapper for the `subscribe_member`
-	 * method, with the `update` flag set to TRUE.
-	 *
-	 * @access	public
-	 * @param	int|string		$member_id		The member ID.
-	 * @return	void
-	 */
-	public function update_member_subscriptions($member_id)
-	{
-		$this->subscribe_member($member_id, TRUE);
-	}
 }
 
 

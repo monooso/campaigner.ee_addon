@@ -12,6 +12,7 @@ require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector' .EXT;
 require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_clients' .EXT;
 require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_general' .EXT;
 require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_lists' .EXT;
+require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_subscribers' .EXT;
 require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model' .EXT;
 
 class Test_campaigner_api_connector extends Testee_unit_test_case {
@@ -37,6 +38,7 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 	private $_cm_api_clients;
 	private $_cm_api_general;
 	private $_cm_api_lists;
+	private $_cm_api_subscribers;
 
 	/**
 	 * Model.
@@ -104,6 +106,9 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 
 		Mock::generate('Mock_CS_REST_Lists', get_class($this) .'_mock_cm_api_lists');
 		$this->_cm_api_lists = $this->_get_mock('cm_api_lists');
+
+		Mock::generate('Mock_CS_REST_Subscribers', get_class($this) .'_mock_cm_api_subscribers');
+		$this->_cm_api_subscribers = $this->_get_mock('cm_api_subscribers');
 
 		Mock::generate('Mock_campaigner_model', get_class($this) .'_mock_campaigner_model');
 		$this->_model = $this->_get_mock('campaigner_model');
@@ -265,6 +270,276 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		$this->assertIdentical($return, $this->_subject->get_list_fields($list_id, TRUE));
 	}
 
+
+	public function test__add_list_subscriber__success()
+	{
+		$list_id			= 'a58ee1d3039b8bec838e6d1482a8a966';
+		$http_status_code	= '201';
+		$resubscribe		= TRUE;
+		$result				= $this->_get_mock('cm_api_result');
+
+		$subscriber = new Campaigner_subscriber(array(
+			'email'		=> 'me@here.com',
+			'name'		=> 'Adam Adamson',
+			'custom_data'	=> array(
+				new Campaigner_subscriber_custom_data(array(
+					'key'	=> '[location]',
+					'value'	=> 'Caerphilly'
+				)),
+				new Campaigner_subscriber_custom_data(array(
+					'key'	=> '[religion]',
+					'value'	=> 'Can see church spire from bedroom'
+				))
+			)
+		));
+
+		$subscriber_data = array(
+			'EmailAddress'		=> $subscriber->get_email(),
+			'Name'				=> $subscriber->get_name(),
+			'Resubscribe'		=> $resubscribe
+		);
+
+		$subscriber_data['CustomFields'] = array();
+
+		foreach ($subscriber->get_custom_data() AS $custom_data)
+		{
+			$subscriber_data['CustomFields'][] = array(
+				'Key'	=> $custom_data->get_key(),
+				'Value'	=> $custom_data->get_value()
+			);
+		}
+
+		$this->_model->expectOnce('get_api_class_subscribers', array($list_id));
+		$this->_cm_api_subscribers->expectOnce('add', array($subscriber_data));
+
+		$result->expectOnce('was_successful');
+
+		$this->_model->setReturnReference('get_api_class_subscribers', $this->_cm_api_subscribers);
+		$this->_cm_api_subscribers->setReturnReference('add', $result);
+		$result->setReturnValue('__get', $http_status_code, array('http_status_code'));
+		$result->setReturnValue('was_successful', TRUE);
+
+		// Tests.
+		$this->assertIdentical(TRUE, $this->_subject->add_list_subscriber($list_id, $subscriber, $resubscribe));
+
+	}
+
+
+	public function test__add_list_subscriber__api_error()
+	{
+		// Dummy values.
+		$list_id			= 'a58ee1d3039b8bec838e6d1482a8a966';
+		$http_status_code	= '401';
+		$response			= $this->_convert_array_to_object(array('Code' => '100', 'Message' => 'Invalid API Key'));
+		$result				= $this->_get_mock('cm_api_result');
+		$subscriber			= new Campaigner_subscriber();
+
+		// Return values.
+		$this->_model->setReturnReference('get_api_class_subscribers', $this->_cm_api_subscribers);
+		$this->_cm_api_subscribers->setReturnReference('add', $result);
+		$result->setReturnValue('__get', $http_status_code, array('http_status_code'));
+		$result->setReturnValue('__get', $response, array('response'));
+		$result->setReturnValue('was_successful', FALSE);
+
+		// Tests.
+		$this->expectException(new Campaigner_api_exception($response->Message, $response->Code));
+		$this->_subject->add_list_subscriber($list_id, $subscriber, FALSE);
+	}
+
+
+	public function test__add_list_subscriber__no_connector()
+	{
+		$list_id		= 'a58ee1d3039b8bec838e6d1482a8a966';
+		$subscriber		= new Campaigner_subscriber();
+		$message		= 'ERROR_MESSAGE';
+		
+		// Return values.
+		$this->_ee->lang->setReturnValue('line', $message);
+		$this->_model->setReturnValue('get_api_class_subscribers', FALSE);
+
+		// Expectations.
+		$this->_ee->lang->expectOnce('line', array('error_no_api_connector'));
+
+		// Tests.
+		$this->expectException(new Campaigner_exception($message));
+		$this->_subject->add_list_subscriber($list_id, $subscriber, FALSE);
+	}
+
+
+	public function test__get_is_subscribed__subscribed()
+	{
+		// Shortcuts.
+		$api_class	= $this->_cm_api_subscribers;
+		$model		= $this->_model;
+
+		// Dummy values
+		$email		= 'me@here.com';
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+
+		// Retrieve the API class.
+		$model->expectOnce('get_api_class_subscribers', array($list_id));
+		$model->setReturnReference('get_api_class_subscribers', $api_class);
+
+		// Attempt to retrieve the subscriber from Campaign Monitor.
+		$result = $this->_get_mock('cm_api_result');
+		$result->expectOnce('was_successful');
+		$result->setReturnValue('was_successful', TRUE);	// This means the member is subscribed.
+
+		$api_class->expectOnce('get', array($email));
+		$api_class->setReturnReference('get', $result);
+
+		// Run the tests.
+		$this->assertIdentical(TRUE, $this->_subject->get_is_subscribed($list_id, $email));
+	}
+
+
+	public function test__get_is_subscribed__not_subscribed()
+	{
+		// Shortcuts.
+		$api_class	= $this->_cm_api_subscribers;
+		$model		= $this->_model;
+
+		// Dummy values
+		$email		= 'me@here.com';
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+
+		// Retrieve the API class.
+		$model->setReturnReference('get_api_class_subscribers', $api_class);
+
+		// Attempt to retrieve the subscriber from Campaign Monitor.
+		$result = $this->_get_mock('cm_api_result');
+		$result->setReturnValue('was_successful', FALSE);	// This means the member is not subscribed.
+		$api_class->setReturnReference('get', $result);
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_subject->get_is_subscribed($list_id, $email));
+	}
+
+
+	public function test__get_is_subscribed__invalid_list_id()
+	{
+		// Shortcuts.
+		$api_class	= $this->_cm_api_subscribers;
+		$model		= $this->_model;
+
+		// Dummy values
+		$email		= 'me@here.com';
+		$list_id	= '';
+
+		// Expectations.
+		$model->expectNever('get_api_class_subscribers');
+		$api_class->expectNever('get');
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_subject->get_is_subscribed($list_id, $email));
+	}
+
+
+	public function test__get_is_subscribed__invalid_email()
+	{
+		// Shortcuts.
+		$api_class	= $this->_cm_api_subscribers;
+		$model		= $this->_model;
+
+		// Dummy values
+		$email		= '';
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+
+		// Expectations.
+		$model->expectNever('get_api_class_subscribers');
+		$api_class->expectNever('get');
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_subject->get_is_subscribed($list_id, $email));
+	}
+
+
+	public function test__remove_list_subscriber__success()
+	{
+		// Shortcuts.
+		$api_class	= $this->_cm_api_subscribers;
+		$model		= $this->_model;
+
+		// Dummy values.
+		$email		= 'me@here.com';
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+
+		// Retrieve the API class.
+		$model->expectOnce('get_api_class_subscribers', array($list_id));
+		$model->setReturnReference('get_api_class_subscribers', $api_class);
+
+		// Unsubscribe the member.
+		$result = $this->_get_mock('cm_api_result');
+		$result->expectOnce('was_successful');
+		$result->setReturnValue('was_successful', TRUE);
+
+		$api_class->expectOnce('unsubscribe', array($email));
+		$api_class->setReturnReference('unsubscribe', $result);
+
+		// Run the tests.
+		$this->assertIdentical(TRUE, $this->_subject->remove_list_subscriber($list_id, $email));
+	}
+		
+
+	public function test__remove_list_subscriber__failure()
+	{
+		// Shortcuts.
+		$api_class	= $this->_cm_api_subscribers;
+		$model		= $this->_model;
+
+		// Dummy values.
+		$email		= 'me@here.com';
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+
+		// Expectations and return values.
+		$model->setReturnReference('get_api_class_subscribers', $api_class);
+
+		$result = $this->_get_mock('cm_api_result');
+		$result->setReturnValue('was_successful', FALSE);
+
+		$api_class->setReturnReference('unsubscribe', $result);
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_subject->remove_list_subscriber($list_id, $email));
+	}
+
+
+	public function test__remove_list_subscriber__invalid_list_id()
+	{
+		// Shortcuts.
+		$api_class	= $this->_cm_api_subscribers;
+		$model		= $this->_model;
+
+		// Dummy values.
+		$email		= 'me@here.com';
+		$list_id	= '';
+
+		// Expectations.
+		$model->expectNever('get_api_class_subscribers');
+		$api_class->expectNever('unsubscribe');
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_subject->remove_list_subscriber($list_id, $email));
+	}
+
+
+	public function test__remove_list_subscriber__invalid_email()
+	{
+		// Shortcuts.
+		$api_class	= $this->_cm_api_subscribers;
+		$model		= $this->_model;
+
+		// Dummy values.
+		$email		= '';
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+
+		// Expectations.
+		$model->expectNever('get_api_class_subscribers');
+		$api_class->expectNever('unsubscribe');
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_subject->remove_list_subscriber($list_id, $email));
+	}
 }
 
 

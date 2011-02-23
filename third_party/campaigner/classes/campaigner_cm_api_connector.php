@@ -59,7 +59,39 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 */
 	public function add_list_subscriber($list_id, Campaigner_subscriber $subscriber, $resubscribe = FALSE)
 	{
-		
+		// Get out early.
+		if ( ! $connector = $this->_factory->get_api_class_subscribers($list_id))
+		{
+			throw new Campaigner_exception($this->_ee->lang->line('error_no_api_connector'));
+		}
+
+		$subscriber_data = array(
+			'EmailAddress'	=> $subscriber->get_email(),
+			'Name'			=> $subscriber->get_name(),
+			'Resubscribe'	=> $resubscribe
+		);
+
+		if ($custom_data = $subscriber->get_custom_data())
+		{
+			$subscriber_data['CustomFields'] = array();
+
+			foreach ($custom_data AS $c)
+			{
+				$subscriber_data['CustomFields'][] = array(
+					'Key'	=> $c->get_key(),
+					'Value'	=> $c->get_value()
+				);
+			}
+		}
+
+		$result = $connector->add($subscriber_data);
+
+		if ( ! $result->was_successful())
+		{
+			throw new Campaigner_api_exception($result->response->Message, $result->response->Code);
+		}
+
+		return TRUE;
 	}
 	
 	
@@ -136,7 +168,17 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 */
 	public function get_is_subscribed($list_id, $email)
 	{
-		
+		// Get out early.
+		if ( ! $list_id OR ! is_string($list_id)
+			OR ! $email OR ! is_string($email))
+		{
+			return FALSE;
+		}
+
+		$connector	= $this->_factory->get_api_class_subscribers($list_id);
+		$result		= $connector->get($email);
+
+		return $result->was_successful();
 	}
 	
 	
@@ -181,22 +223,23 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 */
 	public function remove_list_subscriber($list_id, $email)
 	{
+		// Get out early.
+		if ( ! $list_id OR ! is_string($list_id)
+			OR ! $email OR ! is_string($email))
+		{
+			return FALSE;
+		}
+
+		// Retrieve the API class.
+		$connector = $this->_factory->get_api_class_subscribers($list_id);
+
+		// Unsubscribe the member.
+		$result = $connector->unsubscribe($email);
 		
+		// Success?
+		return $result->was_successful();
 	}
 
-
-	/**
-	 * Updates the specified list subscriber.
-	 *
-	 * @param	string						$list_id		The list ID.
-	 * @param	Campaigner_subscriber		$subscriber		The subscriber.
-	 * @return	bool
-	 */
-	public function update_list_subscriber($list_id, Campaigner_subscriber $subscriber)
-	{
-		
-	}
-	
 }
 
 /* End of file		: campaigner_cm_api_connector.php */

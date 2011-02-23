@@ -65,8 +65,14 @@ $lang = array(
 'hd_api_error'						=> 'API Error',
 'api_error_missing_root_preamble'	=> 'The Campaign Monitor API response is missing the root node: ',
 'api_error_preamble'				=> 'The Campaign Monitor API reported the following error: ',
+'api_error_unable_to_unsubscribe_member' => 'Unable to unsubscribe member from mailing list.',
 'api_error_unknown'					=> 'An unknown problem occurred when contacting the Campaign Monitor API.',
+
+'error_missing_or_invalid_member_id' => 'Missing or invalid member ID.',
 'error_no_api_connector'			=> 'Unable to create API connector.',
+'error_unknown'						=> 'An unknown error occurred.',
+'error_unknown_member'				=> 'Unknown member.',
+'error_unknown_ajax_request'		=> 'Unknown AJAX request.',
 
 /* --------------------------------------------------------------
  * MEMBER FIELDS
