@@ -566,17 +566,9 @@ class Campaigner_model extends CI_Model {
 			return FALSE;
 		}
 
-		// Does this list have a trigger field?
-		if ($trigger_field = $list->get_trigger_field())
+		if ( ! $this->member_should_be_subscribed_to_mailing_list($member_data, $list))
 		{
-			$trigger_value = $list->get_trigger_value();
-
-			if ( ! array_key_exists($trigger_field, $member_data)
-				OR $member_data[$trigger_field] != $trigger_value)
-			{
-				// The member does not want to subscribe to this list.
-				return FALSE;
-			}
+			return FALSE;
 		}
 
 		// Create the basic subscriber object.
@@ -703,16 +695,7 @@ class Campaigner_model extends CI_Model {
 		
 		foreach ($lists AS $list)
 		{
-			// Check the trigger.
-			if ( ! $list->get_trigger_field())
-			{
-				$subscribe_lists[] = $list;
-				continue;
-			}
-			
-			// We have a trigger.
-			if (isset($member_data[$list->get_trigger_field()])
-				&& $member_data[$list->get_trigger_field()] == $list->get_trigger_value())
+			if ($this->member_should_be_subscribed_to_mailing_list($member_data, $list))
 			{
 				$subscribe_lists[] = $list;
 			}
@@ -720,8 +703,8 @@ class Campaigner_model extends CI_Model {
 		
 		return $subscribe_lists;
 	}
-	
-	
+
+
 	/**
 	 * Returns the package name.
 	 *
@@ -836,6 +819,29 @@ class Campaigner_model extends CI_Model {
 		);
 		
 		$this->_ee->db->insert('campaigner_error_log', $insert_data);
+	}
+	
+	
+	/**
+	 * Determines whether the specified member should be subscribed to the specified mailing list,
+	 * based on the value (or absence of) the list trigger field.
+	 *
+	 * @access	public
+	 * @param	array						$member_data		The member data, as returned from 'get_member_by_id'.
+	 * @param	Campaigner_mailing_list		$list				The mailing list.
+	 * @return	bool
+	 */
+	public function member_should_be_subscribed_to_mailing_list(Array $member_data, Campaigner_mailing_list $mailing_list)
+	{
+		// If there is no trigger field, our job is easy.
+		if ( ! $mailing_list->get_trigger_field())
+		{
+			return TRUE;
+		}
+
+		// Check the trigger field.
+		return isset($member_data[$mailing_list->get_trigger_field()])
+			&& $member_data[$mailing_list->get_trigger_field()] == $mailing_list->get_trigger_value();
 	}
 	
 	

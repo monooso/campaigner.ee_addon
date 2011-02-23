@@ -248,7 +248,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			'enabled'	=> 'y',
 			'hook'		=> '',
 			'method'	=> '',
-			'priority'	=> 10,
+			'priority'	=> 5,
 			'settings'	=> '',
 			'version'	=> $version
 		);
@@ -275,9 +275,10 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$dbf = $this->_ee->dbforge;
 		
 		/**
-		 * 1. Delete the extension hooks.
-		 * 2. Drop the settings table.
-		 * 3. Drop the mailing lists table.
+		 * - Delete the extension hooks.
+		 * - Drop the error log table.
+		 * - Drop the settings table.
+		 * - Drop the mailing lists table.
 		 */
 		
 		$db->expectOnce('delete', array('extensions', array('class' => $this->_model->get_extension_class())));
@@ -291,12 +292,12 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_update_extension__update()
+	public function test__update_extension__update()
 	{
 		$db = $this->_ee->db;
 		
-		$installed_version	= '1.0.0';
-		$package_version	= '1.1.0';
+		$installed_version	= '4.0.0';
+		$package_version	= '4.1.0';
 		
 		// Update the extension version number in the database.
 		$data = array('version' => $package_version);
@@ -308,7 +309,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_update_extension__no_update()
+	public function test__update_extension__no_update()
 	{
 		$installed_version	= '1.0.0';
 		$package_version	= '1.0.0';
@@ -317,16 +318,35 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_update_extension__not_installed()
+	public function test__update_extension__not_installed()
 	{
 		$installed_version	= '';
 		$package_version	= '1.0.0';
 		
 		$this->assertIdentical(FALSE, $this->_model->update_extension($installed_version, $package_version));
 	}
+
+
+	public function test__update_extension__upgrade_to_version_4()
+	{
+		// Shortcuts.
+		$db = $this->_ee->db;
+
+		// Dummy values.
+		$installed_version	= '3.0.0';
+		$package_version	= '4.0.0';
+		$criteria			= array('class' => $this->_model->get_extension_class());
+		$data				= array('priority' => 5);
+
+		$db->expectCallCount('update', 2);
+		$db->expectAt(0, 'update', array('extensions', $data, $criteria));
+
+		// Run the tests.
+		$this->_model->update_extension($installed_version, $package_version);
+	}
 	
 	
-	public function test_get_theme_url__no_slash()
+	public function test__get_theme_url__no_slash()
 	{
 		// Dummy values.
 		$theme_url 		= '/path/to/themes';
@@ -343,67 +363,21 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_support_url__success()
+	public function test__get_support_url__success()
 	{
 		$pattern = '#^http://support.experienceinternet.co.uk/#';
 		$this->assertPattern($pattern, $this->_model->get_support_url());
 	}
 	
 	
-	public function xtest_get_member_mailing_lists_to_process__success()
+	public function test__get_docs_url__success()
 	{
-		// Dummy data.
-		$member_data = array(
-			'email'			=> 'billy.bob@chickslovehicks.com',
-			'group_id'		=> '8',
-			'location'		=> 'Hicksville',
-			'member_id'		=> '10',
-			'occupation'	=> 'Hick',
-			'screen_name'	=> 'Billy Bob',
-			'url'			=> 'http://example.com/',
-			'username'		=> 'Billy Bob',
-			'm_field_id_1'	=> 'No',
-			'm_field_id_2'	=> 'Yes'
-		);
-		
-		$mailing_list_a = new Campaigner_mailing_list(array(
-			'active'		=> TRUE,
-			'custom_fields'	=> array(),
-			'list_id'		=> 'LIST_ID_A',
-			'list_name'		=> 'List A',
-			'trigger_field'	=> 'm_field_id_1',
-			'trigger_value'	=> 'Yes'
-		));
-		
-		$mailing_list_b = new Campaigner_mailing_list(array(
-			'active'		=> TRUE,
-			'custom_fields'	=> array(),
-			'list_id'		=> 'LIST_ID_B',
-			'list_name'		=> 'List B',
-			'trigger_field'	=> 'm_field_id_2',
-			'trigger_value'	=> 'Yes'
-		));
-		
-		$mailing_lists 		= array($mailing_list_a, $mailing_list_b);
-		$lists_to_process	= array($mailing_list_b);
-		
-		// Tests.
-		$this->assertIdentical($lists_to_process, $this->_model->get_member_mailing_lists_to_process($member_data, $mailing_lists));
+		$pattern = '#^http://experienceinternet.co.uk/#';
+		$this->assertPattern($pattern, $this->_model->get_docs_url());
 	}
 	
 	
-	public function xtest_get_member_mailing_lists_to_process__no_mailing_lists()
-	{
-		// Dummy data.
-		$member_data	= array();
-		$mailing_lists	= array();
-		
-		// Tests.
-		$this->assertIdentical(array(), $this->_model->get_member_mailing_lists_to_process($member_data, $mailing_lists));
-	}
-
-	
-	public function test_log_error__success()
+	public function test__log_error__success()
 	{
 		// Shortcuts.
 		$config	= $this->_ee->config;
@@ -431,7 +405,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_error_log__success()
+	public function test__get_error_log__success()
 	{
 		// Shortcuts.
 		$config	= $this->_ee->config;
@@ -485,7 +459,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_error_log__empty()
+	public function test__get_error_log__empty()
 	{
 		// Shortcuts.
 		$config	= $this->_ee->config;
@@ -507,7 +481,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_member_by_id__success()
+	public function test__get_member_by_id__success()
 	{
 		// Shortcuts.
 		$db = $this->_ee->db;
@@ -546,7 +520,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_member_by_id__no_member()
+	public function test__get_member_by_id__no_member()
 	{
 		// Dummy values.
 		$db_result = $this->_get_mock('db_query');
@@ -563,7 +537,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_member_by_id__invalid_member()
+	public function test__get_member_by_id__invalid_member()
 	{
 		// Expectations.
 		$this->_ee->db->expectNever('get_where');
@@ -573,7 +547,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_member_fields__success()
+	public function test__get_member_fields__success()
 	{
 		// Dummy values.
 		$db_result	= $this->_get_mock('db_query');
@@ -624,7 +598,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_member_fields__no_custom_member_fields()
+	public function test__get_member_fields__no_custom_member_fields()
 	{
 		// Dummy values.
 		$db_result		= $this->_get_mock('db_query');
@@ -656,7 +630,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_installed_extension_version__installed()
+	public function test__get_installed_extension_version__installed()
 	{
 		$db = $this->_ee->db;
 		
@@ -686,7 +660,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_installed_extension_version__not_installed()
+	public function test__get_installed_extension_version__not_installed()
 	{
 		$db = $this->_ee->db;
 		
@@ -706,7 +680,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_settings_from_db__success()
+	public function test__get_settings_from_db__success()
 	{
 		$config		= $this->_ee->config;
 		$db			= $this->_ee->db;
@@ -746,7 +720,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_settings_from_db__no_settings()
+	public function test__get_settings_from_db__no_settings()
 	{
 		$db = $this->_ee->db;
 		$db_query = $this->_get_mock('db_query');
@@ -761,9 +735,44 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		// Run the test.
 		$this->assertIdentical(new Campaigner_settings(), $this->_model->get_settings_from_db());
 	}
+
+
+	public function test__get_settings_from_db__empty_settings()
+	{
+		$config		= $this->_ee->config;
+		$db			= $this->_ee->db;
+		
+		$site_id	= '10';
+		$api_key	= 'api_key';
+		$client_id	= 'client_id';
+		
+		// Return the site ID.
+		$config->expectOnce('item', array('site_id'));
+		$config->setReturnValue('item', $site_id, array('site_id'));
+		
+		// Settings db row.
+		$db_row		= array();
+		$db_query	= $this->_get_mock('db_query');
+		
+		// Return values.
+		$db_query->setReturnValue('num_rows', 1);
+		$db_query->setReturnValue('row_array', $db_row);
+		$db->setReturnReference('get_where', $db_query);
+		
+		// Expectations.
+		$db_query->expectOnce('num_rows');
+		$db_query->expectOnce('row_array');
+		$db->expectOnce('get_where', array('campaigner_settings', array('site_id' => $site_id), 1));
+		
+		// Create the settings object.
+		$settings = new Campaigner_settings();
+		
+		// Run the test.
+		$this->assertIdentical($settings, $this->_model->get_settings_from_db());
+	}
 	
 	
-	public function test_get_all_mailing_lists__success()
+	public function test__get_all_mailing_lists__success()
 	{
 		$db			= $this->_ee->db;
 		$db_query 	= $this->_get_mock('db_query');
@@ -823,7 +832,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_all_mailing_lists__no_mailing_lists()
+	public function test__get_all_mailing_lists__no_mailing_lists()
 	{
 		$db = $this->_ee->db;
 		$db_query = $this->_get_mock('db_query');
@@ -837,7 +846,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_get_all_mailing_lists__no_custom_fields()
+	public function test__get_all_mailing_lists__no_custom_fields()
 	{
 		$db			= $this->_ee->db;
 		$db_query 	= $this->_get_mock('db_query');
@@ -873,7 +882,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_save_settings_to_db__success()
+	public function test__save_settings_to_db__success()
 	{
 		$config		= $this->_ee->config;
 		$db			= $this->_ee->db;
@@ -903,14 +912,14 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_save_settings_to_db__failure()
+	public function test__save_settings_to_db__failure()
 	{
 		$this->_ee->db->setReturnValue('affected_rows', 0);
 		$this->assertIdentical(FALSE, $this->_model->save_settings_to_db(new Campaigner_settings()));
 	}
 	
 	
-	public function test_save_mailing_lists_to_db__success()
+	public function test__save_mailing_lists_to_db__success()
 	{
 		// Shortcuts.
 		$config	= $this->_ee->config;
@@ -982,7 +991,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_save_mailing_lists_to_db__no_custom_fields()
+	public function test__save_mailing_lists_to_db__no_custom_fields()
 	{
 		// Shortcuts.
 		$config	= $this->_ee->config;
@@ -1024,7 +1033,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_save_mailing_lists_to_db__failure()
+	public function test__save_mailing_lists_to_db__failure()
 	{
 		$config		= $this->_ee->config;
 		$db 		= $this->_ee->db;
@@ -1045,7 +1054,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_save_extension_settings__settings_error()
+	public function test__save_extension_settings__settings_error()
 	{
 		$db		= $this->_ee->db;
 		$lang	= $this->_ee->lang;
@@ -1061,7 +1070,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			$this->_model->save_extension_settings(new Campaigner_settings());
 			$this->fail();
 		}
-		catch (Exception $e)
+		catch (Campaigner_exception $e)
 		{
 			$e->getMessage() == $error
 				? $this->pass()
@@ -1070,7 +1079,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_save_extension_settings__mailing_lists_error()
+	public function test__save_extension_settings__mailing_lists_error()
 	{
 		$db		= $this->_ee->db;
 		$config	= $this->_ee->config;
@@ -1091,7 +1100,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 			$this->_model->save_extension_settings($settings);
 			$this->fail();
 		}
-		catch (Exception $e)
+		catch (Campaigner_exception $e)
 		{
 			$e->getMessage() == $error
 				? $this->pass()
@@ -1100,7 +1109,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 
 	
-	public function test_update_basic_settings_from_input__success()
+	public function test__update_basic_settings_from_input__success()
 	{
 		$input 		= $this->_ee->input;
 		$api_key	= 'API key';
@@ -1122,7 +1131,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_update_basic_settings_from_input__invalid_input()
+	public function test__update_basic_settings_from_input__invalid_input()
 	{
 		$input 		= $this->_ee->input;
 		$api_key	= 'API key';
@@ -1142,7 +1151,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_update_basic_settings_from_input__missing_input()
+	public function test__update_basic_settings_from_input__missing_input()
 	{
 		// Return values.
 		$this->_ee->input->setReturnValue('get_post', FALSE);
@@ -1155,7 +1164,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_update_mailing_list_settings_from_input__success()
+	public function test__update_mailing_list_settings_from_input__success()
 	{
 		// Shortcuts.
 		$input = $this->_ee->input;
@@ -1226,7 +1235,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 
 
-	public function xtest_get_api_connector__success()
+	public function test_get_api_connector__success()
 	{
 		// Shortcuts.
 		$config		= $this->_ee->config;
@@ -1262,14 +1271,12 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		$db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 		
 		// Run the test.
-		$this->assertIdentical(
-			new Campaigner_cm_api_connector($api_key, $this->_model),
-			$this->_model->get_api_connector()
-		);
+		$connector = $this->_model->get_api_connector($api_key, new Campaigner_model());
+		$this->assertIsA($connector, 'Campaigner_api_connector');
 	}
 
 
-	public function test_get_api_connector__no_settings()
+	public function test__get_api_connector__no_settings()
 	{
 		// Shortcuts.
 		$config		= $this->_ee->config;
@@ -1295,7 +1302,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 
 
-	public function test_get_member_as_subscriber__success()
+	public function test__get_member_as_subscriber__success()
 	{
 		// Shortcuts.
 		$db = $this->_ee->db;
@@ -1372,7 +1379,144 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 
 
-	public function test_get_mailing_list_by_id__success()
+	public function test__get_member_as_subscriber__trigger_does_not_match()
+	{
+		// Shortcuts.
+		$db = $this->_ee->db;
+
+		// Dummy values.
+		$list_id	= 'abcdefgh12345678';
+		$member_id	= 20;
+		$name		= 'John Doe';
+		$email		= 'john@doe.com';
+
+		// get_member_by_id
+		$member_result = $this->_get_mock('db_query');
+		$member_row = array(
+			'email'			=> $email,
+			'group_id'		=> '8',
+			'location'		=> 'Hicksville',
+			'member_id'		=> '10',
+			'occupation'	=> 'Hick',
+			'screen_name'	=> $name,
+			'url'			=> 'http://example.com/',
+			'username'		=> $name,
+			'm_field_id_1'	=> 'Auburn',
+			'm_field_id_10'	=> 'n'				// The non-matching trigger.
+		);
+
+		$db->setReturnReferenceAt(0, 'get_where', $member_result);
+		$member_result->setReturnValue('num_rows', 1);
+		$member_result->setReturnValue('row_array', $member_row);
+
+		// get_mailing_list_by_id
+		$list_result = $this->_get_mock('db_query');
+		$fields_data = array();
+
+		for ($count = 1; $count <= 5; $count++)
+		{
+			$fields_data[] = array('member_field_id' => 'm_field_id_' .$count, 'cm_key' => 'cm_key_' .$count);
+		}
+
+		$list_row = array(
+			'custom_fields'		=> serialize($fields_data),
+			'list_id'			=> $list_id,
+			'site_id'			=> '1',
+			'trigger_field'		=> 'm_field_id_10',
+			'trigger_value'		=> 'y'
+		);
+
+		$db->setReturnReferenceAt(1, 'get_where', $list_result);
+		$list_result->setReturnValue('num_rows', 1);
+		$list_result->setReturnValue('row_array', $list_row);
+
+		// Tests.
+		$this->assertIdentical(FALSE, $this->_model->get_member_as_subscriber($member_id, $list_id));
+	}
+
+
+	public function test__get_member_as_subscriber__unknown_member()
+	{
+		// Shortcuts.
+		$db = $this->_ee->db;
+
+		// Dummy values.
+		$list_id	= 'abcdefgh12345678';
+		$member_id	= 20;
+
+		// get_member_by_id
+		$member_result = $this->_get_mock('db_query');
+
+		$db->setReturnReferenceAt(0, 'get_where', $member_result);
+		$member_result->setReturnValue('num_rows', 0);
+
+		// get_mailing_list_by_id
+		$list_result = $this->_get_mock('db_query');
+		$fields_data = array();
+
+		for ($count = 1; $count <= 5; $count++)
+		{
+			$fields_data[] = array('member_field_id' => 'm_field_id_' .$count, 'cm_key' => 'cm_key_' .$count);
+		}
+
+		$list_row = array(
+			'custom_fields'		=> serialize($fields_data),
+			'list_id'			=> $list_id,
+			'site_id'			=> '1',
+			'trigger_field'		=> 'm_field_id_10',
+			'trigger_value'		=> 'y'
+		);
+
+		$db->setReturnReferenceAt(1, 'get_where', $list_result);
+		$list_result->setReturnValue('num_rows', 1);
+		$list_result->setReturnValue('row_array', $list_row);
+
+		// Tests.
+		$this->assertIdentical(FALSE, $this->_model->get_member_as_subscriber($member_id, $list_id));
+	}
+
+
+	public function test__get_member_as_subscriber__unknown_list()
+	{
+		// Shortcuts.
+		$db = $this->_ee->db;
+
+		// Dummy values.
+		$email		= 'me@here.com';
+		$list_id	= 'abcdefgh12345678';
+		$member_id	= 20;
+		$name		= 'Adam Adamson';
+
+		// get_member_by_id
+		$member_result = $this->_get_mock('db_query');
+		$member_row = array(
+			'email'			=> $email,
+			'group_id'		=> '8',
+			'location'		=> 'Hicksville',
+			'member_id'		=> '10',
+			'occupation'	=> 'Hick',
+			'screen_name'	=> $name,
+			'url'			=> 'http://example.com/',
+			'username'		=> $name,
+			'm_field_id_1'	=> 'Auburn',
+			'm_field_id_10'	=> 'y'
+		);
+
+		$db->setReturnReferenceAt(0, 'get_where', $member_result);
+		$member_result->setReturnValue('num_rows', 1);
+		$member_result->setReturnValue('row_array', $member_row);
+
+		// get_mailing_list_by_id
+		$list_result = $this->_get_mock('db_query');
+		$db->setReturnReferenceAt(1, 'get_where', $list_result);
+		$list_result->setReturnValue('num_rows', 0);
+
+		// Tests.
+		$this->assertIdentical(FALSE, $this->_model->get_member_as_subscriber($member_id, $list_id));
+	}
+
+
+	public function test__get_mailing_list_by_id__success()
 	{
 		// Shortcuts.
 		$config	= $this->_ee->config;
@@ -1424,7 +1568,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 
 
-	public function test_get_mailing_list_by_id__no_matching_list()
+	public function test__get_mailing_list_by_id__no_matching_list()
 	{
 		// Shortcuts.
 		$config	= $this->_ee->config;
@@ -1449,12 +1593,231 @@ class Test_campaigner_model extends Testee_unit_test_case {
 		// Tests.
 		$this->assertIdentical(FALSE, $this->_model->get_mailing_list_by_id($list_id));
 	}
+
+
+	public function test__get_api_class_clients__success()
+	{
+		// Dummy values.
+		$api_key	= 'API_KEY';
+		$client_id	= 'abc123';
+		$site_id	= 10;
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$db_lists			= $this->_get_mock('db_query');
+		$db_settings		= $this->_get_mock('db_query');
+		$db_settings_row	= array('api_key' => $api_key);
+		
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 1);
+		$db_settings->setReturnValue('row_array', $db_settings_row);
+
+		$this->_ee->config->setReturnValue('item', $site_id, array('site_id'));
+		$this->_ee->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+		$this->_ee->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+
+		// Run the tests.
+		$this->assertIdentical(new CS_REST_Clients($client_id, $api_key), $this->_model->get_api_class_clients($client_id));
+	}
 	
+
+	public function test__get_api_class_clients__no_settings()
+	{
+		// Dummy values.
+		$client_id	= 'abc123';
+		$site_id	= 10;
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$db_lists			= $this->_get_mock('db_query');
+		$db_settings		= $this->_get_mock('db_query');
+		
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 0);
+
+		$this->_ee->config->setReturnValue('item', $site_id, array('site_id'));
+		$this->_ee->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+		$this->_ee->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_model->get_api_class_clients($client_id));
+	}
+
+
+	public function test__get_api_class_clients__invalid_client_id()
+	{
+		// Dummy values.
+		$client_id	= '';
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$this->_ee->config->expectNever('item');
+		$this->_ee->db->expectNever('get_where');
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_model->get_api_class_clients($client_id));
+	}
+
+
+	public function test__get_api_class_general__success()
+	{
+		// Dummy values.
+		$api_key	= 'API_KEY';
+		$site_id	= 10;
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$db_lists			= $this->_get_mock('db_query');
+		$db_settings		= $this->_get_mock('db_query');
+		$db_settings_row	= array('api_key' => $api_key);
+		
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 1);
+		$db_settings->setReturnValue('row_array', $db_settings_row);
+
+		$this->_ee->config->setReturnValue('item', $site_id, array('site_id'));
+		$this->_ee->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+		$this->_ee->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+
+		// Run the tests.
+		$this->assertIdentical(new CS_REST_General($api_key), $this->_model->get_api_class_general());
+	}
 	
+
+	public function test__get_api_class_general__not_settings()
+	{
+		// Dummy values.
+		$site_id	= 10;
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$db_lists			= $this->_get_mock('db_query');
+		$db_settings		= $this->_get_mock('db_query');
+		
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 0);
+
+		$this->_ee->config->setReturnValue('item', $site_id, array('site_id'));
+		$this->_ee->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+		$this->_ee->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_model->get_api_class_general());
+	}
+
+
+	public function test__get_api_class_lists__success()
+	{
+		// Dummy values.
+		$api_key	= 'API_KEY';
+		$list_id	= 'abc123';
+		$site_id	= 10;
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$db_lists			= $this->_get_mock('db_query');
+		$db_settings		= $this->_get_mock('db_query');
+		$db_settings_row	= array('api_key' => $api_key);
+		
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 1);
+		$db_settings->setReturnValue('row_array', $db_settings_row);
+
+		$this->_ee->config->setReturnValue('item', $site_id, array('site_id'));
+		$this->_ee->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+		$this->_ee->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+
+		// Run the tests.
+		$this->assertIdentical(new CS_REST_Lists($list_id, $api_key), $this->_model->get_api_class_lists($list_id));
+	}
 	
+
+	public function test__get_api_class_lists__no_settings()
+	{
+		// Dummy values.
+		$list_id	= 'abc123';
+		$site_id	= 10;
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$db_lists			= $this->_get_mock('db_query');
+		$db_settings		= $this->_get_mock('db_query');
+		
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 0);
+
+		$this->_ee->config->setReturnValue('item', $site_id, array('site_id'));
+		$this->_ee->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+		$this->_ee->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_model->get_api_class_lists($list_id));
+	}
+
+
+	public function test__get_api_class_lists__invalid_list_id()
+	{
+		// Dummy values.
+		$list_id	= '';
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$this->_ee->config->expectNever('item');
+		$this->_ee->db->expectNever('get_where');
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_model->get_api_class_lists($list_id));
+	}
+
+
+	public function test__member_should_be_subscribed_to_mailing_list__trigger_field_yes()
+	{
+		// Dummy values.
+		$list = new Campaigner_mailing_list(array(
+			'list_id'		=> 'abc123',
+			'list_name'		=> 'List Name',
+			'trigger_field'	=> 'm_field_id_10',
+			'trigger_value'	=> 'y'
+		));
+
+		$member_data = array(
+			'member_id'		=> 10,
+			'm_field_id_10'	=> 'y',
+			'm_field_id_20'	=> 'n'
+		);
+
+		// Run the tests.
+		$this->assertIdentical(TRUE, $this->_model->member_should_be_subscribed_to_mailing_list($member_data, $list));
+	}
+
+
+	public function test__member_should_be_subscribed_to_mailing_list__trigger_field_no()
+	{
+		// Dummy values.
+		$list = new Campaigner_mailing_list(array(
+			'list_id'		=> 'abc123',
+			'list_name'		=> 'List Name',
+			'trigger_field'	=> 'm_field_id_10',
+			'trigger_value'	=> 'y'
+		));
+
+		$member_data = array(
+			'member_id'		=> 10,
+			'm_field_id_10'	=> 'n',
+			'm_field_id_20'	=> 'n'
+		);
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_model->member_should_be_subscribed_to_mailing_list($member_data, $list));
+	}
 	
-	
-	
+
+	public function test__member_should_be_subscribed_to_mailing_list__no_trigger_field()
+	{
+		// Dummy values.
+		$list = new Campaigner_mailing_list(array(
+			'list_id'		=> 'abc123',
+			'list_name'		=> 'List Name',
+		));
+
+		$member_data = array('member_id' => 10);
+
+		// Run the tests.
+		$this->assertIdentical(TRUE, $this->_model->member_should_be_subscribed_to_mailing_list($member_data, $list));
+	}
+
 }
 
 
