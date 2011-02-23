@@ -6,7 +6,7 @@
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
  * @package			: Campaigner
- * @version 		: 3.0.2
+ * @version 		: 4.0.0
  */
 
 require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector' .EXT;
@@ -110,7 +110,7 @@ class Campaigner_model extends CI_Model {
 		$this->_ee =& get_instance();
 		
 		$this->_package_name		= 'Campaigner';
-		$this->_package_version		= '3.0.2';
+		$this->_package_version		= '4.0.0';
 		$this->_extension_class 	= $this->get_package_name() .'_ext';
 	}
 	
