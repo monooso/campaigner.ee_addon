@@ -16,6 +16,7 @@ require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
 require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
+require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
 
 /**
  * NOTE:
