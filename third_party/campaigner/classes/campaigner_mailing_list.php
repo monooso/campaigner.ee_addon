@@ -84,6 +84,34 @@ class Campaigner_mailing_list {
 		
 		foreach ($properties AS $property => $value)
 		{
+			/**
+			 * If the `custom_fields` property is passed as a string,
+			 * chances are it's a serialised array, direct from the database.
+			 *
+			 * We attempt to handle this gracefully, by unserialising the
+			 * array, and creating the necessary Campaigner_custom_field objects.
+			 */
+
+			if ($property == 'custom_fields' && ! is_array($value))
+			{
+				$custom_fields = array();
+
+				if (is_string($value))
+				{
+					$fields_data = unserialize($value);
+
+					if (is_array($fields_data))
+					{
+						foreach ($fields_data AS $field_data)
+						{
+							$custom_fields[] = new Campaigner_custom_field($field_data);
+						}
+					}
+				}
+
+				$value = $custom_fields;
+			}
+
 			$method_name = 'set_' .$property;
 			
 			if (method_exists($this, $method_name))
@@ -216,6 +244,10 @@ class Campaigner_mailing_list {
 	{
 		$this->_active 			= FALSE;
 		$this->_custom_fields	= array();
+		$this->_list_id 		= '';
+		$this->_list_name		= '';
+		$this->_trigger_field	= '';
+		$this->_trigger_value	= '';
 		
 		return $this;
 	}

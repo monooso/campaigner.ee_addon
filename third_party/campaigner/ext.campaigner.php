@@ -8,14 +8,22 @@
  * @package			: Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_api_error' .EXT;
-require_once PATH_THIRD .'campaigner/libraries/CMBase' .EXT;
+require_once PATH_THIRD .'campaigner/helpers/EI_number_helper' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
 
 class Campaigner_ext {
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE PROPERTIES
 	 * ------------------------------------------------------------ */
+
+	/**
+	  * API connector.
+	  *
+	  * @access	private
+	  * @var	Campaigner_api_connector
+	  */
+	private $_connector;
 	
 	/**
 	 * ExpressionEngine object reference.
@@ -95,13 +103,6 @@ class Campaigner_ext {
 	{
 		$this->_ee =& get_instance();
 		
-		if( ! class_exists('EE_Logger') )
-		{
-		   require APPPATH . 'libraries/Logger' . EXT;
-		}
-
-		$this->_ee->logger = new EE_Logger;
-		
 		// Load the model.
 		$this->_ee->load->add_package_path(PATH_THIRD .'campaigner/');
 		$this->_ee->load->model('campaigner_model');
@@ -113,30 +114,23 @@ class Campaigner_ext {
 		$this->_ee->lang->loadfile('campaigner');
 		
 		// Set the instance properties.
-		$this->description	= $this->_ee->lang->line('extension_description');
-		$this->docs_url		= 'http://experienceinternet.co.uk/software/campaigner/';
-		$this->name			= $this->_ee->lang->line('extension_name');
+		$this->description	= $this->_ee->lang->line('campaigner_extension_description');
+		$this->docs_url		= $model->get_docs_url();
+		$this->name			= $this->_ee->lang->line('campaigner_extension_name');
 		$this->settings		= $settings;
 		$this->version		= $model->get_package_version();
 		
 		// Is the extension installed?
-		if ($model->get_installed_extension_version())
+		if ( ! $model->get_installed_extension_version())
 		{
-			// Load the settings from the database, and update them with any input data.
-			$this->settings = $model->update_extension_settings_from_input($model->get_extension_settings());
-			
-			// If the API key has been set, initialise the API connector.
-			if ($this->settings->get_api_key())
-			{
-				$model->set_api_connector(new CampaignMonitor(
-					$this->settings->get_api_key(),		// API key.
-					NULL,								// Client ID.
-					NULL,								// Campaign ID.
-					NULL,								// List ID.
-					'soap'								// Method.
-				));
-			}
+			return;
 		}
+
+		// Load the settings from the database, and update them with any input data.
+		$this->settings = $model->update_extension_settings_from_input($model->get_extension_settings());
+
+		// Retrieve the API connector.
+		$this->_connector = $model->get_api_connector();
 	}
 	
 	
@@ -162,6 +156,25 @@ class Campaigner_ext {
 	{
 		$this->_ee->campaigner_model->disable_extension();
 	}
+
+
+	/**
+	 * Displays the 'error message' view.
+	 *
+	 * @access	public
+	 * @param	string		$error_message		The error message.
+ 	 * @param	string		$error_code			The error code.
+	 * @return	string
+	 */
+	public function display_error($error_message = '', $error_code = '')
+	{
+		$view_vars = array(
+			'error_code'	=> $error_code,
+			'error_message'	=> $error_message ? $error_message : $this->_ee->lang->line('error_unknown')
+		);
+
+		return $this->_ee->load->view('_error', $view_vars, TRUE);
+	}
 	
 	
 	/**
@@ -179,7 +192,7 @@ class Campaigner_ext {
 		
 		// View variables.
 		$view_vars = array(
-			'cp_page_title'		=> $lang->line('extension_name'),
+			'cp_page_title'		=> $lang->line('campaigner_extension_name'),
 			'error_log'			=> $model->get_error_log()
 		);
 		
@@ -208,21 +221,34 @@ class Campaigner_ext {
 			return $this->display_settings_base();
 		}
 		
-		// Handle AJAX requests.
-		switch (strtolower($this->_ee->input->get('request')))
+		/**
+		 * Handle AJAX requests. Both types of AJAX request require
+		 * valid API connector, so we perform that check here.
+		 */
+
+		if ( ! $this->_connector)
 		{
-			case 'get_clients':
-				$this->_ee->output->send_ajax_response($this->display_settings_clients());
-				break;
-				
-			case 'get_mailing_lists':
-				$this->_ee->output->send_ajax_response($this->display_settings_mailing_lists());
-				break;
-			
-			default:
-				// Unknown request. Do nothing.
-				break;
+			$response = $this->display_error($this->_ee->lang->line('error_no_api_connector'));
 		}
+		else
+		{
+			switch (strtolower($this->_ee->input->get('request')))
+			{
+				case 'get_clients':
+					$response = $this->display_settings_clients();
+					break;
+					
+				case 'get_mailing_lists':
+					$response = $this->display_settings_mailing_lists();
+					break;
+				
+				default:
+					$response = $this->display_error($this->_ee->lang->line('error_unknown_ajax_request'));
+					break;
+			}
+		}
+
+		$this->_ee->output->send_ajax_response($response);
 	}
 	
 	
@@ -244,7 +270,7 @@ class Campaigner_ext {
 		// View variables.
 		$view_vars = array(
 			'action_url'		=> 'C=addons_extensions' .AMP .'M=save_extension_settings',
-			'cp_page_title'		=> $lang->line('extension_name'),
+			'cp_page_title'		=> $lang->line('campaigner_extension_name'),
 			'hidden_fields'		=> array('file' => $lower_package_name),
 			'settings'			=> $this->settings		// Loaded in the constructor.
 		);
@@ -291,7 +317,8 @@ class Campaigner_ext {
 	
 	
 	/**
-	 * Displays the "clients" settings form fragment.
+	 * Displays the "clients" settings form fragment. Should only ever be called from the
+	 * display_settings method, which takes care of testing for a valid API connector.
 	 *
 	 * @access	public
 	 * @return	string
@@ -301,29 +328,25 @@ class Campaigner_ext {
 		try
 		{
 			$view_vars = array(
-				'clients'	=> $this->_ee->campaigner_model->get_clients_from_api(),
+				'clients'	=> $this->_connector->get_clients(),
 				'settings'	=> $this->settings
-			);
-			
+			);	
+
 			$view_name = '_clients';
+			return $this->_ee->load->view($view_name, $view_vars, TRUE);
+
 		}
-		catch (Exception $e)
+		catch (Campaigner_exception $e)
 		{
-			// Something went wrong with the API call.
-			$view_vars = array('api_error' => new Campaigner_api_error(array(
-				'code'		=> $e->getCode(),
-				'message'	=> $e->getMessage()
-			)));
-			
-			$view_name = '_api_error';
+			$this->_ee->campaigner_model->log_error($e);
+			return $this->display_error($e->getMessage(), $e->getCode());
 		}
-		
-		return $this->_ee->load->view($view_name, $view_vars, TRUE);
 	}
 	
 	
 	/**
-	 * Displays the "mailing lists" settings form fragment.
+	 * Displays the "mailing lists" settings form fragment. Should only ever be called from
+	 * the display_settings method, which takes care of testing for a valid API connector.
 	 *
 	 * @access	public
 	 * @return	string
@@ -333,60 +356,68 @@ class Campaigner_ext {
 		// Shortcut.
 		$model = $this->_ee->campaigner_model;
 		
+		// Retrieve all the available mailing lists from the API.
 		try
 		{
-			// Retrieve all the available mailing lists from the API.
-			$mailing_lists = $model->get_mailing_lists_from_api($this->settings->get_client_id());
+			$lists = $this->_connector->get_client_lists($this->settings->get_client_id(), TRUE);
+		}
+		catch (Campaigner_exception $e)
+		{
+			$model->log_error($e);
+			return $this->display_error($e->getMessage(), $e->getCode());
+		}
 			
-			// Loop through the mailing lists. If we have settings for a list, make a note of them.
-			foreach ($mailing_lists AS $mailing_list)
+		// Loop through the mailing lists. If we have settings for a list, make a note of them.
+		foreach ($lists AS $list)
+		{
+			// If this list has not been previously saved, we're done.
+			if ( ! ($saved_list = $this->settings->get_mailing_list_by_id($list->get_list_id())))
 			{
-				if (($saved_mailing_list = $this->settings->get_mailing_list_by_id($mailing_list->get_list_id())))
+				continue;
+			}
+
+			// Restore the saved list settings.
+			$list->set_active(TRUE);
+			$list->set_trigger_field($saved_list->get_trigger_field());
+			$list->set_trigger_value($saved_list->get_trigger_value());
+
+			// If this list has no custom fields, we're done.
+			if ( ! ($fields = $list->get_custom_fields()))
+			{
+				continue;
+			}
+
+			// Restore the saved custom field settings.
+			foreach ($fields AS $field)
+			{
+				if (($saved_field = $saved_list->get_custom_field_by_cm_key($field->get_cm_key())))
 				{
-					$mailing_list->set_active(TRUE);
-					$mailing_list->set_trigger_field($saved_mailing_list->get_trigger_field());
-					$mailing_list->set_trigger_value($saved_mailing_list->get_trigger_value());
-					
-					// Custom fields.
-					if (($custom_fields = $mailing_list->get_custom_fields()))
-					{
-						foreach ($custom_fields AS $custom_field)
-						{
-							if (($saved_custom_field = $saved_mailing_list->get_custom_field_by_cm_key($custom_field->get_cm_key())))
-							{
-								$custom_field->set_member_field_id($saved_custom_field->get_member_field_id());
-							}
-						}
-					}
+					$field->set_member_field_id($saved_field->get_member_field_id());
 				}
 			}
+		}
 			
-			// Retrieve the member fields.
-			$member_fields = $model->get_member_fields();
+		// Retrieve the member fields.
+		$member_fields = $model->get_member_fields();
 			
-			// Prepare the member fields data for use in a dropdown.
-			$member_fields_dd_data = array();
+		// Prepare the member fields data for use in a dropdown.
+		$member_fields_dd_data = array();
 
-			foreach ($member_fields AS $member_field)
-			{
-				$member_fields_dd_data[$member_field->get_id()] = $member_field->get_label();
-			}
-			
-			// Define the view variables.
-			$view_vars = array(
-				'mailing_lists'			=> $mailing_lists,
-				'member_fields'			=> $member_fields,
-				'member_fields_dd_data'	=> $member_fields_dd_data,
-				'settings'				=> $this->settings
-			);
-		
-			$view_name = '_mailing_lists';
-		}
-		catch (Exception $e)
+		foreach ($member_fields AS $member_field)
 		{
-			$view_vars = array('api_error' => new Campaigner_api_error(array('code' => $e->getCode(), 'message' => $e->getMessage())));
-			$view_name = '_api_error';
+			$member_fields_dd_data[$member_field->get_id()] = $member_field->get_label();
 		}
+			
+		// Define the view variables.
+		$view_vars = array(
+			'mailing_lists'			=> $lists,
+			'member_fields'			=> $member_fields,
+			'member_fields_dd_data'	=> $member_fields_dd_data,
+			'settings'				=> $this->settings
+		);
+		
+		$view_name = '_mailing_lists';
+		
 		
 		return $this->_ee->load->view($view_name, $view_vars, TRUE);
 	}
@@ -406,7 +437,7 @@ class Campaigner_ext {
 			$this->_ee->campaigner_model->save_extension_settings($this->settings);
 			$this->_ee->session->set_flashdata('message_success', $this->_ee->lang->line('msg_settings_saved'));
 		}
-		catch (Exception $e)
+		catch (Campaigner_exception $e)
 		{
 			$this->_ee->session->set_flashdata(
 				'message_failure',
@@ -443,10 +474,6 @@ class Campaigner_ext {
 				return $this->display_error_log();
 				break;
 				
-			case 'help':
-				return $this->display_help();
-				break;
-			
 			case 'settings':
 			default:
 				return $this->display_settings();
@@ -454,17 +481,145 @@ class Campaigner_ext {
 		}
 	}
 	
+
+	/**
+	 * Subscribes the specified member to the configured mailing lists.
+	 *
+	 * @access	public
+	 * @param	int|string		$member_id			The member ID.
+	 * @param	bool			$force_resubscribe	Should we forcibly resubscribe the member?
+	 * @return	bool
+	 */
+	public function subscribe_member($member_id, $force_resubscribe = FALSE)
+	{
+		// Shortcuts.
+		$model = $this->_ee->campaigner_model;
+
+		// Get out early.
+		if ( ! valid_int($member_id, 1))
+		{
+			$log_message = $this->_ee->lang->line('error_missing_or_invalid_member_id');
+			$log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
+
+			$model->log_error(new Campaigner_exception($log_message));
+
+			return FALSE;
+		}
+
+		// Retrieve the mailing lists to which the member should be subscribed.
+		$lists = $model->get_member_subscribe_lists($member_id);
+
+		foreach ($lists AS $list)
+		{
+			try
+			{
+				if ($subscriber = $model->get_member_as_subscriber($member_id, $list->get_list_id()))
+				{
+					if ($this->_ee->extensions->active_hook('campaigner_subscribe_start') === TRUE)
+					{
+						$subscriber = $this->_ee->extensions->call('campaigner_subscribe_start', $member_id, $subscriber);
+
+						if ($this->_ee->extensions->end_script === TRUE)
+						{
+							return FALSE;
+						}
+					}
+
+					$this->_connector->add_list_subscriber($list->get_list_id(), $subscriber, $force_resubscribe);
+				}
+			}
+			catch (Campaigner_exception $e)
+			{
+				$model->log_error($e);
+				return FALSE;
+			}
+		}
+
+		return TRUE;
+	}
+
+
+	/**
+	 * Unsubscribes the specified member from all mailing lists.
+	 *
+	 * @access	public
+	 * @param	int|string		$member_id		The member ID.
+	 * @return	bool
+	 */
+	public function unsubscribe_member($member_id)
+	{
+		// Shortcuts.
+		$model = $this->_ee->campaigner_model;
+
+		// Get out early.
+		if ( ! valid_int($member_id, 1))
+		{
+			$log_message = $this->_ee->lang->line('error_missing_or_invalid_member_id');
+			$log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
+
+			$model->log_error(new Campaigner_exception($log_message));
+
+			return FALSE;
+		}
+
+		// Retrieve the member information.
+		if ( ! $member_data = $model->get_member_by_id($member_id))
+		{
+			$log_message = $this->_ee->lang->line('error_unknown_member');
+			$log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
+
+			$model->log_error(new Campaigner_exception($log_message));
+
+			return FALSE;
+		}
+
+		$lists = $model->get_all_mailing_lists();
+		$email = $member_data['email'];
+
+		foreach ($lists AS $list)
+		{
+			/**
+			 * TRICKY:
+			 * The member should not be able to unsubscribe from lists with no trigger field.
+			 * This sounds draconian, but makes sense. Without a trigger field, the edit form
+			 * can't include an opt-in / opt-out field for this mailing list anyway, so it makes
+			 * no sense for us to process such lists here.
+			 */
+
+			if ($model->member_should_be_subscribed_to_mailing_list($member_data, $list))
+			{
+				continue;
+			}
+
+			// Unsubscribe the member.
+			try
+			{
+				if ($this->_connector->get_is_subscribed($list->get_list_id(), $email))
+				{
+					$this->_connector->remove_list_subscriber($list->get_list_id(), $email);
+				}
+			}
+			catch (Campaigner_exception $e)
+			{
+				$model->log_error($e);
+				return FALSE;
+			}
+		}
+
+		return TRUE;
+	}
+
 	
 	/**
 	 * Updates the extension.
 	 *
 	 * @access	public
-	 * @param	string		$current_version	The current version.
+	 * @param	string		$installed_version		The installed version.
 	 * @return	bool
 	 */
-	public function update_extension($current_version = '')
+	public function update_extension($installed_version = '')
 	{
-		return $this->_ee->campaigner_model->update_extension($current_version, $this->version);
+		return $this->_ee->campaigner_model->update_extension($installed_version, $this->version);
 	}
 	
 	
@@ -485,7 +640,7 @@ class Campaigner_ext {
 	 */
 	public function on_cp_members_member_create($member_id, Array $member_data)
 	{
-		$this->_ee->campaigner_model->subscribe_member($member_id);
+		$this->subscribe_member($member_id);
 	}
 	
 	
@@ -507,7 +662,7 @@ class Campaigner_ext {
 		
 		foreach ($member_ids AS $member_id)
 		{
-			$this->_ee->campaigner_model->subscribe_member($member_id);
+			$this->subscribe_member($member_id);
 		}
 	}
 	
@@ -529,7 +684,7 @@ class Campaigner_ext {
 			return;
 		}
 		
-		$this->_ee->campaigner_model->subscribe_member($member_id);
+		$this->subscribe_member($member_id);
 	}
 	
 	
@@ -549,7 +704,7 @@ class Campaigner_ext {
 			return;
 		}
 		
-		$this->_ee->campaigner_model->subscribe_member($member_id);
+		$this->subscribe_member($member_id);
 	}
 	
 	
@@ -565,7 +720,8 @@ class Campaigner_ext {
 	 */
 	public function on_user_edit_end($member_id, Array $member_data, Array $member_custom_data)
 	{
-		$this->_ee->campaigner_model->subscribe_member($member_id, TRUE);
+		$this->unsubscribe_member($member_id);
+		$this->subscribe_member($member_id, TRUE);
 	}
 	
 	
@@ -587,7 +743,7 @@ class Campaigner_ext {
 			return;
 		}
 		
-		$this->_ee->campaigner_model->subscribe_member($member_id);
+		$this->subscribe_member($member_id);
 	}
 	
 }
