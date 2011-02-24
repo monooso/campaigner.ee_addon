@@ -491,7 +491,16 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		// Attempt to retrieve the subscriber from Campaign Monitor.
 		$result = $this->_get_mock('cm_api_result');
 		$result->expectOnce('was_successful');
-		$result->setReturnValue('was_successful', TRUE);	// This means the member is subscribed.
+		$result->setReturnValue('was_successful', TRUE);
+
+		$response = $this->_convert_array_to_object(array(
+			'EmailAddress'	=> $email,
+			'Name'			=> 'John Doe',
+			'Date'			=> '2011-02-19 09:00:00',
+			'State'			=> 'Active',
+		));
+
+		$result->setReturnValue('__get', $response, array('response'));
 
 		$api_class->expectOnce('get', array($email));
 		$api_class->setReturnReference('get', $result);
@@ -517,6 +526,42 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		// Attempt to retrieve the subscriber from Campaign Monitor.
 		$result = $this->_get_mock('cm_api_result');
 		$result->setReturnValue('was_successful', FALSE);	// This means the member is not subscribed.
+		$api_class->setReturnReference('get', $result);
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_subject->get_is_subscribed($list_id, $email));
+	}
+
+
+	public function test__get_is_subscribed__not_active()
+	{
+		// Shortcuts.
+		$api_class	= $this->_cm_api_subscribers;
+		$model		= $this->_model;
+
+		// Dummy values
+		$email		= 'me@here.com';
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+
+		// Retrieve the API class.
+		$model->expectOnce('get_api_class_subscribers', array($list_id));
+		$model->setReturnReference('get_api_class_subscribers', $api_class);
+
+		// Attempt to retrieve the subscriber from Campaign Monitor.
+		$result = $this->_get_mock('cm_api_result');
+		$result->expectOnce('was_successful');
+		$result->setReturnValue('was_successful', TRUE);
+
+		$response = $this->_convert_array_to_object(array(
+			'EmailAddress'	=> $email,
+			'Name'			=> 'John Doe',
+			'Date'			=> '2011-02-19 09:00:00',
+			'State'			=> 'Pending',
+		));
+
+		$result->setReturnValue('__get', $response, array('response'));
+
+		$api_class->expectOnce('get', array($email));
 		$api_class->setReturnReference('get', $result);
 
 		// Run the tests.

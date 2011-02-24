@@ -47,15 +47,14 @@ class Mock_campaigner_model {
 	public function get_support_url() {}
 	public function get_theme_url() {}
 	public function log_error(Campaigner_exception $error) {}
+	public function member_should_be_subscribed_to_mailing_list(Array $member_data, Campaigner_mailing_list $mailing_list) {}
 	public function save_extension_settings($settings) {}
 	public function save_mailing_lists_to_db($settings) {}
 	public function save_settings_to_db($settings) {}
-	public function subscribe_member($member_id) {}
 	public function update_basic_settings_from_input(Campaigner_settings $settings) {}
 	public function update_extension($installed_version = '', $package_version = '') {}
 	public function update_extension_settings_from_input(Campaigner_settings $settings) {}
 	public function update_mailing_list_settings_from_input(Campaigner_settings $settings) {}
-	public function update_member_subscriptions($member_id) {}
 	
 }
 

@@ -571,6 +571,19 @@ class Campaigner_ext {
 
 		foreach ($lists AS $list)
 		{
+			/**
+			 * TRICKY:
+			 * The member should not be able to unsubscribe from lists with no trigger field.
+			 * This sounds draconian, but makes sense. Without a trigger field, the edit form
+			 * can't include an opt-in / opt-out field for this mailing list anyway, so it makes
+			 * no sense for use to process such lists here.
+			 */
+
+			if ($model->member_should_be_subscribed_to_mailing_list($member_data, $list))
+			{
+				continue;
+			}
+
 			// Unsubscribe the member.
 			try
 			{

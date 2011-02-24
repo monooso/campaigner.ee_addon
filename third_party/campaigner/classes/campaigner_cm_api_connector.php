@@ -191,7 +191,13 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 		}
 
 		$result = $connector->get($email);
-		return $result->was_successful();
+
+		if ( ! $result->was_successful())
+		{
+			return FALSE;
+		}
+
+		return (strtolower($result->response->State) == 'active');
 	}
 	
 	

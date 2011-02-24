@@ -522,6 +522,10 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$model->expectOnce('get_member_by_id', array($member_id));
 		$model->setReturnValue('get_member_by_id', $member_data);	
 
+		// For each mailing list, determine if the member should be subscribed.
+		$model->expectCallCount('member_should_be_subscribed_to_mailing_list', count($mailing_lists));
+		$model->setReturnValue('member_should_be_subscribed_to_mailing_list', FALSE);
+
 		// For each mailing list, determine if the member is subscribed.
 		$this->_connector->expectCallCount('get_is_subscribed', count($mailing_lists));
 		$this->_connector->expectCallCount('remove_list_subscriber', ceil(count($mailing_lists) / 2));
@@ -545,6 +549,54 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 			$count++;
 		}
 		
+		// Run the tests.
+		$this->assertIdentical(TRUE, $this->_subject->unsubscribe_member($member_id));
+	}
+
+
+	public function test__unsubscribe_member__should_be_subscribed_to_all_mailing_lists()
+	{
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id = 10;
+
+		// Retrieve all the mailing lists.
+		$mailing_lists = array(
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'list_a',
+				'list_name'	=> 'LIST A'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'list_b',
+				'list_name'	=> 'LIST B'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'list_c',
+				'list_name'	=> 'LIST C'
+			))
+		);
+
+		$model->expectOnce('get_all_mailing_lists');
+		$model->setReturnValue('get_all_mailing_lists', $mailing_lists);
+
+		// Retrieve the member information.
+		$email = 'me@here.com';
+
+		$member_data = array(
+			'email'		=> $email,
+			'member_id'	=> $member_id
+		);
+
+		$model->expectOnce('get_member_by_id', array($member_id));
+		$model->setReturnValue('get_member_by_id', $member_data);	
+
+		$model->expectCallCount('member_should_be_subscribed_to_mailing_list', count($mailing_lists));
+		$model->setReturnValue('member_should_be_subscribed_to_mailing_list', TRUE);
+
+		$this->_connector->expectNever('get_is_subscribed');
+		$this->_connector->expectNever('remove_list_subscriber');
+
 		// Run the tests.
 		$this->assertIdentical(TRUE, $this->_subject->unsubscribe_member($member_id));
 	}
