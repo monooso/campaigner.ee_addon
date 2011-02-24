@@ -113,10 +113,6 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		Mock::generate('Mock_campaigner_model', get_class($this) .'_mock_campaigner_model');
 		$this->_model = $this->_get_mock('campaigner_model');
 
-		$this->_model->setReturnReference('get_api_class_clients', $this->_cm_api_clients);
-		$this->_model->setReturnReference('get_api_class_general', $this->_cm_api_general);
-		$this->_model->setReturnReference('get_api_class_lists', $this->_cm_api_lists);
-		
 		// Initialise some test properties.
 		$this->_api_key	= '04f82350a845ey7y87y87y82091015a00';
 
@@ -151,6 +147,7 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		$result->expectOnce('was_successful');
 		
 		// Return values.
+		$this->_model->setReturnReference('get_api_class_general', $this->_cm_api_general);
 		$this->_cm_api_general->setReturnReference('get_clients', $result);
 
 		$result->setReturnValue('__get', $http_status_code, array('http_status_code'));
@@ -170,6 +167,7 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		$result				= $this->_get_mock('cm_api_result');
 
 		// Return values.
+		$this->_model->setReturnReference('get_api_class_general', $this->_cm_api_general);
 		$this->_cm_api_general->setReturnReference('get_clients', $result);
 		$result->setReturnValue('__get', $http_status_code, array('http_status_code'));
 		$result->setReturnValue('__get', $response, array('response'));
@@ -177,6 +175,25 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 
 		// Tests.
 		$this->expectException(new Campaigner_api_exception($response->Message, $response->Code));
+		$this->_subject->get_clients();
+	}
+
+
+	public function test__get_clients__no_connector()
+	{
+		// Dummy values.
+		$message = 'No API connector.';
+
+		// Expectations.
+		$this->_model->expectOnce('get_api_class_general');
+		$this->_cm_api_general->expectNever('get_clients');
+		
+		// Return values.
+		$this->_model->setReturnValue('get_api_class_general', FALSE);
+		$this->_ee->lang->setReturnValue('line', $message, array('error_no_api_connector'));
+		
+		// Tests.
+		$this->expectException(new Campaigner_exception($message));
 		$this->_subject->get_clients();
 	}
 
@@ -204,6 +221,7 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		$result->expectOnce('was_successful');
 		
 		// Return values.
+		$this->_model->setReturnReference('get_api_class_clients', $this->_cm_api_clients);
 		$this->_cm_api_clients->setReturnReference('get_lists', $result);
 
 		$result->setReturnValue('__get', $http_status_code, array('http_status_code'));
@@ -224,6 +242,7 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		$result				= $this->_get_mock('cm_api_result');
 
 		// Return values.
+		$this->_model->setReturnReference('get_api_class_clients', $this->_cm_api_clients);
 		$this->_cm_api_clients->setReturnReference('get_lists', $result);
 		$result->setReturnValue('__get', $http_status_code, array('http_status_code'));
 		$result->setReturnValue('__get', $response, array('response'));
@@ -235,10 +254,30 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 	}
 
 
+	public function test__get_client_lists__no_connector()
+	{
+		// Dummy values.
+		$client_id	= 'abc123';
+		$message	= 'No API connector.';
+
+		// Expectations.
+		$this->_model->expectOnce('get_api_class_clients');
+		$this->_cm_api_clients->expectNever('get_lists');
+		
+		// Return values.
+		$this->_model->setReturnValue('get_api_class_clients', FALSE);
+		$this->_ee->lang->setReturnValue('line', $message, array('error_no_api_connector'));
+		
+		// Tests.
+		$this->expectException(new Campaigner_exception($message));
+		$this->_subject->get_client_lists($client_id);
+	}
+
+
 	public function test__get_list_fields__success()
 	{
+		// Dummy values.
 		$list_id = 'a58ee1d3039b8bec838e6d1482a8a966';
-		$http_status_code = '200';
 
 		$response = array(
 			$this->_convert_array_to_object(array('FieldName' => 'website', 'Key' => '[website]', 'DataType' => 'Text', 'FieldOptions' => array())),
@@ -249,13 +288,14 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 
 		$result = $this->_get_mock('cm_api_result');
 
+		// Expectations.
 		$this->_model->expectOnce('get_api_class_lists', array($list_id));
 		$this->_cm_api_lists->expectOnce('get_custom_fields');
-		$this->_cm_api_lists->setReturnValue('get_custom_fields', $result);
-
 		$result->expectOnce('was_successful');
 
-		$result->setReturnValue('__get', $http_status_code, array('http_status_code'));
+		// Return values.
+		$this->_model->setReturnReference('get_api_class_lists', $this->_cm_api_lists);
+		$this->_cm_api_lists->setReturnValue('get_custom_fields', $result);
 		$result->setReturnValue('__get', $response, array('response'));
 		$result->setReturnValue('was_successful', TRUE);
 
@@ -267,7 +307,75 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 			new Campaigner_custom_field(array('cm_key' => $response[3]->Key, 'label' => $response[3]->FieldName))
 		);
 
-		$this->assertIdentical($return, $this->_subject->get_list_fields($list_id, TRUE));
+		$this->assertIdentical($return, $this->_subject->get_list_fields($list_id));
+	}
+
+
+	public function test__get_list_fields__failure()
+	{
+		// Dummy values.
+		$error_code		= 911;
+		$error_message	= 'Unable to retrieve list fields.';
+		$list_id		= 'a58ee1d3039b8bec838e6d1482a8a966';
+
+		$response = $this->_convert_array_to_object(array(
+			'Code'		=> $error_code,
+			'Message'	=> $error_message
+		));
+
+		$result = $this->_get_mock('cm_api_result');
+
+		// Expectations.
+		$this->_model->expectOnce('get_api_class_lists', array($list_id));
+		$this->_cm_api_lists->expectOnce('get_custom_fields');
+		$result->expectOnce('was_successful');
+
+		// Return values.
+		$this->_model->setReturnReference('get_api_class_lists', $this->_cm_api_lists);
+		$this->_cm_api_lists->setReturnValue('get_custom_fields', $result);
+		$result->setReturnValue('__get', $response, array('response'));
+		$result->setReturnValue('was_successful', FALSE);
+
+		// Tests.
+		$this->expectException(new Campaigner_api_exception($error_message, $error_code));
+		$this->_subject->get_list_fields($list_id);
+	}
+
+
+	public function test__get_list_fields__invalid_list_id()
+	{
+		// Dummy values.
+		$list_id = '';
+		$message = 'Missing or invalid list ID.';
+
+		// Expectations.
+		$this->_model->expectNever('get_api_class_lists');
+		$this->_cm_api_lists->expectNever('get_custom_fields');
+
+		// Return values.
+		$this->_ee->lang->setReturnValue('line', $message, array('error_missing_or_invalid_list_id'));
+
+		// Run the tests..
+		$this->expectException(new Campaigner_exception($message));
+		$this->_subject->get_list_fields($list_id);
+	}
+
+
+	public function test__get_list_fields__no_connector()
+	{
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+		$message	= 'No API connector.';
+		
+		// Return values.
+		$this->_ee->lang->setReturnValue('line', $message);
+		$this->_model->setReturnValue('get_api_class_lists', FALSE);
+
+		// Expectations.
+		$this->_ee->lang->expectOnce('line', array('error_no_api_connector'));
+
+		// Tests.
+		$this->expectException(new Campaigner_exception($message));
+		$this->_subject->get_list_fields($list_id);
 	}
 
 
@@ -320,7 +428,7 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		$result->setReturnValue('was_successful', TRUE);
 
 		// Tests.
-		$this->assertIdentical(TRUE, $this->_subject->add_list_subscriber($list_id, $subscriber, $resubscribe));
+		$this->_subject->add_list_subscriber($list_id, $subscriber, $resubscribe);
 
 	}
 
@@ -454,6 +562,26 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 	}
 
 
+	public function test__get_is_subscribed__no_connector()
+	{
+		// Dummy valiues.
+		$email		= 'me@here.com';
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+		$message	= 'Missing API connector.';
+		
+		// Return values.
+		$this->_ee->lang->setReturnValue('line', $message);
+		$this->_model->setReturnValue('get_api_class_subscribers', FALSE);
+
+		// Expectations.
+		$this->_ee->lang->expectOnce('line', array('error_no_api_connector'));
+
+		// Tests.
+		$this->expectException(new Campaigner_exception($message));
+		$this->_subject->get_is_subscribed($list_id, $email);
+	}
+
+
 	public function test__remove_list_subscriber__success()
 	{
 		// Shortcuts.
@@ -477,7 +605,7 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		$api_class->setReturnReference('unsubscribe', $result);
 
 		// Run the tests.
-		$this->assertIdentical(TRUE, $this->_subject->remove_list_subscriber($list_id, $email));
+		$this->_subject->remove_list_subscriber($list_id, $email);
 	}
 		
 
@@ -488,18 +616,27 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		$model		= $this->_model;
 
 		// Dummy values.
-		$email		= 'me@here.com';
-		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+		$email			= 'me@here.com';
+		$error_message	= 'Unable to remove list subscriber.';
+		$error_code		= 911;
+		$list_id		= 'a58ee1d3039b8bec838e6d1482a8a966';
 
 		// Expectations and return values.
 		$model->setReturnReference('get_api_class_subscribers', $api_class);
 
+		$response = $this->_convert_array_to_object(array(
+			'Code'		=> $error_code,
+			'Message'	=> $error_message
+		));
+
 		$result = $this->_get_mock('cm_api_result');
 		$result->setReturnValue('was_successful', FALSE);
+		$result->setReturnValue('__get', $response, array('response'));
 
 		$api_class->setReturnReference('unsubscribe', $result);
 
 		// Run the tests.
+		$this->expectException(new Campaigner_api_exception($error_message, $error_code));
 		$this->assertIdentical(FALSE, $this->_subject->remove_list_subscriber($list_id, $email));
 	}
 
@@ -540,6 +677,27 @@ class Test_campaigner_api_connector extends Testee_unit_test_case {
 		// Run the tests.
 		$this->assertIdentical(FALSE, $this->_subject->remove_list_subscriber($list_id, $email));
 	}
+
+
+	public function test__remove_list_subscriber__no_connector()
+	{
+		$email		= 'me@here.com';
+		$list_id	= 'a58ee1d3039b8bec838e6d1482a8a966';
+		$message	= 'ERROR_MESSAGE';
+		
+		// Return values.
+		$this->_ee->lang->setReturnValue('line', $message);
+		$this->_model->setReturnValue('get_api_class_subscribers', FALSE);
+
+		// Expectations.
+		$this->_ee->lang->expectOnce('line', array('error_no_api_connector'));
+
+		// Tests.
+		$this->expectException(new Campaigner_exception($message));
+		$this->_subject->remove_list_subscriber($list_id, $email);
+	}
+
+
 }
 
 

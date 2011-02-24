@@ -68,6 +68,7 @@ $lang = array(
 'api_error_unable_to_unsubscribe_member' => 'Unable to unsubscribe member from mailing list.',
 'api_error_unknown'					=> 'An unknown problem occurred when contacting the Campaign Monitor API.',
 
+'error_missing_or_invalid_list_id'	=> 'Missing or invalid list ID.',
 'error_missing_or_invalid_member_id' => 'Missing or invalid member ID.',
 'error_no_api_connector'			=> 'Unable to create API connector.',
 'error_unknown'						=> 'An unknown error occurred.',

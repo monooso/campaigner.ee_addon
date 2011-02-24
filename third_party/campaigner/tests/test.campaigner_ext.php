@@ -9,6 +9,7 @@
  */
 
 require_once PATH_THIRD .'campaigner/ext.campaigner' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
 require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_cm_api_connector' .EXT;
 require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model' .EXT;
 
@@ -145,8 +146,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$session->expectOnce('set_flashdata', array('message_failure', '*'));
 		
 		// Return values.
-		$model->throwOn('save_extension_settings', new Exception('EXCEPTION'));
-		$model->setReturnValue('update_extension_settings_from_input', new Campaigner_settings());
+		$model->throwOn('save_extension_settings', new Campaigner_exception('EXCEPTION'));
 		
 		// Tests.
 		$this->_subject->save_settings();
@@ -234,7 +234,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$loader->expectOnce('view', array('_error', $view_vars, TRUE));
 		
 		// Return values.
-		$lang->setReturnValue('line', $error_message, array('error__unknown_error'));
+		$lang->setReturnValue('line', $error_message, array('error_unknown'));
 		$loader->setReturnValue('view', $view_data, array('_error', $view_vars, TRUE));
 
 		// Tests.
@@ -263,14 +263,14 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 	}
 	
 	
-	
-	public function test_display_settings_clients__api_error()
+	public function test_display_settings_clients__exception()
 	{
 		// Shortcuts.
 		$loader = $this->_ee->load;
+		$model = $this->_ee->campaigner_model;
 		
 		// Dummy values.
-		$exception = new Campaigner_api_exception('Invalid API key', 100);
+		$exception = new Campaigner_exception('Invalid API key', 100);
 		$view_vars = array(
 			'error_code'	=> $exception->getCode(),
 			'error_message'	=> $exception->getMessage()
@@ -278,6 +278,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		
 		// Expectations.
 		$this->_connector->expectOnce('get_clients');
+		$model->expectOnce('log_error', array('*'));
 		$loader->expectOnce('view', array('_error', $view_vars, TRUE));
 		
 		// Return values.
@@ -320,13 +321,14 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_display_settings_mailing_lists__api_error()
+	public function test_display_settings_mailing_lists__exception()
 	{
 		// Shortcuts.
 		$loader	= $this->_ee->load;
+		$model = $this->_ee->campaigner_model;
 		
 		// Dummy values.
-		$exception = new Campaigner_api_exception('Invalid API key', 100);
+		$exception = new Campaigner_exception('Invalid API key', 100);
 		$view_vars = array(
 			'error_code'	=> $exception->getCode(),
 			'error_message'	=> $exception->getMessage()
@@ -337,6 +339,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		
 		// Expectations.
 		$this->_connector->expectOnce('get_client_lists', array($this->_settings->get_client_id(), TRUE));
+		$model->expectOnce('log_error', array('*'));
 		$loader->expectOnce('view', array('_error', $view_vars, TRUE));
 
 		// Tests.
@@ -385,7 +388,100 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$model->setReturnValue('get_member_as_subscriber', $subscriber);
 
 		// Tests.
-		$this->_subject->subscribe_member($member_id);
+		$this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
+	}
+
+
+	public function test__subscribe_member__member_as_subscriber_returns_false()
+	{
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id = 10;
+		$member_subscribe_lists = array(
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'abc123',
+				'list_name'	=> 'LIST A'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'cde456',
+				'list_name'	=> 'LIST B'
+			))
+		);
+
+		$subscriber = new Campaigner_subscriber(array(
+			'email'	=> 'me@here.com',
+			'name'	=> 'John Doe'
+		));
+
+		// Expectations.
+		$model->expectOnce('get_member_subscribe_lists', array($member_id));
+		$model->expectCallCount('get_member_as_subscriber', count($member_subscribe_lists));
+		$this->_connector->expectNever('add_list_subscriber');
+
+		// Return values.
+		$model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
+		$model->setReturnValue('get_member_as_subscriber', FALSE);
+
+		// Tests.
+		$this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
+	}
+
+
+	public function test__subscribe_member__invalid_member_id()
+	{
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id = 0;
+		$message = 'Invalid member ID.';
+
+		// Expectations.
+		$model->expectOnce('log_error', array('*'));
+		$model->expectNever('get_member_subscribe_lists');
+		$model->expectNever('get_member_as_subscriber');
+		$this->_connector->expectNever('add_list_subscriber');
+
+		// Return values.
+		$this->_ee->lang->setReturnValue('line', $message, array('error_missing_or_invalid_member_id'));
+
+		// Tests.
+		$this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
+	}
+
+
+	public function test__subscribe_member__exception()
+	{
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id = 10;
+		$member_subscribe_lists = array(
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'abc123',
+				'list_name'	=> 'LIST A'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'cde456',
+				'list_name'	=> 'LIST B'
+			))
+		);
+
+		$subscriber = new Campaigner_subscriber(array(
+			'email'	=> 'me@here.com',
+			'name'	=> 'John Doe'
+		));
+
+		// Expectations.
+		$this->_connector->throwOn('add_list_subscriber', new Campaigner_exception('Error'));
+		$model->expectOnce('log_error', array('*'));
+
+		// Return values.
+		$model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
+		$model->setReturnValue('get_member_as_subscriber', $subscriber);
+
+		// Tests.
+		$this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
 	}
 
 
@@ -429,7 +525,6 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		// For each mailing list, determine if the member is subscribed.
 		$this->_connector->expectCallCount('get_is_subscribed', count($mailing_lists));
 		$this->_connector->expectCallCount('remove_list_subscriber', ceil(count($mailing_lists) / 2));
-		$this->_connector->setReturnValue('remove_list_subscriber', TRUE);
 
 		$count = 0;
 		$remove_count = 0;
@@ -451,7 +546,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		}
 		
 		// Run the tests.
-		$this->_subject->unsubscribe_member($member_id);
+		$this->assertIdentical(TRUE, $this->_subject->unsubscribe_member($member_id));
 	}
 
 
@@ -466,6 +561,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
 		// Expectations and return values.
 		$this->_ee->lang->setReturnValue('line', $message, array('error_missing_or_invalid_member_id'));
+		$model->expectOnce('log_error', array('*'));
 
 		$model->expectNever('get_all_mailing_lists');
 		$model->expectNever('get_member_by_id');
@@ -474,8 +570,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$this->_connector->expectNever('remove_list_subscriber');
 
 		// Run the tests.
-		$this->expectException(new Campaigner_exception($message));
-		$this->_subject->unsubscribe_member($member_id);
+		$this->assertIdentical(FALSE, $this->_subject->unsubscribe_member($member_id));
 	}
 
 
@@ -492,6 +587,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		// Expectations and return values.
 		$this->_ee->lang->setReturnValue('line', $message, array('error_unknown_member'));
 
+		$model->expectOnce('log_error', array('*'));
 		$model->expectOnce('get_member_by_id');
 		$model->setReturnValue('get_member_by_id', $member_data);
 
@@ -500,8 +596,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$this->_connector->expectNever('remove_list_subscriber');
 
 		// Run the tests.
-		$this->expectException(new Campaigner_exception($message));
-		$this->_subject->unsubscribe_member($member_id);
+		$this->assertIdentical(FALSE, $this->_subject->unsubscribe_member($member_id));
 	}
 		
 	
@@ -529,27 +624,33 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 		$this->_connector->expectNever('remove_list_subscriber');
 
 		// Run the tests.
-		$this->_subject->unsubscribe_member($member_id);
+		$this->assertIdentical(TRUE, $this->_subject->unsubscribe_member($member_id));
 	}
-		
-	
-	public function test__unsubscribe_member__unable_to_unsubscribe()
+
+
+	public function test__unsubscribe_member__exception()
 	{
 		$model = $this->_ee->campaigner_model;
 
 		// Dummy values.
 		$member_id = 10;
-		$message = 'Unable to unsubscribe member.';
 
 		// Retrieve all the mailing lists.
 		$mailing_lists = array(
 			new Campaigner_mailing_list(array(
 				'list_id'	=> 'list_a',
 				'list_name'	=> 'LIST A'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'list_b',
+				'list_name'	=> 'LIST B'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'list_c',
+				'list_name'	=> 'LIST C'
 			))
 		);
 
-		$model->expectOnce('get_all_mailing_lists');
 		$model->setReturnValue('get_all_mailing_lists', $mailing_lists);
 
 		// Retrieve the member information.
@@ -560,286 +661,28 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 			'member_id'	=> $member_id
 		);
 
-		$model->expectOnce('get_member_by_id', array($member_id));
 		$model->setReturnValue('get_member_by_id', $member_data);	
 
-		// Expectations and return values.
-		$this->_connector->expectOnce('get_is_subscribed');
+		// For each mailing list, determine if the member is subscribed.
+		$connector_exception = new Campaigner_exception('Error');
+
 		$this->_connector->setReturnValue('get_is_subscribed', TRUE);
+		$this->_connector->throwOn('remove_list_subscriber', $connector_exception);
 
-		$this->_connector->expectOnce('remove_list_subscriber');
-		$this->_connector->setReturnValue('remove_list_subscriber', FALSE);
+		/**
+		 * Handle the exception.
+		 *
+		 * NOTE:
+		 * Specifying the $connector_exception object as the expected parameter
+		 * causes out of memory errors in SimpleTest. Goodness knows why, and
+		 * I'm not inclined to waste time finding out. This will suffice.
+		 */
 
-		$this->_ee->lang->setReturnValue('line', $message, array('api_error_cannot_unsubscribe_member'));
+		$model->expectOnce('log_error', array('*'));
 		
 		// Run the tests.
-		$this->expectException(new Campaigner_api_exception($message));
-		$this->_subject->unsubscribe_member($member_id);
+		$this->assertIdentical(FALSE, $this->_subject->unsubscribe_member($member_id));
 	}
-
-
-	public function xtest_on_cp_members_member_create__success()
-	{
-		// Shortcuts.
-		$model = $this->_ee->campaigner_model;
-
-		// Dummy values.
-		$member_id		= 10;
-		$member_data 	= array();
-		
-		// Expectations.
-		$model->expectOnce('get_member_subscribe_lists', array($member_id));
-		$this->_connector->expectCallCount('add_list_subscriber', count($lists));
-
-		for ($count = 0, $list_count = count($lists); $count < $list_count; $count++)
-		{
-			// $this->_connector->expectAt($count, 'add_list_subscriber', array($lists[$count]->get_list_id(), $member_id));
-		}
-
-		// Return values.
-		$model->setReturnValue('get_member_subscribe_lists', $lists);
-		
-		// Tests.
-		$this->_subject->on_cp_members_member_create($member_id, $member_data);
-	}
-	
-	
-	public function xtest_on_cp_members_validate_members__success()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$input 	= $this->_ee->input;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy values.
-		$member_ids = array(10, 20, 30);
-		
-		// Expectations.
-		$input->expectOnce('post', array('toggle'));
-		$model->expectCallCount('subscribe_member', count($member_ids));
-		
-		for ($count = 0; $count < count($member_ids); $count++)
-		{
-			$model->expectAt($count, 'subscribe_member', array($member_ids[$count]));
-		}
-		
-		// Return values.
-		$config->setReturnValue('item', 'manual', array('req_mbr_activation'));
-		$input->setReturnValue('post', $member_ids, array('toggle'));
-		
-		// Tests.
-		$this->_subject->on_cp_members_validate_members();
-	}
-	
-	
-	public function xtest_on_member_register_validate_members__success()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy values.
-		$member_id = 10;
-		
-		// Expectations.
-		$model->expectOnce('subscribe_member', array($member_id));
-		
-		// Return values.
-		$config->setReturnValue('item', 'email', array('req_mbr_activation'));
-		
-		// Tests.
-		$this->_subject->on_member_register_validate_members($member_id);
-	}
-	
-	
-	public function xtest_on_member_register_validate_members__no_activation()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy values.
-		$member_id = 10;
-		
-		// Expectations.
-		$model->expectNever('subscribe_member');
-		
-		// Return values.
-		$config->setReturnValue('item', 'none', array('req_mbr_activation'));
-		
-		// Tests.
-		$ths->_subject->on_member_register_validate_members($member_id);
-	}
-	
-	
-	public function xtest_on_member_register_validate_members__manual_activation()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy values.
-		$member_id = 10;
-		
-		// Expectations.
-		$model->expectNever('subscribe_member');
-		
-		// Return values.
-		$config->setReturnValue('item', 'manual', array('req_mbr_activation'));
-		
-		// Tests.
-		$this->_subject->on_member_register_validate_members($member_id);
-	}
-	
-	
-	public function xtest_on_user_edit_end__success()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy values.
-		$member_id			= 10;
-		$member_data 		= array();
-		$member_custom_data	= array();
-		
-		// Expectations.
-		$this->_ee->campaigner_model->expectOnce('subscribe_member', array($member_id, TRUE));
-		
-		// Tests.
-		$this->_subject->on_user_edit_end($member_id, $member_data, $member_custom_data);
-	}
-	
-	
-	public function xtest_on_user_register_end__success()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy values.
-		$member_id		= 10;
-		$user 			= new StdClass();		// Not really important what this is.
-		
-		// Expectations.
-		$config->expectOnce('item', array('req_mbr_activation'));
-		$this->_ee->campaigner_model->expectOnce('subscribe_member', array($member_id));
-		
-		// Returns values.
-		$config->setReturnValue('item', 'none', array('req_mbr_activation'));
-		
-		// Tests.
-		$this->_subject->on_user_register_end($user, $member_id);
-	}
-	
-	
-	public function xtest_on_user_register_end__email_activation()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy values.
-		$member_id		= 10;
-		$user 			= new StdClass();		// Not really important what this is.
-		
-		// Expectations.
-		$this->_ee->campaigner_model->expectNever('subscribe_member');
-		
-		// Returns values.
-		$config->setReturnValue('item', 'email', array('req_mbr_activation'));
-		
-		// Tests.
-		$this->_subject->on_user_register_end($user, $member_id);
-	}
-	
-	
-	public function xtest_on_user_register_end__manual_activation()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy values.
-		$member_id		= 10;
-		$user 			= new StdClass();		// Not really important what this is.
-		
-		// Expectations.
-		$this->_ee->campaigner_model->expectNever('subscribe_member');
-		
-		// Returns values.
-		$config->setReturnValue('item', 'manual', array('req_mbr_activation'));
-		
-		// Tests.
-		$this->_subject->on_user_register_end($user, $member_id);
-	}
-	
-	
-	public function xtest_on_member_member_register__success()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy data.
-		$member_data	= array();
-		$member_id		= 10;
-		
-		// Expectations.
-		$config->expectOnce('item', array('req_mbr_activation'));
-		$model->expectOnce('subscribe_member', array($member_id));
-		
-		// Return values.
-		$config->setReturnValue('item', 'none', array('req_mbr_activation'));
-		
-		// Tests.
-		$this->_subject->on_member_member_register($member_data, $member_id);
-	}
-	
-	
-	public function xtest_on_member_member_register__email_activation()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy data.
-		$member_data 	= array();
-		$member_id		= 10;
-		
-		// Expectations.
-		$model->expectNever('subscribe_member');
-		
-		// Return values.
-		$config->setReturnValue('item', 'email', array('req_mbr_activation'));
-		
-		// Tests.
-		$this->_subject->on_member_member_register($member_data, $member_id);
-	}
-	
-	
-	public function xtest_on_member_member_register__manual_activation()
-	{
-		// Shortcuts.
-		$config	= $this->_ee->config;
-		$model	= $this->_ee->campaigner_model;
-		
-		// Dummy data.
-		$member_data 	= array();
-		$member_id		= 10;
-		
-		// Expectations.
-		$model->expectNever('subscribe_member');
-		
-		// Return values.
-		$config->setReturnValue('item', 'manual', array('req_mbr_activation'));
-		
-		// Tests.
-		$this->_subject->on_member_member_register($member_data, $member_id);
-	}
-	
-
-
 
 }
 

@@ -10,8 +10,10 @@
 
 require_once PATH_THIRD .'campaigner/classes/campaigner_api_connector' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_client' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
 require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
 
 class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	
@@ -55,7 +57,7 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 * @param	string						$list_id			The list ID.
 	 * @param	Campaigner_subscriber		$subscriber			The subscriber.
 	 * @param 	bool						$resubscribe		Automatically resubscribe if necessary.
-	 * @return	bool
+	 * @return	void
 	 */
 	public function add_list_subscriber($list_id, Campaigner_subscriber $subscriber, $resubscribe = FALSE)
 	{
@@ -90,8 +92,6 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 		{
 			throw new Campaigner_api_exception($result->response->Message, $result->response->Code);
 		}
-
-		return TRUE;
 	}
 	
 	
@@ -103,8 +103,13 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 */
 	public function get_clients()
 	{
-		$connector	= $this->_factory->get_api_class_general();
-		$result		= $connector->get_clients();
+		// Get out early.
+		if ( ! $connector = $this->_factory->get_api_class_general())
+		{
+			throw new Campaigner_exception($this->_ee->lang->line('error_no_api_connector'));
+		}
+
+		$result = $connector->get_clients();
 
 		if ( ! $result->was_successful())
 		{
@@ -135,8 +140,13 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 */
 	public function get_client_lists($client_id, $include_fields = FALSE)
 	{
-		$connector	= $this->_factory->get_api_class_clients($client_id);
-		$result		= $connector->get_lists();
+		// Get out early.
+		if ( ! $connector = $this->_factory->get_api_class_clients($client_id))
+		{
+			throw new Campaigner_exception($this->_ee->lang->line('error_no_api_connector'));
+		}
+
+		$result = $connector->get_lists();
 		
 		if ( ! $result->was_successful())
 		{
@@ -175,9 +185,12 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 			return FALSE;
 		}
 
-		$connector	= $this->_factory->get_api_class_subscribers($list_id);
-		$result		= $connector->get($email);
+		if ( ! $connector = $this->_factory->get_api_class_subscribers($list_id))
+		{
+			throw new Campaigner_exception($this->_ee->lang->line('error_no_api_connector'));
+		}
 
+		$result = $connector->get($email);
 		return $result->was_successful();
 	}
 	
@@ -191,8 +204,18 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 */
 	public function get_list_fields($list_id)
 	{
-		$connector	= $this->_factory->get_api_class_lists($list_id);
-		$result		= $connector->get_custom_fields();
+		// Get out early.
+		if ( ! $list_id OR ! is_string($list_id))
+		{
+			throw new Campaigner_exception($this->_ee->lang->line('error_missing_or_invalid_list_id'));
+		}
+
+		if ( ! $connector = $this->_factory->get_api_class_lists($list_id))
+		{
+			throw new Campaigner_exception($this->_ee->lang->line('error_no_api_connector'));
+		}
+
+		$result = $connector->get_custom_fields();
 		
 		if ( ! $result->was_successful())
 		{
@@ -219,7 +242,7 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	 * @access	public
 	 * @param	string		$list_id		The list ID.
 	 * @param	string		$email			The subscriber's email address.
-	 * @return	bool
+	 * @return	void
 	 */
 	public function remove_list_subscriber($list_id, $email)
 	{
@@ -230,14 +253,19 @@ class Campaigner_cm_api_connector extends Campaigner_api_connector {
 			return FALSE;
 		}
 
-		// Retrieve the API class.
-		$connector = $this->_factory->get_api_class_subscribers($list_id);
+		if ( ! $connector = $this->_factory->get_api_class_subscribers($list_id))
+		{
+			throw new Campaigner_exception($this->_ee->lang->line('error_no_api_connector'));
+		}
 
 		// Unsubscribe the member.
 		$result = $connector->unsubscribe($email);
 		
 		// Success?
-		return $result->was_successful();
+		if ( ! $result->was_successful())
+		{
+			throw new Campaigner_api_exception($result->response->Message, $result->response->Code);
+		}
 	}
 
 }

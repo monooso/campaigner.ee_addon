@@ -336,8 +336,9 @@ class Campaigner_ext {
 			return $this->_ee->load->view($view_name, $view_vars, TRUE);
 
 		}
-		catch (Campaigner_api_exception $e)
+		catch (Campaigner_exception $e)
 		{
+			$this->_ee->campaigner_model->log_error($e);
 			return $this->display_error($e->getMessage(), $e->getCode());
 		}
 	}
@@ -360,8 +361,9 @@ class Campaigner_ext {
 		{
 			$lists = $this->_connector->get_client_lists($this->settings->get_client_id(), TRUE);
 		}
-		catch (Campaigner_api_exception $e)
+		catch (Campaigner_exception $e)
 		{
+			$model->log_error($e);
 			return $this->display_error($e->getMessage(), $e->getCode());
 		}
 			
@@ -435,7 +437,7 @@ class Campaigner_ext {
 			$this->_ee->campaigner_model->save_extension_settings($this->settings);
 			$this->_ee->session->set_flashdata('message_success', $this->_ee->lang->line('msg_settings_saved'));
 		}
-		catch (Exception $e)
+		catch (Campaigner_exception $e)
 		{
 			$this->_ee->session->set_flashdata(
 				'message_failure',
@@ -486,21 +488,44 @@ class Campaigner_ext {
 	 * @access	public
 	 * @param	int|string		$member_id			The member ID.
 	 * @param	bool			$force_resubscribe	Should we forcibly resubscribe the member?
-	 * @return	void
+	 * @return	bool
 	 */
 	public function subscribe_member($member_id, $force_resubscribe = FALSE)
 	{
 		// Shortcuts.
 		$model = $this->_ee->campaigner_model;
 
+		// Get out early.
+		if ( ! valid_int($member_id, 1))
+		{
+			$log_message = $this->_ee->lang->line('error_missing_or_invalid_member_id');
+			$log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
+
+			$model->log_error(new Campaigner_exception($log_message));
+
+			return FALSE;
+		}
+
 		// Retrieve the mailing lists to which the member should be subscribed.
 		$lists = $model->get_member_subscribe_lists($member_id);
 
 		foreach ($lists AS $list)
 		{
-			$subscriber = $model->get_member_as_subscriber($member_id, $list->get_list_id());
-			$this->_connector->add_list_subscriber($list->get_list_id(), $subscriber, $force_resubscribe);
+			try
+			{
+				if ($subscriber = $model->get_member_as_subscriber($member_id, $list->get_list_id()))
+				{
+					$this->_connector->add_list_subscriber($list->get_list_id(), $subscriber, $force_resubscribe);
+				}
+			}
+			catch (Campaigner_exception $e)
+			{
+				$model->log_error($e);
+				return FALSE;
+			}
 		}
+
+		return TRUE;
 	}
 
 
@@ -509,23 +534,33 @@ class Campaigner_ext {
 	 *
 	 * @access	public
 	 * @param	int|string		$member_id		The member ID.
-	 * @return	void
+	 * @return	bool
 	 */
 	public function unsubscribe_member($member_id)
 	{
+		// Shortcuts.
+		$model = $this->_ee->campaigner_model;
+
 		// Get out early.
 		if ( ! valid_int($member_id, 1))
 		{
-			throw new Campaigner_exception($this->_ee->lang->line('error_missing_or_invalid_member_id'));
-		}
+			$log_message = $this->_ee->lang->line('error_missing_or_invalid_member_id');
+			$log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
 
-		// Shortcuts.
-		$model = $this->_ee->campaigner_model;
+			$model->log_error(new Campaigner_exception($log_message));
+
+			return FALSE;
+		}
 
 		// Retrieve the member information.
 		if ( ! $member_data = $model->get_member_by_id($member_id))
 		{
-			throw new Campaigner_exception($this->_ee->lang->line('error_unknown_member'));
+			$log_message = $this->_ee->lang->line('error_unknown_member');
+			$log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
+
+			$model->log_error(new Campaigner_exception($log_message));
+
+			return FALSE;
 		}
 
 		// Retrieve all the mailing lists.
@@ -536,15 +571,22 @@ class Campaigner_ext {
 
 		foreach ($lists AS $list)
 		{
-			if ($this->_connector->get_is_subscribed($list->get_list_id(), $email))
+			// Unsubscribe the member.
+			try
 			{
-				// Unsubscribe the member.
-				if ( ! $this->_connector->remove_list_subscriber($list->get_list_id(), $email))
+				if ($this->_connector->get_is_subscribed($list->get_list_id(), $email))
 				{
-					throw new Campaigner_api_exception($this->_ee->lang->line('api_error_cannot_unsubscribe_member'));
+					$this->_connector->remove_list_subscriber($list->get_list_id(), $email);
 				}
 			}
+			catch (Campaigner_exception $e)
+			{
+				$model->log_error($e);
+				return FALSE;
+			}
 		}
+
+		return TRUE;
 	}
 
 	
