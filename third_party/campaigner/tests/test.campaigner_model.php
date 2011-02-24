@@ -1762,6 +1762,67 @@ class Test_campaigner_model extends Testee_unit_test_case {
 	}
 
 
+	public function test__get_api_class_subscribers__success()
+	{
+		// Dummy values.
+		$api_key	= 'API_KEY';
+		$list_id	= 'abc123';
+		$site_id	= 10;
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$db_lists			= $this->_get_mock('db_query');
+		$db_settings		= $this->_get_mock('db_query');
+		$db_settings_row	= array('api_key' => $api_key);
+		
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 1);
+		$db_settings->setReturnValue('row_array', $db_settings_row);
+
+		$this->_ee->config->setReturnValue('item', $site_id, array('site_id'));
+		$this->_ee->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+		$this->_ee->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+
+		// Run the tests.
+		$this->assertIdentical(new CS_REST_Subscribers($list_id, $api_key), $this->_model->get_api_class_subscribers($list_id));
+	}
+	
+
+	public function test__get_api_class_subscribers__no_settings()
+	{
+		// Dummy values.
+		$list_id	= 'abc123';
+		$site_id	= 10;
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$db_lists			= $this->_get_mock('db_query');
+		$db_settings		= $this->_get_mock('db_query');
+		
+		$db_lists->setReturnValue('result_array', array());
+		$db_settings->setReturnValue('num_rows', 0);
+
+		$this->_ee->config->setReturnValue('item', $site_id, array('site_id'));
+		$this->_ee->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
+		$this->_ee->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_model->get_api_class_subscribers($list_id));
+	}
+
+
+	public function test__get_api_class_subscribers__invalid_list_id()
+	{
+		// Dummy values.
+		$list_id	= '';
+
+		// Method calls `get_extension_settings`, so we need to mock that. Boo.
+		$this->_ee->config->expectNever('item');
+		$this->_ee->db->expectNever('get_where');
+
+		// Run the tests.
+		$this->assertIdentical(FALSE, $this->_model->get_api_class_subscribers($list_id));
+	}
+
+
 	public function test__member_should_be_subscribed_to_mailing_list__trigger_field_yes()
 	{
 		// Dummy values.

@@ -30,6 +30,7 @@ require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_clients' .EXT;
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_general' .EXT;
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_lists' .EXT;
+require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_subscribers' .EXT;
 
 class Campaigner_model extends CI_Model {
 	
@@ -401,6 +402,35 @@ class Campaigner_model extends CI_Model {
 
 
 	/**
+	 * Returns an instance of the CM 'subscribers' API class.
+	 * 
+	 * @access	public
+	 * @param	string		$list_id		The list ID.
+	 * @return	CS_REST_Subscribers|FALSE
+	 */
+	public function get_api_class_subscribers($list_id = '')
+	{
+		// Get out early.
+		if ( ! $list_id OR ! is_string($list_id))
+		{
+			return FALSE;
+		}
+
+		$settings = $this->get_extension_settings();
+
+		/**
+		 * Note that this method should only ever be called from
+		 * the API connector object, which wouldn't exist if the
+		 * API key wasn't set. Still, you can't be too careful.
+		 */
+
+		return $settings->get_api_key()
+			? new CS_REST_Subscribers($list_id, $settings->get_api_key())
+			: FALSE;
+	}
+
+
+	/**
 	 * Returns an API connector. If the API key has not been saved, returns FALSE.
 	 *
 	 * @access	public
@@ -696,7 +726,7 @@ class Campaigner_model extends CI_Model {
 	 */
 	public function get_member_subscribe_lists($member_id)
 	{
-		if ( ! ($member_data = $this->get_member_data($member_id))
+		if ( ! ($member_data = $this->get_member_by_id($member_id))
 			OR ! ($lists = $this->get_all_mailing_lists()))
 		{
 			return array();
