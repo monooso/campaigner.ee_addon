@@ -515,6 +515,16 @@ class Campaigner_ext {
 			{
 				if ($subscriber = $model->get_member_as_subscriber($member_id, $list->get_list_id()))
 				{
+					if ($this->_ee->extensions->active_hook('campaigner_subscribe_start') === TRUE)
+					{
+						$subscriber = $this->_ee->extensions->call('campaigner_subscribe_start', $member_id, $subscriber);
+
+						if ($this->_ee->extensions->end_script === TRUE)
+						{
+							return FALSE;
+						}
+					}
+
 					$this->_connector->add_list_subscriber($list->get_list_id(), $subscriber, $force_resubscribe);
 				}
 			}

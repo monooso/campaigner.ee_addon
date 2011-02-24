@@ -633,7 +633,6 @@ class Campaigner_model extends CI_Model {
 			}
 		}
 
-
 		return $subscriber;
 	}
 	

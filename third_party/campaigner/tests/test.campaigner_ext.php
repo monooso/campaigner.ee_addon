@@ -485,6 +485,101 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 	}
 
 
+	public function test__subscribe_member__extension_hook()
+	{
+		// Shortcuts.
+		$extensions = $this->_ee->extensions;
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id = 10;
+		$member_subscribe_lists = array(
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'abc123',
+				'list_name'	=> 'LIST A'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'cde456',
+				'list_name'	=> 'LIST B'
+			))
+		);
+
+		$pre_subscriber = new Campaigner_subscriber(array(
+			'email'	=> 'me@here.com',
+			'name'	=> 'John Doe'
+		));
+
+		$post_subscriber = new Campaigner_subscriber(array(
+			'email'	=> 'you@there.com',
+			'name'	=> 'Jane Doe'
+		));
+
+		// Expectations.
+		$extensions->expectCallCount('active_hook', count($member_subscribe_lists), array('campaigner_subscribe_start'));
+		$this->_connector->expectCallCount('add_list_subscriber', count($member_subscribe_lists));
+
+		$count = 0;
+
+		foreach ($member_subscribe_lists AS $list)
+		{
+			$this->_connector->expectAt($count, 'add_list_subscriber', array($list->get_list_id(), $post_subscriber, FALSE));
+			$count++;
+		}
+
+		// Return values.
+		$extensions->setReturnValue('active_hook', TRUE, array('campaigner_subscribe_start'));
+		$extensions->setReturnValue('call', $post_subscriber, array('campaigner_subscribe_start', $member_id, $pre_subscriber));
+		$extensions->setReturnValue('__get', FALSE, array('end_script'));
+
+		$model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
+		$model->setReturnValue('get_member_as_subscriber', $pre_subscriber);
+
+		// Tests.
+		$this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
+	}
+
+
+	public function test__subscribe_member__extension_hook_end_script()
+	{
+		// Shortcuts.
+		$extensions = $this->_ee->extensions;
+		$model = $this->_ee->campaigner_model;
+
+		// Dummy values.
+		$member_id = 10;
+		$member_subscribe_lists = array(
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'abc123',
+				'list_name'	=> 'LIST A'
+			)),
+			new Campaigner_mailing_list(array(
+				'list_id'	=> 'cde456',
+				'list_name'	=> 'LIST B'
+			))
+		);
+
+		$subscriber = new Campaigner_subscriber(array(
+			'email'	=> 'me@here.com',
+			'name'	=> 'John Doe'
+		));
+
+		// Expectations.
+		$extensions->expectCallCount('active_hook', 1);
+		$this->_connector->expectNever('add_list_subscriber');
+
+		// Return values.
+		$extensions->setReturnValue('active_hook', TRUE, array('campaigner_subscribe_start'));
+		$extensions->setReturnValue('call', $subscriber, array('campaigner_subscribe_start', $member_id, $subscriber));
+		$extensions->setReturnValue('__get', TRUE, array('end_script'));
+
+		$model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
+		$model->setReturnValue('get_member_as_subscriber', $subscriber);
+
+		// Tests.
+		$this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
+	}
+
+
 	public function test__unsubscribe_member__success()
 	{
 		$model = $this->_ee->campaigner_model;
