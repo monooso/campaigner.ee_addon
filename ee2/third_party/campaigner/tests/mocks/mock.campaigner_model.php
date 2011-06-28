@@ -45,6 +45,7 @@ class Mock_campaigner_model {
     public function get_site_id() {}
     public function get_support_url() {}
     public function get_theme_url() {}
+    public function log_error(Campaigner_exception $error) {}
     public function member_should_be_subscribed_to_mailing_list(Array $member_data, Campaigner_mailing_list $mailing_list) {}
     public function save_extension_settings($settings) {}
     public function save_mailing_lists_to_db($settings) {}
