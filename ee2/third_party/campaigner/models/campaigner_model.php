@@ -33,73 +33,13 @@ require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_subscribers
 
 class Campaigner_model extends CI_Model {
     
-    /* --------------------------------------------------------------
-     * PRIVATE PROPERTIES
-     * ------------------------------------------------------------ */
-    
-    /**
-     * ExpressionEngine object reference.
-     *
-     * @access  private
-     * @var     object
-     */
     private $_ee;
-    
-    /**
-     * Extension class. Assumed to be the package name,
-     * with an `_ext` suffix.
-     *
-     * @access  private
-     * @var     string
-     */
     private $_extension_class;
-    
-    /**
-     * Extension settings.
-     *
-     * @access  private
-     * @var     Campaigner_settings
-     */
     private $_extension_settings;
-    
-    /**
-     * Package name.
-     *
-     * @access  private
-     * @var     string
-     */
     private $_package_name;
-    
-    /**
-     * Package version.
-     *
-     * @access  private
-     * @var     string
-     */
     private $_package_version;
-    
-    /**
-     * The extension settings.
-     *
-     * @access  private
-     * @var     Campaigner_settings
-     */
     private $_settings;
-    
-    /**
-     * The site ID.
-     *
-     * @access  private
-     * @var     string
-     */
     private $_site_id;
-    
-    /**
-     * Package theme URL.
-     *
-     * @access  private
-     * @var     string
-     */
     private $_theme_url;
     
     
@@ -123,6 +63,20 @@ class Campaigner_model extends CI_Model {
         $this->_package_name        = 'Campaigner';
         $this->_package_version     = '4.0.0';
         $this->_extension_class     = $this->get_package_name() .'_ext';
+
+        // Load the OmniLog classes.
+        $omnilog_entry  = PATH_THIRD .'omnilog/classes/omnilog_entry' .EXT;
+        $omnilogger     = PATH_THIRD .'omnilog/classes/omnilogger' .EXT;
+
+        if (file_exists($omnilog_entry))
+        {
+            include_once $omnilog_entry;
+        }
+
+        if (file_exists($omnilogger))
+        {
+            include_once $omnilogger;
+        }
     }
     
     
@@ -815,6 +769,30 @@ class Campaigner_model extends CI_Model {
         }
         
         return $this->_theme_url;
+    }
+
+
+    /**
+     * Logs an error to OmniLog.
+     *
+     * @access  public
+     * @param   Campaigner_exception        $exception        The error details.
+     * @return  void
+     */
+    public function log_error(Campaigner_exception $exception)
+    {
+        if (class_exists('Omnilog_entry') && class_exists('Omnilogger'))
+        {
+            $omnilog_entry = new Omnilog_entry(array(
+                'addon_name'    => $this->get_package_name(),
+                'date'          => time(),
+                'message'       => $exception->getMessage(),
+                'notify_admin'  => FALSE,
+                'type'          => Omnilog_entry::NOTICE
+            ));
+
+            OmniLogger::log($omnilog_entry);
+        }
     }
     
     
