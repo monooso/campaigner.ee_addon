@@ -397,7 +397,7 @@ class Campaigner_ext {
             $log_message = $this->_ee->lang->line('error_missing_or_invalid_member_id');
             $log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
 
-            $model->log_error(new Campaigner_exception($log_message));
+            $model->log_error(new Campaigner_exception($log_message), 3);
 
             return FALSE;
         }
@@ -426,7 +426,7 @@ class Campaigner_ext {
             }
             catch (Campaigner_exception $e)
             {
-                $model->log_error($e);
+                $model->log_error($e, 3);
                 return FALSE;
             }
         }
@@ -453,7 +453,7 @@ class Campaigner_ext {
             $log_message = $this->_ee->lang->line('error_missing_or_invalid_member_id');
             $log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
 
-            $model->log_error(new Campaigner_exception($log_message));
+            $model->log_error(new Campaigner_exception($log_message), 3);
 
             return FALSE;
         }
@@ -464,7 +464,7 @@ class Campaigner_ext {
             $log_message = $this->_ee->lang->line('error_unknown_member');
             $log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
 
-            $model->log_error(new Campaigner_exception($log_message));
+            $model->log_error(new Campaigner_exception($log_message), 3);
 
             return FALSE;
         }
@@ -497,7 +497,7 @@ class Campaigner_ext {
             }
             catch (Campaigner_exception $e)
             {
-                $model->log_error($e);
+                $model->log_error($e, 3);
                 return FALSE;
             }
         }

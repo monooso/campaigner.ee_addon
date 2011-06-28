@@ -776,19 +776,39 @@ class Campaigner_model extends CI_Model {
      * Logs an error to OmniLog.
      *
      * @access  public
-     * @param   Campaigner_exception        $exception        The error details.
+     * @param   Campaigner_exception        $exception          The error details.
+     * @param   int                         $severity           The error 'level'.
      * @return  void
      */
-    public function log_error(Campaigner_exception $exception)
+    public function log_error(Campaigner_exception $exception, $severity = 1)
     {
         if (class_exists('Omnilog_entry') && class_exists('Omnilogger'))
         {
+            switch ($severity)
+            {
+                case 3:
+                    $notify = TRUE;
+                    $type   = Omnilog_entry::ERROR;
+                    break;
+
+                case 2:
+                    $notify = FALSE;
+                    $type   = Omnilog_entry::WARNING;
+                    break;
+
+                case 1:
+                default:
+                    $notify = FALSE;
+                    $type   = Omnilog_entry::NOTICE;
+                    break;
+            }
+
             $omnilog_entry = new Omnilog_entry(array(
                 'addon_name'    => $this->get_package_name(),
                 'date'          => time(),
                 'message'       => $exception->getMessage(),
-                'notify_admin'  => FALSE,
-                'type'          => Omnilog_entry::NOTICE
+                'notify_admin'  => $notify,
+                'type'          => $type
             ));
 
             OmniLogger::log($omnilog_entry);
