@@ -9,8 +9,8 @@
  * @package     Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_exception.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_settings.php';
 
 class Mock_campaigner_model {
     

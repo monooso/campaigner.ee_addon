@@ -8,8 +8,8 @@
  * @package         : Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/helpers/EI_number_helper' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
+require_once PATH_THIRD .'campaigner/helpers/EI_number_helper.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_exception.php';
 
 class Campaigner_ext {
     

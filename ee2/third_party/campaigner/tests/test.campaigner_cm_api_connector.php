@@ -8,12 +8,12 @@
  * @copyright	Experience Internet
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector' .EXT;
-require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_clients' .EXT;
-require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_general' .EXT;
-require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_lists' .EXT;
-require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_subscribers' .EXT;
-require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector.php';
+require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_clients.php';
+require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_general.php';
+require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_lists.php';
+require_once PATH_THIRD .'campaigner/tests/mocks/createsend-php/mock.csrest_subscribers.php';
+require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model.php';
 
 class Test_campaigner_api_connector extends Testee_unit_test_case {
 	

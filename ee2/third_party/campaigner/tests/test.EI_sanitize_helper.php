@@ -8,7 +8,7 @@
  * @copyright	Experience Internet
  */
 
-require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
+require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper.php';
 
 class Test_EI_sanitize_helper extends Testee_unit_test_case {
 	

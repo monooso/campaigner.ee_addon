@@ -8,12 +8,12 @@
  * @package			: Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_api_connector' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_client' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_api_connector.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_client.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_exception.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
 
 class Campaigner_cm_api_connector extends Campaigner_api_connector {
 	

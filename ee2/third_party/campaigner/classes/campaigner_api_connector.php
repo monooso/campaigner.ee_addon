@@ -8,7 +8,7 @@
  * @package			: Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
 
 abstract class Campaigner_api_connector {
 

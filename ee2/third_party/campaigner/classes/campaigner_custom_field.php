@@ -8,7 +8,7 @@
  * @package			: Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
+require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper.php';
 
 class Campaigner_custom_field {
 	

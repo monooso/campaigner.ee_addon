@@ -8,7 +8,7 @@
  * @copyright   Experience Internet
  */
 
-require_once PATH_THIRD .'campaigner/models/campaigner_model' .EXT;
+require_once PATH_THIRD .'campaigner/models/campaigner_model.php';
 
 class Test_campaigner_model extends Testee_unit_test_case {
     

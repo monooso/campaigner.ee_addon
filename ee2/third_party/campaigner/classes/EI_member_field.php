@@ -8,7 +8,7 @@
  * @package			: EI
  */
 
-require_once PATH_THIRD .'campaigner/helpers/EI_number_helper' .EXT;
+require_once PATH_THIRD .'campaigner/helpers/EI_number_helper.php';
 
 class EI_member_field {
 	

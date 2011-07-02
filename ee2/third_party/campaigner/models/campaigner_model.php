@@ -9,13 +9,13 @@
  * @version         : 4.0.0
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_exception' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_settings' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
-require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
-require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_exception.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_settings.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
+require_once PATH_THIRD .'campaigner/classes/EI_member_field.php';
+require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper.php';
 
 /**
  * NOTE:
@@ -26,10 +26,10 @@ require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper' .EXT;
  * It's not a high priority, just worthy of a note.
  */
 
-require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_clients' .EXT;
-require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_general' .EXT;
-require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_lists' .EXT;
-require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_subscribers' .EXT;
+require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_clients.php';
+require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_general.php';
+require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_lists.php';
+require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_subscribers.php';
 
 class Campaigner_model extends CI_Model {
     
@@ -65,9 +65,9 @@ class Campaigner_model extends CI_Model {
         $this->_extension_class     = $this->get_package_name() .'_ext';
 
         // Load the OmniLogger class.
-        if (file_exists(PATH_THIRD .'omnilog/classes/omnilogger' .EXT))
+        if (file_exists(PATH_THIRD .'omnilog/classes/omnilogger.php'))
         {
-            include_once PATH_THIRD .'omnilog/classes/omnilogger' .EXT;
+            include_once PATH_THIRD .'omnilog/classes/omnilogger.php';
         }
     }
     

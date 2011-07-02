@@ -9,7 +9,7 @@
  * @package 		: Campaigner
  */
 
-require_once dirname(__FILE__) .DIRECTORY_SEPARATOR .'mock.campaigner_api_connector' .EXT;
+require_once dirname(__FILE__) .DIRECTORY_SEPARATOR .'mock.campaigner_api_connector.php';
 
 class Mock_campaigner_cm_api_connector extends Mock_campaigner_api_connector {}
 

@@ -8,7 +8,7 @@
  * @package			: Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber_custom_data' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber_custom_data.php';
 
 class Campaigner_subscriber {
 	

@@ -8,7 +8,7 @@
  * @copyright	Experience Internet
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_custom_field.php';
 
 class Test_campaigner_custom_field extends Testee_unit_test_case {
 	

@@ -8,7 +8,7 @@
  * @package 	EI
  */
 
-require_once PATH_THIRD .'campaigner/classes/EI_member_field' .EXT;
+require_once PATH_THIRD .'campaigner/classes/EI_member_field.php';
 
 class Test_EI_member_field extends Testee_unit_test_case {
 	

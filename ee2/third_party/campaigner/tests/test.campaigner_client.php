@@ -8,7 +8,7 @@
  * @package		Campaigner
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_client' .EXT;
+require_once PATH_THIRD .'campaigner/classes/campaigner_client.php';
 
 class Test_campaigner_client extends Testee_unit_test_case {
 	

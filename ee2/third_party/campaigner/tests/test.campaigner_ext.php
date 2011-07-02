@@ -8,10 +8,10 @@
  * @copyright   Experience Internet
  */
 
-require_once PATH_THIRD .'campaigner/ext.campaigner' .EXT;
-require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber' .EXT;
-require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_cm_api_connector' .EXT;
-require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model' .EXT;
+require_once PATH_THIRD .'campaigner/ext.campaigner.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
+require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_cm_api_connector.php';
+require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model.php';
 
 class Test_campaigner_ext extends Testee_unit_test_case {
     
