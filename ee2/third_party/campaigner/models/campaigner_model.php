@@ -64,18 +64,10 @@ class Campaigner_model extends CI_Model {
         $this->_package_version     = '4.0.0';
         $this->_extension_class     = $this->get_package_name() .'_ext';
 
-        // Load the OmniLog classes.
-        $omnilog_entry  = PATH_THIRD .'omnilog/classes/omnilog_entry' .EXT;
-        $omnilogger     = PATH_THIRD .'omnilog/classes/omnilogger' .EXT;
-
-        if (file_exists($omnilog_entry))
+        // Load the OmniLogger class.
+        if (file_exists(PATH_THIRD .'omnilog/classes/omnilogger' .EXT))
         {
-            include_once $omnilog_entry;
-        }
-
-        if (file_exists($omnilogger))
-        {
-            include_once $omnilogger;
+            include_once PATH_THIRD .'omnilog/classes/omnilogger' .EXT;
         }
     }
     
