@@ -153,7 +153,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
         
         // Expectations.
         $dbf->expectOnce('add_field', array($fields));
-        $dbf->expectOnce('add_key', array('list_id', TRUE));
+        $dbf->expectCallCount('add_key', 2);
+        $dbf->expectAt(0, 'add_key', array('list_id', TRUE));
+        $dbf->expectAt(1, 'add_key', array('site_id', TRUE));
         $dbf->expectOnce('create_table', array('campaigner_mailing_lists'));
         $loader->expectOnce('dbforge', array());
         
@@ -325,6 +327,26 @@ class Test_campaigner_model extends Testee_unit_test_case {
         $db->expectAt(0, 'update', array('extensions', $data, $criteria));
 
         // Run the tests.
+        $this->_model->update_extension($installed_version, $package_version);
+    }
+    
+    
+    public function test__update_extension__upgrade_to_version_4_1()
+    {
+        // Shortcuts.
+        $db = $this->_ee->db;
+
+        // Dummy values.
+        $installed_version  = '4.0.0';
+        $package_version    = '4.1.0';
+
+        $sql_drop = 'ALTER TABLE exp_campaigner_mailing_lists DROP PRIMARY KEY';
+        $sql_add = 'ALTER TABLE exp_campaigner_mailing_lists ADD PRIMARY KEY (list_id, site_id)';
+
+        $db->expectCallCount('query', 2);
+        $db->expectAt(0, 'query', array(new EqualWithoutWhitespaceExpectation($sql_drop)));
+        $db->expectAt(1, 'query', array(new EqualWithoutWhitespaceExpectation($sql_add)));
+
         $this->_model->update_extension($installed_version, $package_version);
     }
     

@@ -172,6 +172,7 @@ class Campaigner_model extends CI_Model {
         
         $dbforge->add_field($fields);
         $dbforge->add_key('list_id', TRUE);
+        $dbforge->add_key('site_id', TRUE);
         $dbforge->create_table('campaigner_mailing_lists');
     }
     
@@ -989,6 +990,13 @@ class Campaigner_model extends CI_Model {
                 array('priority' => 5),
                 array('class' => $this->get_extension_class())
             );
+        }
+
+        // Version 4.1.
+        if (version_compare($installed_version, '4.1', '<'))
+        {
+            $this->_ee->db->query('ALTER TABLE exp_campaigner_mailing_lists DROP PRIMARY KEY');
+            $this->_ee->db->query('ALTER TABLE exp_campaigner_mailing_lists ADD PRIMARY KEY (list_id, site_id)');
         }
         
         // Update the extension version in the database.
