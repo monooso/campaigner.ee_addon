@@ -14,7 +14,8 @@ require_once PATH_THIRD .'campaigner/classes/campaigner_exception.php';
 require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list.php';
 require_once PATH_THIRD .'campaigner/classes/campaigner_settings.php';
 require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
-require_once PATH_THIRD .'campaigner/classes/EI_member_field.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_trigger_field.php';
+require_once PATH_THIRD .'campaigner/helpers/EI_number_helper.php';
 require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper.php';
 
 /**
@@ -605,21 +606,65 @@ class Campaigner_model extends CI_Model {
         // Shortcuts.
         $lang = $this->_ee->lang;
         
-        $member_fields = array();
+        $trigger_fields = array();
+        $member_groups = array();
+
+        // Retrieve the member groups.
+        $db_member_groups = $this->_ee->db
+            ->select('group_id, group_title')
+            ->get('member_groups');
+
+        foreach ($db_member_groups->result_array() AS $db_member_group)
+        {
+            $member_groups[] = new Campaigner_trigger_field_option(array(
+                'id'    => $db_member_group['group_id'],
+                'label' => $db_member_group['group_title']
+            ));
+        }
         
         // ExpressionEngine hard-codes these member fields, so we must do the same.
         $standard_member_fields = array(
-            array('id' => 'group_id', 'label' => $lang->line('mbr_group_id'), 'options' => array(), 'type' => 'text'),
-            array('id' => 'location', 'label' => $lang->line('mbr_location'), 'options' => array(), 'type' => 'text'),
-            array('id' => 'occupation', 'label' => $lang->line('mbr_occupation'), 'options' => array(), 'type' => 'text'),
-            array('id' => 'screen_name', 'label' => $lang->line('mbr_screen_name'), 'options' => array(), 'type' => 'text'),
-            array('id' => 'url', 'label' => $lang->line('mbr_url'), 'options' => array(), 'type' => 'text'),
-            array('id' => 'username', 'label' => $lang->line('mbr_username'), 'options' => array(), 'type' => 'text')
+            array(
+                'id'        => 'group_id',
+                'label'     => $lang->line('mbr_group_id'),
+                'options'   => $member_groups,
+                'type'      => 'select'
+            ),
+            array(
+                'id'        => 'location',
+                'label'     => $lang->line('mbr_location'),
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'occupation',
+                'label'     => $lang->line('mbr_occupation'),
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'screen_name',
+                'label'     => $lang->line('mbr_screen_name'),
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'url',
+                'label'     => $lang->line('mbr_url'),
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'username',
+                'label'     => $lang->line('mbr_username'),
+                'options'   => array(),
+                'type'      => 'text'
+            )
         );
         
         foreach ($standard_member_fields AS $member_field_data)
         {
-            $member_fields[] = new EI_member_field($member_field_data);
+            $trigger_fields[] = new Campaigner_trigger_field($member_field_data);
         }
         
         // Load the custom member fields from the database.
@@ -629,13 +674,31 @@ class Campaigner_model extends CI_Model {
         
         foreach ($db_member_fields->result_array() AS $db_row)
         {
-            $member_field = new EI_member_field();
-            $member_field->populate_from_db_array($db_row);
-            
-            $member_fields[] = $member_field;
+            $trigger_field_options = array();
+
+            if ($db_row['m_field_type'] == Campaigner_trigger_field::DATATYPE_SELECT)
+            {
+                $list_items = explode("\n", $db_row['m_field_list_items']);
+                foreach ($list_items AS $list_item)
+                {
+                    $trigger_field_options[] = new Campaigner_trigger_field_option(array(
+                        'id'    => $list_item,
+                        'label' => $list_item
+                    ));
+                }
+            }
+
+            $trigger_field = new Campaigner_trigger_field(array(
+                'id'        => 'm_field_id_' .$db_row['m_field_id'],
+                'label'     => $db_row['m_field_label'],
+                'options'   => $trigger_field_options,
+                'type'      => $db_row['m_field_type']
+            ));
+
+            $trigger_fields[] = $trigger_field;
         }
         
-        return $member_fields;
+        return $trigger_fields;
     }
 
 
