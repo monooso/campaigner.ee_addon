@@ -234,14 +234,14 @@
 					+'style="display:none;" '
 					+'tabindex="' + triggerValueField.tabIndex + '">';
 
-				for (var opt in options) {
-					triggerValueHtml += '<option value="' + options[opt] + '"';
+				for (var option_index in options) {
+					triggerValueHtml += '<option value="' + options[option_index].id + '"';
 					
-					if (options[opt] == currentFieldValue) {
+					if (options[option_index].id == currentFieldValue) {
 						triggerValueHtml += ' selected="selected"';
 					}
 					
-					triggerValueHtml += '>' + options[opt] + '</option>';
+					triggerValueHtml += '>' + options[option_index].label + '</option>';
 				}
 
 				triggerValueHtml += '</select>';
