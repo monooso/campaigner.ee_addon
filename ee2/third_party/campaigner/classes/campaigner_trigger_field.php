@@ -1,16 +1,17 @@
 <?php
 
 /**
- * Member Field.
+ * Campaigner "trigger" field.
  *
  * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright		: Experience Internet
- * @package			: EI
+ * @package			: Campaigner
  */
 
+require_once PATH_THIRD .'campaigner/classes/campaigner_trigger_field_option.php';
 require_once PATH_THIRD .'campaigner/helpers/EI_number_helper.php';
 
-class EI_member_field {
+class Campaigner_trigger_field {
 	
 	/* --------------------------------------------------------------
 	 * CONSTANTS
@@ -32,36 +33,9 @@ class EI_member_field {
 	 * PRIVATE PROPERTIES.
 	 * ------------------------------------------------------------ */
 	
-	/**
-	 * Field ID.
-	 *
-	 * @access	private
-	 * @var		mixed
-	 */
 	private $_id;
-	
-	/**
-	 * Field label.
-	 *
-	 * @access	private
-	 * @var		string
-	 */
 	private $_label;
-	
-	/**
-	 * Field options.
-	 *
-	 * @access	private
-	 * @var		array
-	 */
 	private $_options;
-	
-	/**
-	 * Field type.
-	 *
-	 * @access	private
-	 * @var		string
-	 */
 	private $_type;
 	
 	
@@ -97,16 +71,12 @@ class EI_member_field {
 	 * Add a field option.
 	 *
 	 * @access	public
-	 * @param	string	$option	A field option.
+	 * @param	Campaigner_trigger_field_option     $option     A trigger field option.
 	 * @return	array
 	 */
-	public function add_option($option)
+	public function add_option(Campaigner_trigger_field_option $option)
 	{
-		if (is_string($option))
-		{
-			$this->_options[] = $option;
-		}
-		
+		$this->_options[] = $option;
 		return $this->get_options();
 	}
 	
@@ -298,12 +268,19 @@ class EI_member_field {
 	 */
 	public function to_array()
 	{
-		return array(
+		$return = array(
 			'id'		=> $this->get_id(),
 			'label'		=> $this->get_label(),
-			'options'	=> $this->get_options(),
+			'options'	=> array(),
 			'type'		=> $this->get_type()
 		);
+
+        foreach ($this->_options AS $option)
+        {
+            $return['options'][] = $option->to_array();
+        }
+
+        return $return;
 	}
 	
 	

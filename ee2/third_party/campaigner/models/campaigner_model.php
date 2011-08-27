@@ -606,10 +606,21 @@ class Campaigner_model extends CI_Model {
         $lang = $this->_ee->lang;
         
         $member_fields = array();
+        $member_groups = array();
+
+        // Retrieve the member groups.
+        $db_member_groups = $this->_ee->db
+            ->select('group_id, group_title')
+            ->get('member_groups');
+
+        foreach ($db_member_groups->result_array() AS $db_member_group)
+        {
+            $member_groups[$db_member_group['group_id']] = $db_member_group['group_title'];
+        }
         
         // ExpressionEngine hard-codes these member fields, so we must do the same.
         $standard_member_fields = array(
-            array('id' => 'group_id', 'label' => $lang->line('mbr_group_id'), 'options' => array(), 'type' => 'text'),
+            array('id' => 'group_id', 'label' => $lang->line('mbr_group_id'), 'options' => $member_groups, 'type' => 'select'),
             array('id' => 'location', 'label' => $lang->line('mbr_location'), 'options' => array(), 'type' => 'text'),
             array('id' => 'occupation', 'label' => $lang->line('mbr_occupation'), 'options' => array(), 'type' => 'text'),
             array('id' => 'screen_name', 'label' => $lang->line('mbr_screen_name'), 'options' => array(), 'type' => 'text'),
