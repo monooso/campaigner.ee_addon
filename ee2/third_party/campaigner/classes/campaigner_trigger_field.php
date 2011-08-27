@@ -9,7 +9,6 @@
  */
 
 require_once PATH_THIRD .'campaigner/classes/campaigner_trigger_field_option.php';
-require_once PATH_THIRD .'campaigner/helpers/EI_number_helper.php';
 
 class Campaigner_trigger_field {
 	
@@ -130,43 +129,6 @@ class Campaigner_trigger_field {
 	
 	
 	/**
-	 * Populates the instance from a DB row array.
-	 *
-	 * @access	public
-	 * @param	array		$db_row		The database row.
-	 * @return	EI_member_field
-	 */
-	public function populate_from_db_array(Array $db_row)
-	{
-		$this->reset();
-		
-		foreach ($db_row AS $key => $val)
-		{
-			switch (strtolower($key))
-			{
-				case 'm_field_id':
-					$this->set_id($val);
-					break;
-					
-				case 'm_field_label':
-					$this->set_label($val);
-					break;
-					
-				case 'm_field_list_items':
-					$this->set_options(explode("\n", $val));
-					break;
-					
-				case 'm_field_type':
-					$this->set_type($val);
-					break;
-			}
-		}
-		
-		return $this;
-	}
-	
-	
-	/**
 	 * Resets all the properties to their default values.
 	 *
 	 * @access	public
@@ -174,10 +136,10 @@ class Campaigner_trigger_field {
 	 */
 	public function reset()
 	{
-		$this->_id 		= NULL;
-		$this->_label	= NULL;
+		$this->_id 		= '';
+		$this->_label	= '';
 		$this->_options = array();
-		$this->_type	= NULL;
+		$this->_type	= '';
 	}
 	
 	
@@ -185,21 +147,12 @@ class Campaigner_trigger_field {
 	 * Sets the field ID.
 	 *
 	 * @access	public
-	 * @param 	mixed		$id			The field ID.
+	 * @param 	string	    $id	    The field ID.
 	 * @return	mixed
 	 */
 	public function set_id($id)
 	{
-		if (is_string($id) OR is_int($id))
-		{
-			if (valid_int($id, 1))
-			{
-				$id = 'm_field_id_' .$id;
-			}
-			
-			$this->_id = $id;
-		}
-		
+        $this->_id = $id;
 		return $this->get_id();
 	}
 	
@@ -235,6 +188,11 @@ class Campaigner_trigger_field {
 		
 		foreach ($options AS $option)
 		{
+            if ( ! $option instanceof Campaigner_trigger_field_option)
+            {
+                continue;
+            }
+
 			$this->add_option($option);
 		}
 		
@@ -283,24 +241,7 @@ class Campaigner_trigger_field {
         return $return;
 	}
 	
-	
-	/**
-	 * Returns the instance as a database row array.
-	 *
-	 * @access	public
-	 * @return	array
-	 */
-	public function to_db_array()
-	{
-		return array(
-			'm_field_id'			=> $this->get_id(),
-			'm_field_label'			=> $this->get_label(),
-			'm_field_list_items'	=> implode("\n", $this->get_options()),
-			'm_field_type'			=> $this->get_type()
-		);
-	}
-	
-	
+
 	
 	/* --------------------------------------------------------------
 	 * PRIVATE METHODS
@@ -326,5 +267,5 @@ class Campaigner_trigger_field {
 	
 }
 
-/* End of file		: campaigner_member_field.php */
-/* File location	: third_party/campaigner/classes/campaigner_member_field.php */
+/* End of file		: campaigner_trigger_field.php */
+/* File location	: third_party/campaigner/classes/campaigner_trigger_field.php */

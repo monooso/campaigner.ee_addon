@@ -79,16 +79,6 @@ class Test_campaigner_trigger_field extends Testee_unit_test_case {
 	}
 	
 	
-	public function test_set_id__invalid_values()
-	{
-		$field = new Campaigner_trigger_field($this->_props);
-		
-		$this->assertIdentical($this->_props['id'], $field->set_id(NULL));
-		$this->assertIdentical($this->_props['id'], $field->set_id(FALSE));
-		$this->assertIdentical($this->_props['id'], $field->set_id(new StdClass()));
-	}
-	
-	
 	public function test_set_label__invalid_values()
 	{
 		$field = new Campaigner_trigger_field($this->_props);
@@ -112,29 +102,6 @@ class Test_campaigner_trigger_field extends Testee_unit_test_case {
 	}
 	
 	
-	public function xtest_populate_from_db_array__success()
-	{
-		// Dummy values.
-		$db_array = array(
-			'm_field_id'			=> 'm_field_id_10',
-			'm_field_label'			=> 'Favourite Colour',
-			'm_field_list_items'	=> "Red\nGreen\nBlue",
-			'm_field_type'			=> 'select'
-		);
-		
-		$field_options = array('Red', 'Green', 'Blue');
-		
-		$field = new Campaigner_trigger_field();
-		$field->populate_from_db_array($db_array);
-		
-		// Tests.
-		$this->assertIdentical($db_array['m_field_id'], $field->get_id());
-		$this->assertIdentical($db_array['m_field_label'], $field->get_label());
-		$this->assertIdentical($field_options, $field->get_options());
-		$this->assertIdentical($db_array['m_field_type'], $field->get_type());
-	}
-	
-	
 	public function test_to_array__success()
 	{
 		$field = new Campaigner_trigger_field($this->_props);
@@ -154,37 +121,6 @@ class Test_campaigner_trigger_field extends Testee_unit_test_case {
 		$this->assertIdentical($expected_result, $field_array);
 	}
 	
-	
-	public function xtest_to_db_array__success()
-	{
-		// Dummy values.
-		$db_array = array(
-			'm_field_id'			=> 'm_field_id_10',
-			'm_field_label'			=> 'Favourite Colour',
-			'm_field_list_items'	=> "Red\nGreen\nBlue",
-			'm_field_type'			=> 'select'
-		);
-		
-		$field = new Campaigner_trigger_field();
-		$field->populate_from_db_array($db_array);
-		
-		// Tests.
-		$field_array = $field->to_db_array();
-		
-		ksort($db_array);
-		ksort($field_array);
-		
-		$this->assertIdentical($db_array, $field_array);
-	}
-	
-	
-	public function xtest_set_id__integer_conversion()
-	{
-		$this->_props['id'] = 10;
-		$field = new Campaigner_trigger_field($this->_props);
-		
-		$this->assertIdentical('m_field_id_' .$this->_props['id'], $field->get_id());
-	}
 	
 }
 
