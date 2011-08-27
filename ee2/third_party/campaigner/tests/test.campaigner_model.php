@@ -470,24 +470,56 @@ class Test_campaigner_model extends Testee_unit_test_case {
         $member_groups = array();
         foreach ($db_member_group_rows AS $db_member_group_row)
         {
-            $member_groups[$db_member_group_row['group_id']]
-                = $db_member_group_row['group_title'];
+            $member_groups[] = new Campaigner_trigger_field_option(array(
+                'id'    => $db_member_group_row['group_id'],
+                'label' => $db_member_group_row['group_title']
+            ));
         }
 
         // Retrieve the member fields.
-        $member_fields  = array();
+        $trigger_fields  = array();
         $standard_member_fields = array(
-            array('id' => 'group_id', 'label' => $dummy_label, 'options' => $member_groups, 'type' => 'select'),
-            array('id' => 'location', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-            array('id' => 'occupation', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-            array('id' => 'screen_name', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-            array('id' => 'url', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-            array('id' => 'username', 'label' => $dummy_label, 'options' => array(), 'type' => 'text')
+            array(
+                'id'        => 'group_id',
+                'label'     => $dummy_label,
+                'options'   => $member_groups,
+                'type'      => 'select'
+            ),
+            array(
+                'id'        => 'location',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'occupation',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'screen_name',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'url',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'username',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            )
         );
         
         foreach ($standard_member_fields AS $member_field_data)
         {
-            $member_fields[] = new EI_member_field($member_field_data);
+            $trigger_fields[] = new Campaigner_trigger_field($member_field_data);
         }
         
         $db_member_fields = $this->_get_mock('db_query');
@@ -500,10 +532,29 @@ class Test_campaigner_model extends Testee_unit_test_case {
         
         foreach ($db_member_field_rows AS $db_member_field_row)
         {
-            $member_field = new EI_member_field();
-            $member_field->populate_from_db_array($db_member_field_row);
-            
-            $member_fields[] = $member_field;
+            $trigger_field_options = array();
+
+            if ($db_member_field_row['m_field_type'] == Campaigner_trigger_field::DATATYPE_SELECT)
+            {
+                $db_member_field_options = explode("\n", $db_member_field_row['m_field_list_items']);
+                foreach ($db_member_field_options AS $option)
+                {
+                    $trigger_field_options[] = new Campaigner_trigger_field_option(array(
+                        'id'    => $option,
+                        'label' => $option
+                    ));
+                }
+            }
+
+            $trigger_field_data = array(
+                'id'        => 'm_field_id_' .$db_member_field_row['m_field_id'],
+                'label'     => $db_member_field_row['m_field_label'],
+                'options'   => $trigger_field_options,
+                'type'      => $db_member_field_row['m_field_type']
+            );
+
+            $trigger_field = new Campaigner_trigger_field($trigger_field_data);
+            $trigger_fields[] = $trigger_field;
         }
 
         $this->_ee->db->expectAt(1, 'select', array('m_field_id, m_field_label, m_field_list_items, m_field_type'));
@@ -513,39 +564,93 @@ class Test_campaigner_model extends Testee_unit_test_case {
         $db_member_fields->expectOnce('result_array');
         $db_member_fields->setReturnValue('result_array', $db_member_field_rows);
 
-        $this->assertIdentical($member_fields, $this->_model->get_member_fields());
+        $this->assertIdentical($trigger_fields, $this->_model->get_member_fields());
     }
     
     
-    public function xtest__get_member_fields__no_custom_member_fields()
+    public function test__get_member_fields__no_custom_member_fields()
     {
-        // Dummy values.
-        $db_result      = $this->_get_mock('db_query');
-        $db_rows        = array();
-        $member_fields  = array();
-        $dummy_label    = 'Label';
-
-        $standard_member_fields = array(
-            array('id' => 'group_id', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-            array('id' => 'location', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-            array('id' => 'occupation', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-            array('id' => 'screen_name', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-            array('id' => 'url', 'label' => $dummy_label, 'options' => array(), 'type' => 'text'),
-            array('id' => 'username', 'label' => $dummy_label, 'options' => array(), 'type' => 'text')
+        // Language strings.
+        $dummy_label = 'Label';
+        $this->_ee->lang->setReturnValue('line', $dummy_label);
+        
+        // Retrieve the member groups.
+        $db_member_groups = $this->_get_mock('db_query');
+        $db_member_group_rows = array(
+            array('group_id' => '5', 'group_title' => 'Super Admins'),
+            array('group_id' => '10', 'group_title' => 'Authors'),
+            array('group_id' => '15', 'group_title' => 'Editors')
         );
 
-        foreach ($standard_member_fields AS $member_field_data)
+        $this->_ee->db->expectAt(0, 'select', array('group_id, group_title'));
+        $this->_ee->db->expectAt(0, 'get', array('member_groups'));
+        $this->_ee->db->setReturnReferenceAt(0, 'get', $db_member_groups);
+        $db_member_groups->setReturnValue('result_array', $db_member_group_rows);
+
+        $member_groups = array();
+        foreach ($db_member_group_rows AS $db_member_group_row)
         {
-            $member_fields[] = new EI_member_field($member_field_data);
+            $member_groups[] = new Campaigner_trigger_field_option(array(
+                'id'    => $db_member_group_row['group_id'],
+                'label' => $db_member_group_row['group_title']
+            ));
         }
 
-        // Return values.
-        $this->_ee->db->setReturnReference('get', $db_result);
-        $this->_ee->lang->setReturnValue('line', $dummy_label);
-        $db_result->setReturnValue('result_array', $db_rows);
+        // Retrieve the member fields.
+        $trigger_fields  = array();
+        $standard_member_fields = array(
+            array(
+                'id'        => 'group_id',
+                'label'     => $dummy_label,
+                'options'   => $member_groups,
+                'type'      => 'select'
+            ),
+            array(
+                'id'        => 'location',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'occupation',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'screen_name',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'url',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            ),
+            array(
+                'id'        => 'username',
+                'label'     => $dummy_label,
+                'options'   => array(),
+                'type'      => 'text'
+            )
+        );
+        
+        foreach ($standard_member_fields AS $member_field_data)
+        {
+            $trigger_fields[] = new Campaigner_trigger_field($member_field_data);
+        }
+        
+        $db_member_fields = $this->_get_mock('db_query');
+        $this->_ee->db->expectAt(1, 'select', array('m_field_id, m_field_label, m_field_list_items, m_field_type'));
+        $this->_ee->db->expectAt(1, 'get', array('member_fields'));
+        $this->_ee->db->setReturnReferenceAt(1, 'get', $db_member_fields);
 
-        // Tests.
-        $this->assertIdentical($member_fields, $this->_model->get_member_fields());
+        $db_member_fields->expectOnce('result_array');
+        $db_member_fields->setReturnValue('result_array', array());
+
+        $this->assertIdentical($trigger_fields, $this->_model->get_member_fields());
     }
     
     
