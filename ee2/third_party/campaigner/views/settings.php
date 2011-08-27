@@ -33,22 +33,10 @@ $this->table->clear();
 ?>
 
 <!-- Clients -->
-<div id="campaigner_clients">
-<?php
-
-//$this->load->view('_clients');
-
-?>
-</div>
+<div id="campaigner_clients"></div>
 
 <!-- Mailing Lists -->
-<div id="campaigner_lists">
-<?php
-
-//$this->load->view('_mailing_lists');
-
-?>
-</div>
+<div id="campaigner_lists"></div>
 
 <?php
 
