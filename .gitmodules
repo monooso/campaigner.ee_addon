@@ -1,3 +1,0 @@
-[submodule "ee2/third_party/campaigner/libraries/createsend-php"]
-	path = ee2/third_party/campaigner/libraries/createsend-php
-	url = git://github.com/campaignmonitor/createsend-php.git
