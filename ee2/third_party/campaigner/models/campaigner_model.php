@@ -80,57 +80,9 @@ class Campaigner_model extends CI_Model {
    */
   public function activate_extension()
   {
-    $this->activate_extension_error_log_table();
     $this->activate_extension_mailing_lists_table();
     $this->activate_extension_settings_table();
     $this->activate_extension_register_hooks();
-  }
-  
-  
-  /**
-   * Creates the error log table when the extension is activated.
-   *
-   * @access  public
-   * @return  void
-   */
-  public function activate_extension_error_log_table()
-  {
-    // Shortcuts.
-    $this->_ee->load->dbforge();
-    $dbforge = $this->_ee->dbforge;
-    
-    // Table data.
-    $fields = array(
-      'error_log_id' => array(
-        'auto_increment' => TRUE,
-        'constraint'    => 10,
-        'type'          => 'int',
-        'unsigned'      => TRUE
-      ),
-      'site_id' => array(
-        'constraint'    => 5,
-        'type'          => 'int',
-        'unsigned'      => TRUE
-      ),
-      'error_date' => array(
-        'constraint'    => 10,
-        'type'          => 'int',
-        'unsigned'      => TRUE
-      ),
-      'error_code' => array(
-        'constraint'    => 3,
-        'type'          => 'int',
-        'unsigned'      => TRUE
-      ),
-      'error_message' => array(
-        'constraint'    => 255,
-        'type'          => 'varchar'
-      )
-    );
-    
-    $dbforge->add_field($fields);
-    $dbforge->add_key('error_log_id', TRUE);
-    $dbforge->create_table('campaigner_error_log');
   }
   
   
