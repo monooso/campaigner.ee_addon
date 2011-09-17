@@ -669,6 +669,39 @@ class Campaigner_ext {
   }
 
 
+  /**
+   * Handles the `zoo_visitor_update_end` hook.
+   *
+   * @access  public
+   * @param   Array    $member_data    The member data.
+   * @param   int|string    $member_id    The member ID.
+   * @return  bool
+   */
+  public function on_zoo_visitor_update_end(
+    Array $member_data = array(),
+    $member_id = ''
+  )
+  {
+    $this->subscribe_member($member_id);
+    return TRUE;
+  }
+
+
+  /**
+   * Handles the `zoo_visitor_register` hook.
+   *
+   * @access  public
+   * @param   Array         $userdata     The user data.
+   * @param   int|string    $member_id    The member ID.
+   * @return  Array
+   */
+  public function on_zoo_visitor_register($userdata = NULL, $member_id = 0)
+  {
+    $this->subscribe_member($member_id);
+    return $userdata;
+  }
+
+
 }
 
 
