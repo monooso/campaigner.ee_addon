@@ -19,7 +19,6 @@ class Mock_campaigner_model {
      * ------------------------------------------------------------ */
     
     public function activate_extension() {}
-    public function activate_extension_error_log_table() {}
     public function activate_extension_mailing_lists_table() {}
     public function activate_extension_register_hooks() {}
     public function activate_extension_settings_table() {}

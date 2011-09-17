@@ -164,93 +164,49 @@ class Test_campaigner_model extends Testee_unit_test_case {
     }
     
     
-    public function test_activate_extension_error_log_table__success()
-    {
-        // Shortcuts.
-        $dbf    = $this->_ee->dbforge;
-        $loader = $this->_ee->load;
-        
-        // Dummy data.
-        $fields = array(
-            'error_log_id' => array(
-                'auto_increment' => TRUE,
-                'constraint'    => 10,
-                'type'          => 'int',
-                'unsigned'      => TRUE
-            ),
-            'site_id' => array(
-                'constraint'    => 5,
-                'type'          => 'int',
-                'unsigned'      => TRUE
-            ),
-            'error_date' => array(
-                'constraint'    => 10,
-                'type'          => 'int',
-                'unsigned'      => TRUE
-            ),
-            'error_code' => array(
-                'constraint'    => 3,
-                'type'          => 'int',
-                'unsigned'      => TRUE
-            ),
-            'error_message' => array(
-                'constraint'    => 255,
-                'type'          => 'varchar'
-            )
-        );
-        
-        // Expectations.
-        $dbf->expectOnce('add_field', array($fields));
-        $dbf->expectOnce('add_key', array('error_log_id', TRUE));
-        $dbf->expectOnce('create_table', array('campaigner_error_log'));
-        $loader->expectOnce('dbforge', array());
-        
-        // Tests.
-        $this->_model->activate_extension_error_log_table();
-    }
-    
-    
     public function test_activate_extension_register_hooks__success()
     {
-        // Shortcuts.
-        $db = $this->_ee->db;
+      // Shortcuts.
+      $db = $this->_ee->db;
+      
+      // Dummy data.
+      $class      = $this->_model->get_extension_class();
+      $version    = $this->_model->get_package_version();
+      
+      $hooks = array(
+        'cp_members_member_create',
+        'cp_members_validate_members',
+        'member_member_register',
+        'member_register_validate_members',
+        'user_edit_end',
+        'user_register_end',
+        'zoo_visitor_register',
+        'zoo_visitor_update_end'
+      );
+      
+      $hook_data = array(
+        'class'     => $class,
+        'enabled'   => 'y',
+        'hook'      => '',
+        'method'    => '',
+        'priority'  => 5,
+        'settings'  => '',
+        'version'   => $version
+      );
+      
+      // Expectations.
+      $db->expectCallCount('insert', count($hooks));
+      
+      for ($count = 0; $count < count($hooks); $count++)
+      {
+        $hook_data['hook']    = $hooks[$count];
+        $hook_data['method']  = 'on_' .$hooks[$count];
         
-        // Dummy data.
-        $class      = $this->_model->get_extension_class();
-        $version    = $this->_model->get_package_version();
-        
-        $hooks = array(
-            'cp_members_member_create',
-            'cp_members_validate_members',
-            'member_member_register',
-            'member_register_validate_members',
-            'user_edit_end',
-            'user_register_end'
-        );
-        
-        $hook_data = array(
-            'class'     => $class,
-            'enabled'   => 'y',
-            'hook'      => '',
-            'method'    => '',
-            'priority'  => 5,
-            'settings'  => '',
-            'version'   => $version
-        );
-        
-        // Expectations.
-        $db->expectCallCount('insert', count($hooks));
-        
-        for ($count = 0; $count < count($hooks); $count++)
-        {
-            $hook_data['hook']      = $hooks[$count];
-            $hook_data['method']    = 'on_' .$hooks[$count];
-            
-            $db->expectAt($count, 'insert', array('extensions', $hook_data));
-        }
-        
-        // Tests.
-        $this->_model->activate_extension_register_hooks();
+        $db->expectAt($count, 'insert', array('extensions', $hook_data));
+      }
+      
+      // Tests.
+      $this->_model->activate_extension_register_hooks();
     }
     
     
@@ -384,40 +340,58 @@ class Test_campaigner_model extends Testee_unit_test_case {
     
     public function test__get_member_by_id__success()
     {
-        // Shortcuts.
-        $db = $this->_ee->db;
-        
-        // Dummy values.
-        $member_id  = 10;
-        $db_result  = $this->_get_mock('db_query');
-        $db_row     = array(
-            'email'         => 'billy.bob@chickslovehicks.com',
-            'group_id'      => '8',
-            'location'      => 'Hicksville',
-            'member_id'     => '10',
-            'occupation'    => 'Hick',
-            'screen_name'   => 'Billy Bob',
-            'url'           => 'http://example.com/',
-            'username'      => 'Billy Bob',
-            'm_field_id_1'  => 'No',
-            'm_field_id_2'  => 'Yes'
-        );
-        
-        // Expectations.
-        $db->expectOnce('select', array('members.email, members.group_id, members.location, members.member_id, members.occupation, members.screen_name, members.url, members.username, member_data.*'));
-        $db->expectOnce('join', array('member_data', 'member_data.member_id = members.member_id', 'inner'));
-        $db->expectOnce('get_where', array('members', array('members.member_id' => $member_id), 1));
-        
-        $db_result->expectOnce('num_rows');
-        $db_result->expectOnce('row_array');
-        
-        // Returns values.
-        $db->setReturnReference('get_where', $db_result);
-        $db_result->setReturnValue('num_rows', 1);
-        $db_result->setReturnValue('row_array', $db_row);
-        
-        // Tests.
-        $this->assertIdentical($db_row, $this->_model->get_member_by_id($member_id));
+      // Shortcuts.
+      $db = $this->_ee->db;
+      
+      // Dummy values.
+      $member_id  = 10;
+      $db_result  = $this->_get_mock('db_query');
+      $db_row     = array(
+          'email'         => 'billy.bob@chickslovehicks.com',
+          'group_id'      => '8',
+          'location'      => 'Hicksville',
+          'member_id'     => '10',
+          'occupation'    => 'Hick',
+          'screen_name'   => 'Billy Bob',
+          'url'           => 'http://example.com/',
+          'username'      => 'Billy Bob',
+          'm_field_id_1'  => 'No',
+          'm_field_id_2'  => 'Yes'
+      );
+      
+      // Expectations.
+      $select_fields = 'members.email, members.group_id,
+        members.location, members.member_id, members.occupation,
+        members.screen_name, members.url, members.username, member_data.*';
+
+      $db->expectOnce(
+        'select',
+        array(new EqualWithoutWhitespaceExpectation($select_fields))
+      );
+
+      $db->expectOnce('join', array(
+        'member_data',
+        'member_data.member_id = members.member_id', 'inner')
+      );
+
+      $db->expectOnce(
+        'get_where',
+        array('members', array('members.member_id' => $member_id), 1)
+      );
+      
+      $db_result->expectOnce('num_rows');
+      $db_result->expectOnce('row_array');
+      
+      // Returns values.
+      $db->setReturnReference('get_where', $db_result);
+      $db_result->setReturnValue('num_rows', 1);
+      $db_result->setReturnValue('row_array', $db_row);
+      
+      // Tests.
+      $this->assertIdentical(
+        $db_row,
+        $this->_model->get_member_by_id($member_id)
+      );
     }
     
     
