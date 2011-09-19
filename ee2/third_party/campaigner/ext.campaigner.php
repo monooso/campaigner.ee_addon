@@ -735,9 +735,10 @@ class Campaigner_ext {
     $member_id = 0
   )
   {
-    /**
-     * @todo  Check for activation.
-     */
+    if ($this->_ee->config->item('req_mbr_activation') != 'none')
+    {
+      return;
+    }
 
     $this->subscribe_member($member_id, TRUE);
   }
