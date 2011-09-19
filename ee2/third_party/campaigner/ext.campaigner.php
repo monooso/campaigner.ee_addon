@@ -670,35 +670,76 @@ class Campaigner_ext {
 
 
   /**
-   * Handles the `zoo_visitor_update_end` hook.
+   * Handles the `zoo_visitor_cp_register_end` hook.
    *
    * @access  public
-   * @param   Array    $member_data    The member data.
-   * @param   int|string    $member_id    The member ID.
-   * @return  bool
+   * @param   Array         $member_data    The member data.
+   * @param   int|string    $member_id      The member ID.
+   * @return  void
    */
-  public function on_zoo_visitor_update_end(
+  public function on_zoo_visitor_cp_register_end(
     Array $member_data = array(),
-    $member_id = ''
+    $member_id = 0
   )
   {
     $this->subscribe_member($member_id);
-    return TRUE;
   }
 
 
   /**
-   * Handles the `zoo_visitor_register` hook.
+   * Handles the `zoo_visitor_cp_update_end` hook.
    *
    * @access  public
-   * @param   Array         $userdata     The user data.
-   * @param   int|string    $member_id    The member ID.
-   * @return  Array
+   * @param   Array         $member_data    The member data.
+   * @param   int|string    $member_id      The member ID.
+   * @return  void
    */
-  public function on_zoo_visitor_register($userdata = NULL, $member_id = 0)
+  public function on_zoo_visitor_cp_update_end(
+    Array $member_data = array(),
+    $member_id = 0
+  )
   {
+    $this->unsubscribe_member($member_id);
     $this->subscribe_member($member_id);
-    return $userdata;
+  }
+
+
+  /**
+   * Handles the `zoo_visitor_update_end` hook.
+   *
+   * @access  public
+   * @param   Array         $member_data    The member data.
+   * @param   int|string    $member_id      The member ID.
+   * @return  void
+   */
+  public function on_zoo_visitor_update_end(
+    Array $member_data = array(),
+    $member_id = 0
+  )
+  {
+    $this->unsubscribe_member($member_id);
+    $this->subscribe_member($member_id);
+  }
+
+
+  /**
+   * Handles the `zoo_visitor_register_end` hook.
+   *
+   * @access  public
+   * @param   Array         $member_data    The member data.
+   * @param   int|string    $member_id      The member ID.
+   * @return  void
+   */
+  public function on_zoo_visitor_register_end(
+    Array $member_data = array(),
+    $member_id = 0
+  )
+  {
+    /**
+     * @todo  Check for activation.
+     */
+
+    $this->subscribe_member($member_id, TRUE);
   }
 
 

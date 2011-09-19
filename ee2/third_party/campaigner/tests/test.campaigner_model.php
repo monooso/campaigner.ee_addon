@@ -180,7 +180,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
         'member_register_validate_members',
         'user_edit_end',
         'user_register_end',
-        'zoo_visitor_register',
+        'zoo_visitor_cp_register_end',
+        'zoo_visitor_cp_update_end',
+        'zoo_visitor_register_end',
         'zoo_visitor_update_end'
       );
       

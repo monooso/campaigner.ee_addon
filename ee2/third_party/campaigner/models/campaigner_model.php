@@ -144,7 +144,9 @@ class Campaigner_model extends CI_Model {
       'member_register_validate_members',
       'user_edit_end',
       'user_register_end',
-      'zoo_visitor_register',
+      'zoo_visitor_cp_register_end',
+      'zoo_visitor_cp_update_end',
+      'zoo_visitor_register_end',
       'zoo_visitor_update_end'
     );
     

@@ -45,7 +45,11 @@ class Test_campaigner_ext extends Testee_unit_test_case {
      * Dummy return values. Called from subject constructor.
      */
 
-    $this->_settings            = new Campaigner_settings(array('api_key' => 'API_KEY', 'client_id' => 'CLIENT_ID'));
+    $this->_settings = new Campaigner_settings(array(
+      'api_key'   => 'API_KEY',
+      'client_id' => 'CLIENT_ID'
+    ));
+
     $this->_installed_version   = '1.0.0';
     $this->_package_version     = '1.0.0';
 
