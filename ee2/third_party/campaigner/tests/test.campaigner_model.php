@@ -307,6 +307,53 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
         $this->_model->update_extension($installed_version, $package_version);
     }
+
+
+    public function test__update_extension__upgrade_to_version_4_2()
+    {
+      $db = $this->_ee->db;
+
+      $installed_version  = '4.1.0';
+      $package_version    = '4.2.0';
+
+      $hook_data = array(
+        'class'     => $this->_model->get_extension_class(),
+        'enabled'   => 'y',
+        'hook'      => '',
+        'method'    => '',
+        'priority'  => 5,
+        'settings'  => '',
+        'version'   => $package_version
+      );
+
+      $hooks = array(
+        'zoo_visitor_cp_register_end',
+        'zoo_visitor_cp_update_end',
+        'zoo_visitor_register_end',
+        'zoo_visitor_update_end'
+      );
+
+      $db->expectCallCount('insert', 4);
+      $call_count = 0;
+
+      foreach ($hooks AS $hook)
+      {
+        $insert_data = array_merge(
+          $hook_data,
+          array(
+            'hook'    => $hook,
+            'method'  => 'on_' .$hook
+          )
+        );
+
+        $this->_ee->db->expectAt($call_count++, 'insert', array(
+          'extensions',
+          $insert_data
+        ));
+      }
+    
+      $this->_model->update_extension($installed_version, $package_version);
+    }
     
     
     public function test__get_theme_url__no_slash()

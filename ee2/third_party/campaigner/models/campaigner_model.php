@@ -1050,6 +1050,35 @@ class Campaigner_model extends CI_Model {
       $this->_ee->db->query('ALTER TABLE exp_campaigner_mailing_lists
         ADD PRIMARY KEY (list_id, site_id)');
     }
+
+    // Version 4.2.
+    if (version_compare($installed_version, '4.2', '<'))
+    {
+      $hooks = array(
+        'zoo_visitor_cp_register_end',
+        'zoo_visitor_cp_update_end',
+        'zoo_visitor_register_end',
+        'zoo_visitor_update_end'
+      );
+      
+      $hook_data = array(
+        'class'     => $this->get_extension_class(),
+        'enabled'   => 'y',
+        'hook'      => '',
+        'method'    => '',
+        'priority'  => 5,
+        'settings'  => '',
+        'version'   => $package_version
+      );
+      
+      foreach ($hooks AS $hook)
+      {
+        $hook_data['hook'] = $hook;
+        $hook_data['method'] = 'on_' .$hook;
+        
+        $this->_ee->db->insert('extensions', $hook_data);
+      }
+    }
     
     // Update the extension version in the database.
     $this->_ee->db->update(
