@@ -6,7 +6,7 @@
  * @author          : Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright       : Experience Internet
  * @package         : Campaigner
- * @version         : 4.1.0
+ * @version         : 4.2.0
  */
 
 require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector.php';
@@ -61,7 +61,7 @@ class Campaigner_model extends CI_Model {
     $this->_ee =& get_instance();
     
     $this->_package_name      = 'Campaigner';
-    $this->_package_version   = '4.1.0';
+    $this->_package_version   = '4.2.0';
     $this->_extension_class   = $this->get_package_name() .'_ext';
 
     // Load the OmniLogger class.
@@ -80,57 +80,9 @@ class Campaigner_model extends CI_Model {
    */
   public function activate_extension()
   {
-    $this->activate_extension_error_log_table();
     $this->activate_extension_mailing_lists_table();
     $this->activate_extension_settings_table();
     $this->activate_extension_register_hooks();
-  }
-  
-  
-  /**
-   * Creates the error log table when the extension is activated.
-   *
-   * @access  public
-   * @return  void
-   */
-  public function activate_extension_error_log_table()
-  {
-    // Shortcuts.
-    $this->_ee->load->dbforge();
-    $dbforge = $this->_ee->dbforge;
-    
-    // Table data.
-    $fields = array(
-      'error_log_id' => array(
-        'auto_increment' => TRUE,
-        'constraint'    => 10,
-        'type'          => 'int',
-        'unsigned'      => TRUE
-      ),
-      'site_id' => array(
-        'constraint'    => 5,
-        'type'          => 'int',
-        'unsigned'      => TRUE
-      ),
-      'error_date' => array(
-        'constraint'    => 10,
-        'type'          => 'int',
-        'unsigned'      => TRUE
-      ),
-      'error_code' => array(
-        'constraint'    => 3,
-        'type'          => 'int',
-        'unsigned'      => TRUE
-      ),
-      'error_message' => array(
-        'constraint'    => 255,
-        'type'          => 'varchar'
-      )
-    );
-    
-    $dbforge->add_field($fields);
-    $dbforge->add_key('error_log_id', TRUE);
-    $dbforge->create_table('campaigner_error_log');
   }
   
   
@@ -191,7 +143,11 @@ class Campaigner_model extends CI_Model {
       'member_member_register',
       'member_register_validate_members',
       'user_edit_end',
-      'user_register_end'
+      'user_register_end',
+      'zoo_visitor_cp_register_end',
+      'zoo_visitor_cp_update_end',
+      'zoo_visitor_register_end',
+      'zoo_visitor_update_end'
     );
     
     $hook_data = array(
@@ -1093,6 +1049,35 @@ class Campaigner_model extends CI_Model {
 
       $this->_ee->db->query('ALTER TABLE exp_campaigner_mailing_lists
         ADD PRIMARY KEY (list_id, site_id)');
+    }
+
+    // Version 4.2.
+    if (version_compare($installed_version, '4.2', '<'))
+    {
+      $hooks = array(
+        'zoo_visitor_cp_register_end',
+        'zoo_visitor_cp_update_end',
+        'zoo_visitor_register_end',
+        'zoo_visitor_update_end'
+      );
+      
+      $hook_data = array(
+        'class'     => $this->get_extension_class(),
+        'enabled'   => 'y',
+        'hook'      => '',
+        'method'    => '',
+        'priority'  => 5,
+        'settings'  => '',
+        'version'   => $package_version
+      );
+      
+      foreach ($hooks AS $hook)
+      {
+        $hook_data['hook'] = $hook;
+        $hook_data['method'] = 'on_' .$hook;
+        
+        $this->_ee->db->insert('extensions', $hook_data);
+      }
     }
     
     // Update the extension version in the database.
