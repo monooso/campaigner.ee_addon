@@ -869,6 +869,29 @@ class Campaigner_model extends CI_Model {
     Campaigner_mailing_list $mailing_list
   )
   {
+    /**
+     * Third-party extensions can override the behaviour of this method.
+     * This is particularly handy when dealing with custom member fields
+     * that may contain multiple values. For example:
+     *
+     * $preferred_colors = 'R|G|B';
+     *
+     * By default, trigger value of 'R' will fail, even though it is one
+     * of the preferred colours. A third-party extension can be used to
+     * handle such situations.
+     */
+
+    if ($this->_ee->extensions->active_hook(
+      'campaigner_should_subscribe_member') === TRUE)
+    {
+      $subscribe = $this->_ee->extensions->call(
+        'campaigner_should_subscribe_member',
+        $member_data, $mailing_list
+      );
+
+      return (bool) $subscribe;
+    }
+
     // If there is no trigger field, our job is easy.
     if ( ! $mailing_list->get_trigger_field())
     {
