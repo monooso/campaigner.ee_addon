@@ -137,7 +137,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test_display_error__success()
+  public function xtest_display_error__success()
   {
     $loader         = $this->_ee->load;
 
@@ -153,7 +153,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test_display_error__unknown_error()
+  public function xtest_display_error__unknown_error()
   {
       // Shortcuts.
       $lang   = $this->_ee->lang;
@@ -186,54 +186,72 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
   
   
-  public function test_display_settings_clients__success()
+  public function test__display_clients__success()
   {
-      // Shortcuts.
-      $loader = $this->_ee->load;
-      
-      // Dummy values.
-      $clients    = array();
-      $view_vars  = array('clients' => $clients, 'settings' => $this->_settings);
-      
-      // Expectations.
-      $this->_connector->expectOnce('get_clients');
-      $loader->expectOnce('view', array('_clients', $view_vars, TRUE));
-      
-      // Return values.
-      $this->_connector->setReturnValue('get_clients', $clients);
-      
-      // Tests.
-      $this->_subject->display_settings_clients();
+    // AJAX request.
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+
+    $this->_ee->input->setReturnValue(
+      'get',
+      'get_clients',
+      array('request')
+    );
+
+    // Shortcuts.
+    $loader = $this->_ee->load;
+    
+    // Dummy values.
+    $clients    = array();
+    $view_vars  = array('clients' => $clients, 'settings' => $this->_settings);
+    
+    // Expectations.
+    $this->_connector->expectOnce('get_clients');
+    $loader->expectOnce('view', array('_clients', $view_vars, TRUE));
+    
+    // Return values.
+    $this->_connector->setReturnValue('get_clients', $clients);
+    
+    // Tests.
+    $this->_subject->display_settings();
   }
   
   
-  public function test_display_settings_clients__exception()
+  public function test__display_clients__exception()
   {
-      // Shortcuts.
-      $loader = $this->_ee->load;
-      $model = $this->_ee->campaigner_model;
-      
-      // Dummy values.
-      $exception = new Campaigner_exception('Invalid API key', 100);
-      $view_vars = array(
-          'error_code'    => $exception->getCode(),
-          'error_message' => $exception->getMessage()
-      );
-      
-      // Expectations.
-      $this->_connector->expectOnce('get_clients');
-      $model->expectOnce('log_error', array('*'));
-      $loader->expectOnce('view', array('_error', $view_vars, TRUE));
-      
-      // Return values.
-      $this->_connector->throwOn('get_clients', $exception);
-      
-      // Tests.
-      $this->_subject->display_settings_clients();
+    // AJAX request.
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+
+    $this->_ee->input->setReturnValue(
+      'get',
+      'get_clients',
+      array('request')
+    );
+
+    // Shortcuts.
+    $loader = $this->_ee->load;
+    $model = $this->_ee->campaigner_model;
+    
+    // Dummy values.
+    $exception = new Campaigner_exception('Invalid API key', 100);
+    $view_vars = array(
+        'error_code'    => $exception->getCode(),
+        'error_message' => $exception->getMessage()
+    );
+    
+    // Expectations.
+    $this->_connector->expectOnce('get_clients');
+    $model->expectOnce('log_error', array('*'));
+    $loader->expectOnce('view', array('_error', $view_vars, TRUE));
+    
+    // Return values.
+    $this->_connector->throwOn('get_clients', $exception);
+    
+    // Tests.
+    $this->_subject->display_settings();
   }
 
 
-  public function test__display_settings_custom_fields__has_custom_fields()
+  public function test__display_custom_fields__has_custom_fields()
   {
     // AJAX request.
     $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
@@ -289,7 +307,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test__display_settings_custom_fields__no_custom_fields()
+  public function test__display_custom_fields__no_custom_fields()
   {
     // AJAX request.
     $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
@@ -331,7 +349,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test__display_settings_custom_fields__missing_list_id()
+  public function test__display_custom_fields__missing_list_id()
   {
     // AJAX request.
     $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
@@ -378,7 +396,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
   
   
-  public function test_display_settings_custom_fields__api_exception()
+  public function test__display_custom_fields__api_exception()
   {
     // AJAX request.
     $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
@@ -425,65 +443,83 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test_display_settings_mailing_lists__success()
+  public function test__display_mailing_lists__success()
   {
-      // Shortcuts.
-      $loader = $this->_ee->load;
-      $model  = $this->_ee->campaigner_model;
-      
-      // Dummy values.
-      $lists                  = array();
-      $member_fields          = array();
-      $member_fields_dd_data  = array();
-      
-      $view_vars = array(
-          'mailing_lists'         => $lists,
-          'member_fields'         => $member_fields,
-          'member_fields_dd_data' => $member_fields_dd_data,
-          'settings'              => $this->_settings
-      );
-      
-      // Expectations.
-      $this->_connector->expectOnce('get_client_lists',
-        array($this->_settings->get_client_id()));
+    // AJAX request.
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
 
-      $loader->expectOnce('view', array('_mailing_lists', $view_vars, TRUE));
-      $model->expectOnce('get_member_fields');
-      
-      // Return values.
-      $this->_connector->setReturnValue('get_client_lists', $lists);
-      $model->setReturnValue('get_member_fields', $member_fields);
-      
-      // Tests.
-      $this->_subject->display_settings_mailing_lists();
+    $this->_ee->input->setReturnValue(
+      'get',
+      'get_mailing_lists',
+      array('request')
+    );
+
+    // Shortcuts.
+    $loader = $this->_ee->load;
+    $model  = $this->_ee->campaigner_model;
+    
+    // Dummy values.
+    $lists                  = array();
+    $member_fields          = array();
+    $member_fields_dd_data  = array();
+    
+    $view_vars = array(
+        'mailing_lists'         => $lists,
+        'member_fields'         => $member_fields,
+        'member_fields_dd_data' => $member_fields_dd_data,
+        'settings'              => $this->_settings
+    );
+    
+    // Expectations.
+    $this->_connector->expectOnce('get_client_lists',
+      array($this->_settings->get_client_id()));
+
+    $loader->expectOnce('view', array('_mailing_lists', $view_vars, TRUE));
+    $model->expectOnce('get_member_fields');
+    
+    // Return values.
+    $this->_connector->setReturnValue('get_client_lists', $lists);
+    $model->setReturnValue('get_member_fields', $member_fields);
+    
+    // Tests.
+    $this->_subject->display_settings();
   }
   
   
-  public function test_display_settings_mailing_lists__exception()
+  public function test__display_mailing_lists__exception()
   {
-      // Shortcuts.
-      $loader = $this->_ee->load;
-      $model = $this->_ee->campaigner_model;
-      
-      // Dummy values.
-      $exception = new Campaigner_exception('Invalid API key', 100);
-      $view_vars = array(
-          'error_code'    => $exception->getCode(),
-          'error_message' => $exception->getMessage()
-      );
-      
-      // Return values.
-      $this->_connector->throwOn('get_client_lists', $exception);
-      
-      // Expectations.
-      $this->_connector->expectOnce('get_client_lists',
-        array($this->_settings->get_client_id()));
+    // AJAX request.
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
 
-      $model->expectOnce('log_error', array('*'));
-      $loader->expectOnce('view', array('_error', $view_vars, TRUE));
+    $this->_ee->input->setReturnValue(
+      'get',
+      'get_mailing_lists',
+      array('request')
+    );
 
-      // Tests.
-      $this->_subject->display_settings_mailing_lists();
+    // Shortcuts.
+    $loader = $this->_ee->load;
+    $model = $this->_ee->campaigner_model;
+    
+    // Dummy values.
+    $exception = new Campaigner_exception('Invalid API key', 100);
+    $view_vars = array(
+        'error_code'    => $exception->getCode(),
+        'error_message' => $exception->getMessage()
+    );
+    
+    // Return values.
+    $this->_connector->throwOn('get_client_lists', $exception);
+    
+    // Expectations.
+    $this->_connector->expectOnce('get_client_lists',
+      array($this->_settings->get_client_id()));
+
+    $model->expectOnce('log_error', array('*'));
+    $loader->expectOnce('view', array('_error', $view_vars, TRUE));
+
+    // Tests.
+    $this->_subject->display_settings();
   }
 
 

@@ -97,41 +97,6 @@ class Campaigner_ext {
 
 
   /**
-   * Displays the custom fields 'try again' view.
-   *
-   * @access  public
-   * @param   string      $list_id      The "parent" list ID.
-   * @return  string
-   */
-  public function display_custom_fields_try_again($list_id)
-  {
-    $view_vars = array('list_id' => $list_id);
-    return $this->_ee->load->view('_custom_fields_try_again', $view_vars, TRUE);
-  }
-
-
-  /**
-   * Displays the 'error message' view.
-   *
-   * @access  public
-   * @param   string      $error_message      The error message.
-   * @param   string      $error_code         The error code.
-   * @return  string
-   */
-  public function display_error($error_message = '', $error_code = '')
-  {
-    $view_vars = array(
-        'error_code'    => $error_code,
-        'error_message' => $error_message
-          ? $error_message
-          : $this->_ee->lang->line('error_unknown')
-    );
-
-    return $this->_ee->load->view('_error', $view_vars, TRUE);
-  }
-  
-  
-  /**
    * Displays the 'settings' page.
    *
    * @access  public
@@ -144,7 +109,7 @@ class Campaigner_ext {
       OR strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest'
     )
     {
-      return $this->display_settings_base();
+      return $this->_display_base_settings();
     }
     
     /**
@@ -154,7 +119,7 @@ class Campaigner_ext {
 
     if ( ! $this->_connector)
     {
-      $response = $this->display_error(
+      $response = $this->_display_error(
         $this->_ee->lang->line('error_no_api_connector')
       );
     }
@@ -163,19 +128,19 @@ class Campaigner_ext {
       switch (strtolower($this->_ee->input->get('request')))
       {
         case 'get_clients':
-          $response = $this->display_settings_clients();
+          $response = $this->_display_clients();
           break;
 
         case 'get_custom_fields':
-          $response = $this->_display_settings_custom_fields();
+          $response = $this->_display_custom_fields();
           break;
             
         case 'get_mailing_lists':
-          $response = $this->display_settings_mailing_lists();
+          $response = $this->_display_mailing_lists();
           break;
         
         default:
-          $response = $this->display_error(
+          $response = $this->_display_error(
             $this->_ee->lang->line('error_unknown_ajax_request')
           );
           break;
@@ -183,172 +148,6 @@ class Campaigner_ext {
     }
 
     $this->_ee->output->send_ajax_response($response);
-  }
-  
-  
-  /**
-   * Displays the "base" settings form.
-   *
-   * @access  public
-   * @return  string
-   */
-  public function display_settings_base()
-  {
-    // Shortcuts.
-    $cp     = $this->_ee->cp;
-    $lang   = $this->_ee->lang;
-    $model  = $this->_ee->campaigner_model;
-    
-    $lower_package_name = strtolower($model->get_package_name());
-    
-    // View variables.
-    $view_vars = array(
-      'action_url'    => 'C=addons_extensions' .AMP .'M=save_extension_settings',
-      'cp_page_title' => $lang->line('campaigner_extension_name'),
-      'hidden_fields' => array('file' => $lower_package_name),
-      'settings'      => $this->settings      // Loaded in the constructor.
-    );
-    
-    // Theme URL.
-    $theme_url = $model->get_theme_url();
-    
-    // Add the CSS.
-    $cp->add_to_foot('<link media="screen, projection" rel="stylesheet"
-      type="text/css" href="' .$theme_url .'css/cp.css" />');
-
-    // Load the JavaScript library, and set a shortcut.
-    $this->_ee->load->library('javascript');
-    $js = $this->_ee->javascript;
-    
-    $cp->add_to_foot('<script type="text/javascript" src="' .$theme_url
-      .'js/cp.js"></script>');
-
-    $cp->add_to_foot('<script type="text/javascript" src="' .$theme_url
-      .'js/jquery.activity-indicator.min.js"></script>');
-
-    // JavaScript globals.
-    $js->set_global('campaigner.lang', array(
-      'missingApiKey'     => $lang->line('msg_missing_api_key'),
-      'missingClientId'   => $lang->line('msg_missing_client_id')
-    ));
-    
-    // Prepare the member fields.
-    $member_fields = $model->get_member_fields();
-    $js_member_fields = array();
-    
-    foreach ($member_fields AS $member_field)
-    {
-      $js_member_fields[$member_field->get_id()] = $member_field->to_array();
-    }
-    
-    $js->set_global('campaigner.memberFields',
-      $js->generate_json($js_member_fields));
-
-    $js->set_global('campaigner.ajaxUrl',
-      str_replace(AMP, '&', BASE)
-      .'&C=addons_extensions&M=extension_settings&file='
-      .$lower_package_name
-    );
-
-    // Compile the JavaScript.
-    $js->compile();
-    
-    // Load the view.
-    return $this->_ee->load->view('settings', $view_vars, TRUE);
-  }
-  
-  
-  /**
-   * Displays the "clients" settings form fragment. Should only ever be called from the
-   * display_settings method, which takes care of testing for a valid API connector.
-   *
-   * @access  public
-   * @return  string
-   */
-  public function display_settings_clients()
-  {
-    try
-    {
-      $view_vars = array(
-        'clients'   => $this->_connector->get_clients(),
-        'settings'  => $this->settings
-      );  
-
-      $view_name = '_clients';
-      return $this->_ee->load->view($view_name, $view_vars, TRUE);
-    }
-    catch (Campaigner_exception $e)
-    {
-      $this->_ee->campaigner_model->log_error($e);
-      return $this->display_error($e->getMessage(), $e->getCode());
-    }
-  }
-
-
-  /**
-   * Displays the "mailing lists" settings form fragment. Should only ever be
-   * called from the display_settings method, which takes care of testing for a
-   * valid API connector.
-   *
-   * @access  public
-   * @return  string
-   */
-  public function display_settings_mailing_lists()
-  {
-    $model = $this->_ee->campaigner_model;
-    
-    // Retrieve all the available mailing lists from the API.
-    try
-    {
-      $lists = $this->_connector->get_client_lists(
-        $this->settings->get_client_id());
-    }
-    catch (Campaigner_exception $e)
-    {
-      $model->log_error($e);
-      return $this->display_error($e->getMessage(), $e->getCode());
-    }
-        
-    // Loop through the lists. Note any list settings.
-    foreach ($lists AS $list)
-    {
-      // If this list has not been previously saved, we're done.
-      if ( ! ($saved_list = $this->settings->get_mailing_list_by_id(
-        $list->get_list_id()))
-      )
-      {
-        continue;
-      }
-
-      // Restore the saved list settings.
-      $list->set_active(TRUE);
-      $list->set_trigger_field($saved_list->get_trigger_field());
-      $list->set_trigger_value($saved_list->get_trigger_value());
-    }
-
-    // Retrieve the member fields.
-    $member_fields = $model->get_member_fields();
-
-    // Prepare the member fields data for use in a dropdown.
-    $member_fields_dd_data = array();
-
-    foreach ($member_fields AS $member_field)
-    {
-      $member_fields_dd_data[$member_field->get_id()] =
-        $member_field->get_label();
-    }
-    
-    // Define the view variables.
-    $view_vars = array(
-      'mailing_lists'         => $lists,
-      'member_fields'         => $member_fields,
-      'member_fields_dd_data' => $member_fields_dd_data,
-      'settings'              => $this->settings
-    );
-    
-    $view_name = '_mailing_lists';
-    
-    return $this->_ee->load->view($view_name, $view_vars, TRUE);
   }
   
   
@@ -759,14 +558,110 @@ class Campaigner_ext {
    * ------------------------------------------------------------ */
   
   /**
-   * Displays the "custom fields" settings form fragment. Should only ever be
-   * called from the display_settings method, which takes care of testing for
-   * a valid API connector.
+   * Displays the "base" settings form.
+   *
+   * @access  private
+   * @return  string
+   */
+  private function _display_base_settings()
+  {
+    // Shortcuts.
+    $cp     = $this->_ee->cp;
+    $lang   = $this->_ee->lang;
+    $model  = $this->_ee->campaigner_model;
+    
+    $lower_package_name = strtolower($model->get_package_name());
+    
+    // View variables.
+    $view_vars = array(
+      'action_url'    => 'C=addons_extensions' .AMP .'M=save_extension_settings',
+      'cp_page_title' => $lang->line('campaigner_extension_name'),
+      'hidden_fields' => array('file' => $lower_package_name),
+      'settings'      => $this->settings      // Loaded in the constructor.
+    );
+    
+    // Theme URL.
+    $theme_url = $model->get_theme_url();
+    
+    // Add the CSS.
+    $cp->add_to_foot('<link media="screen, projection" rel="stylesheet"
+      type="text/css" href="' .$theme_url .'css/cp.css" />');
+
+    // Load the JavaScript library, and set a shortcut.
+    $this->_ee->load->library('javascript');
+    $js = $this->_ee->javascript;
+    
+    $cp->add_to_foot('<script type="text/javascript" src="' .$theme_url
+      .'js/cp.js"></script>');
+
+    $cp->add_to_foot('<script type="text/javascript" src="' .$theme_url
+      .'js/jquery.activity-indicator.min.js"></script>');
+
+    // JavaScript globals.
+    $js->set_global('campaigner.lang', array(
+      'missingApiKey'     => $lang->line('msg_missing_api_key'),
+      'missingClientId'   => $lang->line('msg_missing_client_id')
+    ));
+    
+    // Prepare the member fields.
+    $member_fields = $model->get_member_fields();
+    $js_member_fields = array();
+    
+    foreach ($member_fields AS $member_field)
+    {
+      $js_member_fields[$member_field->get_id()] = $member_field->to_array();
+    }
+    
+    $js->set_global('campaigner.memberFields',
+      $js->generate_json($js_member_fields));
+
+    $js->set_global('campaigner.ajaxUrl',
+      str_replace(AMP, '&', BASE)
+      .'&C=addons_extensions&M=extension_settings&file='
+      .$lower_package_name
+    );
+
+    // Compile the JavaScript.
+    $js->compile();
+    
+    // Load the view.
+    return $this->_ee->load->view('settings', $view_vars, TRUE);
+  }
+  
+  
+  /**
+   * Displays the "clients" settings form fragment.
+   *
+   * @access  private
+   * @return  string
+   */
+  private function _display_clients()
+  {
+    try
+    {
+      $view_vars = array(
+        'clients'   => $this->_connector->get_clients(),
+        'settings'  => $this->settings
+      );  
+
+      $view_name = '_clients';
+      return $this->_ee->load->view($view_name, $view_vars, TRUE);
+    }
+    catch (Campaigner_exception $e)
+    {
+      $this->_ee->campaigner_model->log_error($e);
+      return $this->_display_error($e->getMessage(), $e->getCode());
+    }
+  }
+
+
+  /**
+   * Displays the "custom fields" settings form fragment.
    *
    * @access  public
    * @return  string
    */
-  private function _display_settings_custom_fields()
+  private function _display_custom_fields()
   {
     $model = $this->_ee->campaigner_model;
 
@@ -777,7 +672,7 @@ class Campaigner_ext {
         'error_missing_or_invalid_list_id');
 
       $model->log_error(new Campaigner_exception($error_message));
-      return $this->display_error($error_message);
+      return $this->_display_error($error_message);
     }
     
     try
@@ -787,8 +682,7 @@ class Campaigner_ext {
     catch (Campaigner_exception $e)
     {
       $model->log_error($e);
-      return $this->display_custom_fields_try_again($list_id);
-      // return $this->display_error($e->getMessage(), $e->getCode());
+      return $this->_display_custom_fields_try_again($list_id);
     }
 
     // Restore any saved field settings.
@@ -827,6 +721,105 @@ class Campaigner_ext {
     );
     
     $view_name = '_custom_fields';
+    return $this->_ee->load->view($view_name, $view_vars, TRUE);
+  }
+  
+  
+  /**
+   * Displays the custom fields 'try again' view.
+   *
+   * @access  private
+   * @param   string      $list_id      The "parent" list ID.
+   * @return  string
+   */
+  private function _display_custom_fields_try_again($list_id)
+  {
+    $view_vars = array('list_id' => $list_id);
+    return $this->_ee->load->view('_custom_fields_try_again', $view_vars, TRUE);
+  }
+
+
+  /**
+   * Displays the 'error message' view.
+   *
+   * @access  private
+   * @param   string      $error_message      The error message.
+   * @param   string      $error_code         The error code.
+   * @return  string
+   */
+  private function _display_error($error_message = '', $error_code = '')
+  {
+    $view_vars = array(
+        'error_code'    => $error_code,
+        'error_message' => $error_message
+          ? $error_message
+          : $this->_ee->lang->line('error_unknown')
+    );
+
+    return $this->_ee->load->view('_error', $view_vars, TRUE);
+  }
+  
+  
+  /**
+   * Displays the "mailing lists" settings form fragment.
+   *
+   * @access  private
+   * @return  string
+   */
+  private function _display_mailing_lists()
+  {
+    $model = $this->_ee->campaigner_model;
+    
+    // Retrieve all the available mailing lists from the API.
+    try
+    {
+      $lists = $this->_connector->get_client_lists(
+        $this->settings->get_client_id());
+    }
+    catch (Campaigner_exception $e)
+    {
+      $model->log_error($e);
+      return $this->_display_error($e->getMessage(), $e->getCode());
+    }
+        
+    // Loop through the lists. Note any list settings.
+    foreach ($lists AS $list)
+    {
+      // If this list has not been previously saved, we're done.
+      if ( ! ($saved_list = $this->settings->get_mailing_list_by_id(
+        $list->get_list_id()))
+      )
+      {
+        continue;
+      }
+
+      // Restore the saved list settings.
+      $list->set_active(TRUE);
+      $list->set_trigger_field($saved_list->get_trigger_field());
+      $list->set_trigger_value($saved_list->get_trigger_value());
+    }
+
+    // Retrieve the member fields.
+    $member_fields = $model->get_member_fields();
+
+    // Prepare the member fields data for use in a dropdown.
+    $member_fields_dd_data = array();
+
+    foreach ($member_fields AS $member_field)
+    {
+      $member_fields_dd_data[$member_field->get_id()] =
+        $member_field->get_label();
+    }
+    
+    // Define the view variables.
+    $view_vars = array(
+      'mailing_lists'         => $lists,
+      'member_fields'         => $member_fields,
+      'member_fields_dd_data' => $member_fields_dd_data,
+      'settings'              => $this->settings
+    );
+    
+    $view_name = '_mailing_lists';
     return $this->_ee->load->view($view_name, $view_vars, TRUE);
   }
   
