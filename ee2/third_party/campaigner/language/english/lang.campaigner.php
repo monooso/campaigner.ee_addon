@@ -76,6 +76,8 @@ $lang = array(
 'error_unknown_member'              => 'Unknown member.',
 'error_unknown_ajax_request'        => 'Unknown AJAX request.',
 
+'error_unable_to_load_custom_fields' => 'Unable to load custom fields.',
+
 /* --------------------------------------------------------------
  * MEMBER FIELDS
  * ------------------------------------------------------------ */
