@@ -97,6 +97,20 @@ class Campaigner_ext {
 
 
   /**
+   * Displays the custom fields 'try again' view.
+   *
+   * @access  public
+   * @param   string      $list_id      The "parent" list ID.
+   * @return  string
+   */
+  public function display_custom_fields_try_again($list_id)
+  {
+    $view_vars = array('list_id' => $list_id);
+    return $this->_ee->load->view('_custom_fields_try_again', $view_vars, TRUE);
+  }
+
+
+  /**
    * Displays the 'error message' view.
    *
    * @access  public
@@ -300,7 +314,8 @@ class Campaigner_ext {
     catch (Campaigner_exception $e)
     {
       $model->log_error($e);
-      return $this->display_error($e->getMessage(), $e->getCode());
+      return $this->display_custom_fields_try_again($list_id);
+      // return $this->display_error($e->getMessage(), $e->getCode());
     }
 
     // Restore any saved field settings.

@@ -282,6 +282,15 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_settings_custom_fields__no_custom_fields()
   {
+    // AJAX request.
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+
+    $this->_ee->input->setReturnValue(
+      'get',
+      'get_custom_fields',
+      array('request')
+    );
+
     $model    = $this->_ee->campaigner_model;
     $list_id  = 'abc123';
     $fields   = array();
@@ -309,7 +318,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       TRUE
     ));
   
-    $this->_subject->display_settings_custom_fields();
+    $this->_subject->display_settings();
   }
 
 
@@ -380,11 +389,8 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $model->expectOnce('log_error');
 
     $this->_ee->load->expectOnce('view', array(
-      '_error',
-      array(
-        'error_code'    => $api_exception->getCode(),
-        'error_message' => $api_exception->getMessage()
-      ),
+      '_custom_fields_try_again',
+      array('list_id' => $list_id),
       TRUE
     ));
 
