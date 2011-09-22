@@ -558,6 +558,27 @@ class Campaigner_ext {
    * ------------------------------------------------------------ */
   
   /**
+   * Converts an array of member field objects for use in a dropdown menu.
+   *
+   * @access  private
+   * @param   Array     $member_fields    An array of member field objects.
+   * @return  Array
+   */
+  private function _build_member_fields_dropdown(Array $member_fields)
+  {
+    $dropdown = array();
+
+    foreach ($member_fields AS $member_field)
+    {
+      $dropdown[$member_field->get_id()] =
+        $member_field->get_label();
+    }
+
+    return $dropdown;
+  }
+  
+  
+  /**
    * Displays the "base" settings form.
    *
    * @access  private
@@ -702,16 +723,9 @@ class Campaigner_ext {
 
     // Retrieve the member fields.
     $member_fields = $model->get_member_fields();
+    $member_fields_dd_data = $this->_build_member_fields_dropdown(
+      $member_fields);
 
-    // Prepare the member fields data for use in a dropdown.
-    $member_fields_dd_data = array();
-
-    foreach ($member_fields AS $member_field)
-    {
-      $member_fields_dd_data[$member_field->get_id()] =
-        $member_field->get_label();
-    }
-        
     // Define the view variables.
     $view_vars = array(
       'custom_fields'         => $fields,
@@ -723,8 +737,8 @@ class Campaigner_ext {
     $view_name = '_custom_fields';
     return $this->_ee->load->view($view_name, $view_vars, TRUE);
   }
-  
-  
+
+
   /**
    * Displays the custom fields 'error' view.
    *
@@ -799,16 +813,9 @@ class Campaigner_ext {
 
     // Retrieve the member fields.
     $member_fields = $model->get_member_fields();
+    $member_fields_dd_data = $this->_build_member_fields_dropdown(
+      $member_fields);
 
-    // Prepare the member fields data for use in a dropdown.
-    $member_fields_dd_data = array();
-
-    foreach ($member_fields AS $member_field)
-    {
-      $member_fields_dd_data[$member_field->get_id()] =
-        $member_field->get_label();
-    }
-    
     // Define the view variables.
     $view_vars = array(
       'mailing_lists'         => $lists,
