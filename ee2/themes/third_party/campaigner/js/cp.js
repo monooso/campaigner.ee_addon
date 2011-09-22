@@ -123,8 +123,8 @@
 			stopLoading();
 		}
 	}
-	
-	
+
+
 	/**
 	 * Handles the getLists AJAX response.
 	 *
@@ -134,6 +134,7 @@
 	function handleGetListsResponse(response) {
 		$('#campaigner_lists').html(eval(response));
 		iniTriggerFields();
+    iniGetCustomFields();
 		stopLoading();
 	};
 	
@@ -152,6 +153,48 @@
 				}
 			});
 	}
+
+
+  /**
+   * Initialises the automatic loading (via AJAX) of each list's custom field.
+   *
+   * @return  void
+   */
+  function iniGetCustomFields() {
+    $('#campaigner_lists input[type=checkbox][name^=mailing_lists]')
+      .each(function() {
+        var $input        = $(this);
+        var $row          = $input.closest('tr');
+        var $fields_cell  = $row.find('td').filter(':last');
+
+        // Start the loading animation.
+        $fields_cell.activity({
+          align     : 'left',
+          length    : 3,
+          padding   : 10,
+          space     : 1,
+          steps     : 3,
+          width     : 2
+        });
+
+        $.get(
+          EE.campaigner.ajaxUrl, {
+            request : 'get_custom_fields',
+            api_key : apiKey,
+            list_id : this.value
+          },
+          function(response) {
+            $fields_cell
+              .activity(false)
+              .find('.campaigner_loading').fadeOut('slow', function() {
+                $fields_cell.empty().html(eval(response));
+                $fields_cell.find('.campaigner_custom_fields').fadeIn('slow');
+              });
+          },
+          'html'
+        );
+      });
+  }
 	
 	
 	/**
@@ -186,7 +229,8 @@
 	 * @return	void
 	 */
 	function iniLoadingMessage() {
-		$('body').append('<div id="campaigner_loading"><p></p></div>');
+		$('body').append('<div class="campaigner_modal_loading" '
+      + 'id="campaigner_loading"><p></p></div>');
 	}
 	
 	

@@ -45,6 +45,7 @@ $lang = array(
 'tbl_hd_trigger_value'      => 'Trigger Value',
 'tbl_hd_custom_fields'      => 'Custom Fields',
 
+'msg_loading_custom_fields' => 'Loading custom fields&hellip;',
 'msg_no_clients'            => 'There are no clients associated with this account.',
 'msg_no_custom_fields'      => 'There are no custom fields for this mailing list.',
 'msg_no_mailing_lists'      => 'There are no mailing lists associated with this client.',

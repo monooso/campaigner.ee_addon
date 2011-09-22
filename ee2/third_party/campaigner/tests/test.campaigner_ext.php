@@ -231,8 +231,167 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       // Tests.
       $this->_subject->display_settings_clients();
   }
+
+
+  public function test__display_settings_custom_fields__has_custom_fields()
+  {
+    $model    = $this->_ee->campaigner_model;
+    $list_id  = 'abc123';
+
+    $fields = array(
+      new Campaigner_custom_field(array(
+        'cm_key'  => 'xyz987',
+        'label'   => 'Age',
+        'member_field_id' => 'm_field_id_10'
+      )),
+      new Campaigner_custom_field(array(
+        'cm_key'  => 'klm666',
+        'label'   => 'Occupation',
+        'member_field_id' => 'm_field_id_20'
+      ))
+    );
+
+    // Retrieve the AJAX-supplied list ID.
+    $this->_ee->input->expectOnce('get_post', array('list_id'));
+    $this->_ee->input->setReturnValue('get_post', $list_id, array('list_id'));
+
+    // Retrieve the custom list fields from the API.
+    $this->_connector->expectOnce('get_list_fields', array($list_id));
+    $this->_connector->setReturnValue('get_list_fields', $fields);
+
+    // @todo Test restoration of saved custom field settings.
+
+    // Retrieve the member fields. Don't really care about this.
+    $model->setReturnValue('get_member_fields', array());
+
+    // Load the view.
+    $this->_ee->load->expectOnce('view', array(
+      '_custom_fields',
+      array(
+        'custom_fields' => $fields,
+        'list_id'       => $list_id,
+        'member_fields' => array(),
+        'member_fields_dd_data' => array()
+      ),
+      TRUE
+    ));
+  
+    $this->_subject->display_settings_custom_fields();
+  }
+
+
+  public function test__display_settings_custom_fields__no_custom_fields()
+  {
+    $model    = $this->_ee->campaigner_model;
+    $list_id  = 'abc123';
+    $fields   = array();
+
+    // Retrieve the AJAX-supplied list ID.
+    $this->_ee->input->expectOnce('get_post', array('list_id'));
+    $this->_ee->input->setReturnValue('get_post', $list_id, array('list_id'));
+
+    // Retrieve the custom list fields from the API.
+    $this->_connector->expectOnce('get_list_fields', array($list_id));
+    $this->_connector->setReturnValue('get_list_fields', $fields);
+
+    // Retrieve the member fields. Don't really care about this.
+    $model->setReturnValue('get_member_fields', array());
+
+    // Load the view.
+    $this->_ee->load->expectOnce('view', array(
+      '_custom_fields',
+      array(
+        'custom_fields' => $fields,
+        'list_id'       => $list_id,
+        'member_fields' => array(),
+        'member_fields_dd_data' => array()
+      ),
+      TRUE
+    ));
+  
+    $this->_subject->display_settings_custom_fields();
+  }
+
+
+  public function test__display_settings_custom_fields__missing_list_id()
+  {
+    $model    = $this->_ee->campaigner_model;
+    $fields   = array();
+
+    // Retrieve the AJAX-supplied list ID.
+    $this->_ee->input->expectOnce('get_post', array('list_id'));
+    $this->_ee->input->setReturnValue('get_post', FALSE, array('list_id'));
+
+    // Should never get this far.
+    $this->_connector->expectNever('get_list_fields');
+    $model->expectNever('get_member_fields');
+
+    // Log the error, and display the error view.
+    $error_message = 'Oh noes!';
+    $this->_ee->lang->setReturnValue('line', $error_message);
+
+    /**
+     * NOTE:
+     * We can't test with a Campaigner_exception arugment, as the test fails
+     * due to the exception being created in a different file.
+     */
+
+    $model->expectOnce('log_error');
+
+    $this->_ee->load->expectOnce('view', array(
+      '_error',
+      array(
+        'error_code'    => '',
+        'error_message' => $error_message
+      ),
+      TRUE
+    ));
+  
+    $this->_subject->display_settings_custom_fields();
+  }
   
   
+  public function test_display_settings_custom_fields__api_exception()
+  {
+    $model = $this->_ee->campaigner_model;
+    $list_id  = 'abc123';
+    $fields   = array();
+
+    // Retrieve the AJAX-supplied list ID.
+    $this->_ee->input->expectOnce('get_post', array('list_id'));
+    $this->_ee->input->setReturnValue('get_post', $list_id, array('list_id'));
+
+    // Retrieve the custom list fields from the API.
+    $api_exception = new Campaigner_exception('Oh noes!', 666);
+
+    $this->_connector->expectOnce('get_list_fields', array($list_id));
+    $this->_connector->throwOn('get_list_fields', $api_exception);
+
+    // Should never get this far.
+    $model->expectNever('get_member_fields');
+
+    /**
+     * NOTE:
+     * Testing that the $api_exception object is supplied as the log_error
+     * argument causing SimpleTest to enter into an infinite recursive loop.
+     * Nice.
+     */
+
+    $model->expectOnce('log_error');
+
+    $this->_ee->load->expectOnce('view', array(
+      '_error',
+      array(
+        'error_code'    => $api_exception->getCode(),
+        'error_message' => $api_exception->getMessage()
+      ),
+      TRUE
+    ));
+
+    $this->_subject->display_settings_custom_fields();
+  }
+
+
   public function test_display_settings_mailing_lists__success()
   {
       // Shortcuts.
@@ -252,7 +411,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       );
       
       // Expectations.
-      $this->_connector->expectOnce('get_client_lists', array($this->_settings->get_client_id(), TRUE));
+      $this->_connector->expectOnce('get_client_lists',
+        array($this->_settings->get_client_id()));
+
       $loader->expectOnce('view', array('_mailing_lists', $view_vars, TRUE));
       $model->expectOnce('get_member_fields');
       
@@ -282,7 +443,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       $this->_connector->throwOn('get_client_lists', $exception);
       
       // Expectations.
-      $this->_connector->expectOnce('get_client_lists', array($this->_settings->get_client_id(), TRUE));
+      $this->_connector->expectOnce('get_client_lists',
+        array($this->_settings->get_client_id()));
+
       $model->expectOnce('log_error', array('*'));
       $loader->expectOnce('view', array('_error', $view_vars, TRUE));
 
