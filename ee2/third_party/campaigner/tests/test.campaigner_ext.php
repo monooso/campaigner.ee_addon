@@ -377,20 +377,14 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     /**
      * NOTE:
-     * We can't test with a Campaigner_exception arugment, as the test fails
+     * We can't test with a Campaigner_exception argument, as the test fails
      * due to the exception being created in a different file.
      */
 
     $model->expectOnce('log_error');
 
     $this->_ee->load->expectOnce('view', array(
-      '_error',
-      array(
-        'error_code'    => '',
-        'error_message' => $error_message
-      ),
-      TRUE
-    ));
+      '_custom_fields_error', array(), TRUE));
   
     $this->_subject->display_settings();
   }
@@ -434,10 +428,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $model->expectOnce('log_error');
 
     $this->_ee->load->expectOnce('view', array(
-      '_custom_fields_try_again',
-      array('list_id' => $list_id),
-      TRUE
-    ));
+      '_custom_fields_error', array(), TRUE));
 
     $this->_subject->display_settings();
   }

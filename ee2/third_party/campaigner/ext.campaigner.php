@@ -672,7 +672,7 @@ class Campaigner_ext {
         'error_missing_or_invalid_list_id');
 
       $model->log_error(new Campaigner_exception($error_message));
-      return $this->_display_error($error_message);
+      return $this->_display_custom_fields_error();
     }
     
     try
@@ -682,7 +682,7 @@ class Campaigner_ext {
     catch (Campaigner_exception $e)
     {
       $model->log_error($e);
-      return $this->_display_custom_fields_try_again($list_id);
+      return $this->_display_custom_fields_error($list_id);
     }
 
     // Restore any saved field settings.
@@ -726,16 +726,14 @@ class Campaigner_ext {
   
   
   /**
-   * Displays the custom fields 'try again' view.
+   * Displays the custom fields 'error' view.
    *
    * @access  private
-   * @param   string      $list_id      The "parent" list ID.
    * @return  string
    */
-  private function _display_custom_fields_try_again($list_id)
+  private function _display_custom_fields_error()
   {
-    $view_vars = array('list_id' => $list_id);
-    return $this->_ee->load->view('_custom_fields_try_again', $view_vars, TRUE);
+    return $this->_ee->load->view('_custom_fields_error', array(), TRUE);
   }
 
 
