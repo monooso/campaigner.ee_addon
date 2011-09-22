@@ -167,7 +167,7 @@ class Campaigner_ext {
           break;
 
         case 'get_custom_fields':
-          $response = $this->display_settings_custom_fields();
+          $response = $this->_display_settings_custom_fields();
           break;
             
         case 'get_mailing_lists':
@@ -285,79 +285,6 @@ class Campaigner_ext {
   }
 
 
-  /**
-   * Displays the "custom fields" settings form fragment. Should only ever be
-   * called from the display_settings method, which takes care of testing for
-   * a valid API connector.
-   *
-   * @access  public
-   * @return  string
-   */
-  public function display_settings_custom_fields()
-  {
-    $model = $this->_ee->campaigner_model;
-
-    // At the very least, we need a list ID.
-    if ( ! ($list_id = $this->_ee->input->get_post('list_id')))
-    {
-      $error_message = $this->_ee->lang->line(
-        'error_missing_or_invalid_list_id');
-
-      $model->log_error(new Campaigner_exception($error_message));
-      return $this->display_error($error_message);
-    }
-    
-    try
-    {
-      $fields = $this->_connector->get_list_fields($list_id);
-    }
-    catch (Campaigner_exception $e)
-    {
-      $model->log_error($e);
-      return $this->display_custom_fields_try_again($list_id);
-      // return $this->display_error($e->getMessage(), $e->getCode());
-    }
-
-    // Restore any saved field settings.
-    if ($saved_list = $this->settings->get_mailing_list_by_id($list_id))
-    {
-      // Restore the saved custom field settings.
-      foreach ($fields AS $field)
-      {
-        if (($saved_field = $saved_list->get_custom_field_by_cm_key(
-          $field->get_cm_key())
-        ))
-        {
-          $field->set_member_field_id($saved_field->get_member_field_id());
-        }
-      }
-    }
-
-    // Retrieve the member fields.
-    $member_fields = $model->get_member_fields();
-
-    // Prepare the member fields data for use in a dropdown.
-    $member_fields_dd_data = array();
-
-    foreach ($member_fields AS $member_field)
-    {
-      $member_fields_dd_data[$member_field->get_id()] =
-        $member_field->get_label();
-    }
-        
-    // Define the view variables.
-    $view_vars = array(
-      'custom_fields'         => $fields,
-      'list_id'               => $list_id,
-      'member_fields'         => $member_fields,
-      'member_fields_dd_data' => $member_fields_dd_data
-    );
-    
-    $view_name = '_custom_fields';
-    return $this->_ee->load->view($view_name, $view_vars, TRUE);
-  }
-  
-  
   /**
    * Displays the "mailing lists" settings form fragment. Should only ever be
    * called from the display_settings method, which takes care of testing for a
@@ -826,6 +753,84 @@ class Campaigner_ext {
   }
 
 
+
+  /* --------------------------------------------------------------
+   * PRIVATE METHODS
+   * ------------------------------------------------------------ */
+  
+  /**
+   * Displays the "custom fields" settings form fragment. Should only ever be
+   * called from the display_settings method, which takes care of testing for
+   * a valid API connector.
+   *
+   * @access  public
+   * @return  string
+   */
+  private function _display_settings_custom_fields()
+  {
+    $model = $this->_ee->campaigner_model;
+
+    // At the very least, we need a list ID.
+    if ( ! ($list_id = $this->_ee->input->get_post('list_id')))
+    {
+      $error_message = $this->_ee->lang->line(
+        'error_missing_or_invalid_list_id');
+
+      $model->log_error(new Campaigner_exception($error_message));
+      return $this->display_error($error_message);
+    }
+    
+    try
+    {
+      $fields = $this->_connector->get_list_fields($list_id);
+    }
+    catch (Campaigner_exception $e)
+    {
+      $model->log_error($e);
+      return $this->display_custom_fields_try_again($list_id);
+      // return $this->display_error($e->getMessage(), $e->getCode());
+    }
+
+    // Restore any saved field settings.
+    if ($saved_list = $this->settings->get_mailing_list_by_id($list_id))
+    {
+      // Restore the saved custom field settings.
+      foreach ($fields AS $field)
+      {
+        if (($saved_field = $saved_list->get_custom_field_by_cm_key(
+          $field->get_cm_key())
+        ))
+        {
+          $field->set_member_field_id($saved_field->get_member_field_id());
+        }
+      }
+    }
+
+    // Retrieve the member fields.
+    $member_fields = $model->get_member_fields();
+
+    // Prepare the member fields data for use in a dropdown.
+    $member_fields_dd_data = array();
+
+    foreach ($member_fields AS $member_field)
+    {
+      $member_fields_dd_data[$member_field->get_id()] =
+        $member_field->get_label();
+    }
+        
+    // Define the view variables.
+    $view_vars = array(
+      'custom_fields'         => $fields,
+      'list_id'               => $list_id,
+      'member_fields'         => $member_fields,
+      'member_fields_dd_data' => $member_fields_dd_data
+    );
+    
+    $view_name = '_custom_fields';
+    return $this->_ee->load->view($view_name, $view_vars, TRUE);
+  }
+  
+  
 }
 
 
