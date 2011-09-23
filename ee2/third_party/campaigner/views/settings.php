@@ -1,3 +1,5 @@
+<div id="campaigner">
+
 <?php
 
 echo form_open($action_url, '', $hidden_fields);
@@ -45,5 +47,6 @@ echo form_submit(array('name' => 'submit', 'value' => lang('lbl_save_settings'),
 echo '</div>';
 echo form_close();
 
-/* End of file		: settings.php */
-/* File location	: third_party/campaigner/views/settings.php */
+?>
+
+</div><!-- /#campaigner -->
