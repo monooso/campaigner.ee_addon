@@ -6,7 +6,7 @@
  * @author          : Stephen Lewis <addons@experienceinternet.co.uk>
  * @copyright       : Experience Internet
  * @package         : Campaigner
- * @version         : 4.2.0
+ * @version         : 4.3.0b1
  */
 
 require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector.php';
@@ -61,7 +61,7 @@ class Campaigner_model extends CI_Model {
     $this->_ee =& get_instance();
     
     $this->_package_name      = 'Campaigner';
-    $this->_package_version   = '4.2.0';
+    $this->_package_version   = '4.3.0b1';
     $this->_extension_class   = $this->get_package_name() .'_ext';
 
     // Load the OmniLogger class.
