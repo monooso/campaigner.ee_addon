@@ -1,57 +1,61 @@
 /**
  * Campaigner control panel styles.
  *
- * @author			: Stephen Lewis <addons@experienceinternet.co.uk>
- * @copyright		: Experience Internet
- * @package			: Campaigner
+ * @author      : Stephen Lewis <addons@experienceinternet.co.uk>
+ * @copyright   : Experience Internet
+ * @package     : Campaigner
  */
 
 @media screen, projection {
-	
-/* =campaigner_lists
+  
+/* =stacked
  -------------------------------------------------------------*/
-#campaigner_lists .stacked label {
-display 				: block;
-font-weight 			: normal;
-margin-bottom 			: 0.5em;
+#campaigner .stacked label {
+  display         : block;
+  font-weight     : normal;
+  margin-bottom   : 0.5em;
 }
 
-#campaigner_lists .stacked label span {
-display 				: inline-block;
-margin-right 			: 10px;
-width 					: 35%;
+#campaigner .stacked label span {
+  display         : inline-block;
+  margin-right    : 10px;
+  width           : 35%;
 }
 
-#campaigner_lists .stacked select {
-display 				: inline-block;
+#campaigner .stacked select {
+  display         : inline-block;
+}
+
+
+/* =campaigner_custom_fields
+ * ------------------------------------------------------------ */
+.campaigner_custom_fields {
+  display         : none;
 }
 
 
 /* =campaigner_loading
+ * ------------------------------------------------------------ */
+.campaigner_loading {
+  color           : rgba(0, 0, 0, 0.5);
+  display         : inline-block;
+  font-weight     : bold;
+  padding-left    : 22px;
+  text-shadow     : 0 1px 0 rgb(255, 255, 255);
+}
+
+
+/* =campaigner_modal_loading
  -------------------------------------------------------------*/
-#campaigner_loading {
-background 				: rgb(0, 0, 0);
-display 				: none;
-opacity 				: 0.9;
-position 				: absolute;
+#campaigner_modal_loading {
+  background      : rgba(0, 0, 0, 0.85);
+  display         : none;
+  position        : absolute;
 }
 
-#campaigner_loading p {
--moz-border-radius		: 10px;
--webkit-border-radius	: 10px;
-background 				: rgb(0, 0, 0) url('../img/loading.gif') no-repeat 50% 50%;
-border 					: 2px solid rgb(51, 51, 51);
-border-radius 			: 10px;
-height 					: 32px;
-left 					: 50%;
-margin 					: -68px 0 0 -68px;
-padding 				: 50px;
-position 				: absolute;
-top 					: 50%;
-width 					: 32px;
-}
 
 }
 
-/* End of file		: cp.css */
-/* File location	: themes/third_party/campaigner/css/cp.css */
+
+/* End of file    : cp.css */
+/* File location  : themes/third_party/campaigner/css/cp.css */

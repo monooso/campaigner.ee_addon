@@ -49,30 +49,11 @@ if ($mailing_lists)
 		));
 		
 		// Custom fields.
-		if (($custom_fields = $mailing_list->get_custom_fields()))
-		{
-			$custom_fields_cell = '';
-			
-			foreach ($custom_fields AS $custom_field)
-			{
-				$custom_fields_cell .= '<label><span>' .$custom_field->get_label() .'</span>';
-				
-				$custom_fields_cell .= form_dropdown(
-					"mailing_lists[{$list_id}][custom_fields][{$custom_field->get_sanitized_cm_key()}]",
-					array_merge(array('' => lang('lbl_no_custom_field')), $member_fields_dd_data),
-					$custom_field->get_member_field_id(),
-					"id='mailing_lists[{$list_id}][custom_fields][{$custom_field->get_sanitized_cm_key()}]' tabindex='" .($tabindex += 10) ."'"
-				);
-				
-				$custom_fields_cell .= '</label>';
-			}
-		}
-		else
-		{
-			$custom_fields_cell = '<p>' .lang('msg_no_custom_fields') .'</p>';
-		}
-		
-		$mailing_list_custom_fields = array('class' => 'stacked', 'data' => $custom_fields_cell);
+    $mailing_list_custom_fields = array(
+      'class' => 'stacked',
+      'data' => '<span class="campaigner_loading">'
+        .lang('msg_loading_custom_fields') .'</span>'
+    );
 		
 		// Add the row to the table.
 		$this->table->add_row(array(
