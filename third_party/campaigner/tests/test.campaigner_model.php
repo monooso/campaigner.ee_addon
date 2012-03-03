@@ -38,7 +38,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
    * TEST METHODS
    * ------------------------------------------------------------ */
 
-  public function test_get_package_name()
+  public function test__get_package_name()
   {
     $this->assertEqual(
       strtolower($this->_model->get_package_name()),
@@ -52,7 +52,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test_get_package_version()
+  public function test__get_package_version()
   {
     $this->assertPattern(
       '/^[0-9abcdehlprtv\.]+$/i',
@@ -61,7 +61,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test_get_extension_class()
+  public function test__get_extension_class()
   {
     $this->assertEqual(
       strtolower($this->_model->get_extension_class()),
@@ -75,7 +75,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test_get_site_id()
+  public function test__get_site_id()
   {
     $config = $this->EE->config;
     $site_id = '10';
@@ -87,7 +87,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test_activate_extension_settings_table__success()
+  public function test__activate_extension_settings_table__success()
   {
     // Shortcuts.
     $dbf    = $this->EE->dbforge;
@@ -121,7 +121,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test_activate_extension_mailing_lists_table__success()
+  public function test__activate_extension_mailing_lists_table__success()
   {
     // Shortcuts.
     $dbf    = $this->EE->dbforge;
@@ -164,7 +164,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test_activate_extension_register_hooks__success()
+  public function test__activate_extension_register_hooks__success()
   {
     // Shortcuts.
     $db = $this->EE->db;
@@ -213,7 +213,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test_disable_extension()
+  public function test__disable_extension()
   {
     $db = $this->EE->db;
     $dbf = $this->EE->dbforge;
@@ -1282,7 +1282,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test_get_api_connector__success()
+  public function test__get_api_connector__success()
   {
       // Shortcuts.
       $config     = $this->EE->config;
