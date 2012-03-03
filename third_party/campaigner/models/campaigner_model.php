@@ -855,6 +855,56 @@ class Campaigner_model extends CI_Model {
     {
       return $fields;
     }
+
+    $query_fields = array(
+      'channel_fields.field_id',
+      'channel_fields.field_list_items',
+      'channel_fields.field_name',
+      'channel_fields.field_type'
+    );
+
+    $db_result = $this->EE->db
+      ->select(implode(', ', $query_fields))
+      ->from('channel_fields')
+      ->join('channels',
+        'channels.field_group = channel_fields.group_id', 'inner')
+      ->join('zoo_visitor_settings',
+        'zoo_visitor_settings.var_value = channels.channel_id', 'inner')
+      ->where('zoo_visitor_settings.site_id', $this->get_site_id())
+      ->where('zoo_visitor_settings.var', 'member_channel_id')
+      ->where('channel_fields.field_type !=', 'zoo_visitor')
+      ->get();
+
+    if ( ! $db_result->num_rows())
+    {
+      return $fields;
+    }
+
+    foreach ($db_result->result() AS $db_row)
+    {
+      $field_data = array(
+        'id'      => $db_row->field_id,
+        'options' => array(),
+        'type'    => $db_row->field_type
+      );
+
+      if ($db_row->field_type === Campaigner_trigger_field::DATATYPE_SELECT)
+      {
+        $field_options = explode("\n", $db_row->field_list_items);
+
+        foreach ($field_options AS $field_option)
+        {
+          $field_data['options'][] = new Campaigner_trigger_field_option(array(
+            'id'    => $field_option,
+            'label' => $field_option
+          ));
+        }
+      }
+
+      $fields[] = new Campaigner_trigger_field($field_data);
+    }
+
+    return $fields;
   }
 
 

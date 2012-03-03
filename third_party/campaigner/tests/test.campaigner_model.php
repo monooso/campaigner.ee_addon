@@ -805,7 +805,124 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $this->assertIdentical(array(),
       $this->_subject->get_zoo_visitor_member_fields());
   }
-  
+
+
+  public function test__get_zoo_visitor_member_fields__returns_an_array_of_campaigner_trigger_fields()
+  {
+    // Set the cache.
+    $this->EE->session->cache[$this->_namespace][$this->_package_name]
+      [$this->_site_id]['is_zoo_visitor_installed'] = TRUE;
+
+    $fields = array(
+      'channel_fields.field_id',
+      'channel_fields.field_list_items',
+      'channel_fields.field_name',
+      'channel_fields.field_type'
+    );
+
+    $this->EE->db->expectOnce('select', array(implode(', ', $fields)));
+    $this->EE->db->expectOnce('from', array('channel_fields'));
+
+    $this->EE->db->expectCallCount('join', 2);
+
+    $this->EE->db->expectAt(0, 'join', array('channels',
+      'channels.field_group = channel_fields.group_id', 'inner'));
+
+    $this->EE->db->expectAt(1, 'join', array('zoo_visitor_settings',
+      'zoo_visitor_settings.var_value = channels.channel_id', 'inner'));
+
+    $this->EE->db->expectCallCount('where', 3);
+
+    $this->EE->db->expectAt(0, 'where',
+      array('zoo_visitor_settings.site_id', $this->_site_id));
+
+    $this->EE->db->expectAt(1, 'where',
+      array('zoo_visitor_settings.var', 'member_channel_id'));
+
+    $this->EE->db->expectAt(2, 'where',
+      array('channel_fields.field_type !=', 'zoo_visitor'));
+
+    $this->EE->db->expectOnce('get');
+
+    // Query result.
+    $db_result = $this->_get_mock('db_query');
+
+    $db_rows = array(
+      (object) array(
+        'field_id'          => '10',
+        'field_list_items'  => '',
+        'field_name'        => 'dob',
+        'field_type'        => 'date'
+      ),
+      (object) array(
+        'field_id'          => '20',
+        'field_list_items'  => '',
+        'field_name'        => 'city',
+        'field_type'        => 'text'
+      ),
+      (object) array(
+        'field_id'          => '30',
+        'field_list_items'  => "Canada\nUSA",
+        'field_name'        => 'country',
+        'field_type'        => 'select'
+      )
+    );
+
+    $this->EE->db->returnsByReference('get', $db_result);
+    $db_result->returns('num_rows', count($db_rows));
+    $db_result->returns('result', $db_rows);
+
+    $expected_result = array(
+      new Campaigner_trigger_field(array(
+        'id'      => $db_rows[0]->field_id,
+        'options' => array(),
+        'type'    => $db_rows[0]->field_type
+      )),
+      new Campaigner_trigger_field(array(
+        'id'      => $db_rows[1]->field_id,
+        'options' => array(),
+        'type'    => $db_rows[1]->field_type
+      )),
+      new Campaigner_trigger_field(array(
+        'id'      => $db_rows[2]->field_id,
+        'options' => array(
+          new Campaigner_trigger_field_option(array(
+            'id' => 'Canada', 'label' => 'Canada')),
+          new Campaigner_trigger_field_option(array(
+            'id' => 'USA', 'label' => 'USA'))
+        ),
+        'type'    => $db_rows[2]->field_type
+      ))
+    );
+
+    // Run the tests.
+    $this->assertIdentical($expected_result,
+      $this->_subject->get_zoo_visitor_member_fields());
+  }
+
+
+  public function test__get_zoo_visitor_member_fields__returns_an_empty_array_if_no_member_fields_are_found()
+  {
+    // Set the cache.
+    $this->EE->session->cache[$this->_namespace][$this->_package_name]
+      [$this->_site_id]['is_zoo_visitor_installed'] = TRUE;
+
+    $this->EE->db->expectOnce('select');
+    $this->EE->db->expectOnce('from');
+    $this->EE->db->expectCallCount('join', 2);
+    $this->EE->db->expectCallCount('where', 3);
+    $this->EE->db->expectOnce('get');
+
+    // Query result.
+    $db_result = $this->_get_mock('db_query');
+
+    $this->EE->db->returnsByReference('get', $db_result);
+    $db_result->returns('num_rows', 0);
+
+    // Run the tests.
+    $this->assertIdentical(array(),
+      $this->_subject->get_zoo_visitor_member_fields());
+  }
 
 
   public function test__is_zoo_visitor_installed__not_installed()
