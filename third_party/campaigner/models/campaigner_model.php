@@ -142,6 +142,7 @@ class Campaigner_model extends CI_Model {
       'cp_members_validate_members',
       'member_member_register',
       'member_register_validate_members',
+      'membrr_subscribe',
       'user_edit_end',
       'user_register_end',
       'zoo_visitor_cp_register_end',
@@ -1065,7 +1066,7 @@ class Campaigner_model extends CI_Model {
     }
 
     // Version 4.1.
-    if (version_compare($installed_version, '4.1', '<'))
+    if (version_compare($installed_version, '4.1.0', '<'))
     {
       $this->_ee->db->query('ALTER TABLE exp_campaigner_mailing_lists
         DROP PRIMARY KEY');
@@ -1074,14 +1075,41 @@ class Campaigner_model extends CI_Model {
         ADD PRIMARY KEY (list_id, site_id)');
     }
 
-    // Version 4.2.
-    if (version_compare($installed_version, '4.2', '<'))
+    // Version 4.2 adds support for Zoo Visitor.
+    if (version_compare($installed_version, '4.2.0', '<'))
     {
       $hooks = array(
         'zoo_visitor_cp_register_end',
         'zoo_visitor_cp_update_end',
         'zoo_visitor_register_end',
         'zoo_visitor_update_end'
+      );
+      
+      $hook_data = array(
+        'class'     => $this->get_extension_class(),
+        'enabled'   => 'y',
+        'hook'      => '',
+        'method'    => '',
+        'priority'  => 5,
+        'settings'  => '',
+        'version'   => $package_version
+      );
+      
+      foreach ($hooks AS $hook)
+      {
+        $hook_data['hook'] = $hook;
+        $hook_data['method'] = 'on_' .$hook;
+        
+        $this->_ee->db->insert('extensions', $hook_data);
+      }
+    }
+
+    // Version 4.4.0 adds support for CartThrob and Membrr.
+    if (version_compare($installed_version, '4.4.0', '<'))
+    {
+      $hooks = array(
+        'cartthrob_create_member',
+        'membrr_subscribe'
       );
       
       $hook_data = array(

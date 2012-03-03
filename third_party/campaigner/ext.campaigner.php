@@ -352,6 +352,20 @@ class Campaigner_ext {
    * ------------------------------------------------------------ */
 
   /**
+   * Handles the `cartthrob_create_member` hook.
+   *
+   * @access  public
+   * @param   array    $member_data    The member data.
+   * @param   object    $cartthrob    A reference to the CartThrob object.
+   * @return  void
+   */
+  public function on_cartthrob_create_member(Array $member_data, &$cartthrob)
+  {
+    
+  }
+
+
+  /**
    * Handles the `cp_members_member_create` hook. Used when a member is created
    * via the control panel.
    *
@@ -404,6 +418,19 @@ class Campaigner_ext {
    */
   public function on_member_member_register(Array $member_data, $member_id)
   {
+    /**
+     * TRICKY:
+     * The BrilliantRetail module calls this hook what automatically creating a 
+     * member during the checkout process.
+     *
+     * Unfortunately, BR doesn't honour the "member activation" preference, so 
+     * the following check could result in the BR-created member not being
+     * subscribed to Campaign Monitor.
+     *
+     * There's nothing we can do about this, as there's no way to identify the 
+     * new member as having been created by BR. Hence this long winded note.
+     */
+
     if ($this->_ee->config->item('req_mbr_activation') != 'none')
     {
       return;
@@ -430,6 +457,24 @@ class Campaigner_ext {
       return;
     }
     
+    $this->subscribe_member($member_id);
+  }
+
+
+  /**
+   * Handles the `membrr_subscribe` hook.
+   *
+   * @access  public
+   * @param   int     $member_id          The member ID.
+   * @param   int     $subscription_id    The subscription ID.
+   * @param   int     $plan_id            The plan ID.
+   * @param   string  $end_date           The plan end date.
+   * @return  void
+   */
+  public function on_membrr_subscribe($member_id, $subscription_id,
+    $plan_id, $end_date
+  )
+  {
     $this->subscribe_member($member_id);
   }
   
