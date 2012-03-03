@@ -843,11 +843,14 @@ class Campaigner_model extends CI_Model {
    */
   public function is_zoo_visitor_installed()
   {
+    $cache =& $this->EE->session->cache[$this->_namespace]
+      [$this->_package_name];
+
     // Use the cache whenever possible.
-    /*
-    $this->EE->session->cache[$this->_namespace]
-      [$this->_package_name]['zoo_visitor_installed'];
-     */
+    if (array_key_exists('is_zoo_visitor_installed', $cache))
+    {
+      return $cache['is_zoo_visitor_installed'];
+    }
 
     // Is the Zoo Visitor module installed?
     if ($this->EE->db
@@ -855,13 +858,13 @@ class Campaigner_model extends CI_Model {
       ->count_all_results('modules') !== 1
     )
     {
-      return FALSE;
+      return $cache['is_zoo_visitor_installed'] = FALSE;
     }
 
     // Does the Zoo Visitor settings table exist?
     if ( ! $this->EE->db->table_exists('zoo_visitor_settings'))
     {
-      return FALSE;
+      return $cache['is_zoo_visitor_installed'] = FALSE;
     }
 
     // Is Zoo Visitor configured?
@@ -871,10 +874,10 @@ class Campaigner_model extends CI_Model {
       ->count_all_results('zoo_visitor_settings') !== 1
     )
     {
-      return FALSE;
+      return $cache['is_zoo_visitor_installed'] = FALSE;
     }
 
-    return TRUE;
+    return $cache['is_zoo_visitor_installed'] = TRUE;
   }
 
 

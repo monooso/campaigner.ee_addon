@@ -819,6 +819,44 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
+  public function test__is_zoo_visitor_installed__caches_result()
+  {
+    $cache =& $this->EE->session->cache[$this->_namespace]
+      [$this->_package_name];
+
+    // The cached value should not exist at this point.
+    $this->assertIdentical(FALSE,
+      array_key_exists('is_zoo_visitor_installed', $cache));
+
+    $this->EE->db->expectOnce('where');
+    $this->EE->db->expectOnce('count_all_results', array('modules'));
+    $this->EE->db->returns('count_all_results', 0);
+
+    $this->assertIdentical(FALSE, $this->_subject->is_zoo_visitor_installed());
+
+    // The cached value should now be set.
+    $this->assertIdentical(TRUE,
+      array_key_exists('is_zoo_visitor_installed', $cache));
+
+    $this->assertIdentical(FALSE, $cache['is_zoo_visitor_installed']);
+  }
+
+
+  public function test__is_zoo_visitor_installed__uses_cached_result()
+  {
+    // Set the cache.
+    $this->EE->session->cache[$this->_namespace][$this->_package_name]
+      ['is_zoo_visitor_installed'] = TRUE;
+
+    // The method should just use the cached value.
+    $this->EE->db->expectNever('where');
+    $this->EE->db->expectNever('count_all_results');
+    $this->EE->db->expectNever('table_exists');
+
+    $this->assertIdentical(TRUE, $this->_subject->is_zoo_visitor_installed());
+  }
+
+
   public function test__is_zoo_visitor_installed__installed_in_modules_table_but_zoo_visitor_settings_table_does_not_exist()
   {
     // Is the Zoo Visitor module installed?
