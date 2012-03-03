@@ -178,6 +178,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       'cp_members_validate_members',
       'member_member_register',
       'member_register_validate_members',
+      'membrr_subscribe',
       'user_edit_end',
       'user_register_end',
       'zoo_visitor_cp_register_end',
@@ -333,7 +334,6 @@ class Test_campaigner_model extends Testee_unit_test_case {
       'zoo_visitor_update_end'
     );
 
-    $db->expectCallCount('insert', 4);
     $call_count = 0;
 
     foreach ($hooks AS $hook)
