@@ -874,17 +874,17 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
     $expected_result = array(
       new Campaigner_trigger_field(array(
-        'id'      => $db_rows[0]->field_id,
+        'id'      => 'field_id_' .$db_rows[0]->field_id,
         'options' => array(),
         'type'    => $db_rows[0]->field_type
       )),
       new Campaigner_trigger_field(array(
-        'id'      => $db_rows[1]->field_id,
+        'id'      => 'field_id_' .$db_rows[1]->field_id,
         'options' => array(),
         'type'    => $db_rows[1]->field_type
       )),
       new Campaigner_trigger_field(array(
-        'id'      => $db_rows[2]->field_id,
+        'id'      => 'field_id_' .$db_rows[2]->field_id,
         'options' => array(
           new Campaigner_trigger_field_option(array(
             'id' => 'Canada', 'label' => 'Canada')),

@@ -883,7 +883,7 @@ class Campaigner_model extends CI_Model {
     foreach ($db_result->result() AS $db_row)
     {
       $field_data = array(
-        'id'      => $db_row->field_id,
+        'id'      => 'field_id_' .$db_row->field_id,
         'options' => array(),
         'type'    => $db_row->field_type
       );
