@@ -783,16 +783,13 @@ class Test_campaigner_model extends Testee_unit_test_case {
   public function test__get_theme_url__no_slash()
   {
     // Dummy values.
-    $theme_url      = '/path/to/themes';
-    $package_url    = $theme_url .'/third_party/' .strtolower($this->_subject->get_package_name()) .'/';
+    $theme_url    = '/path/to/themes';
+    $package_url  = $theme_url .'/third_party/'
+      .strtolower($this->_subject->get_package_name()) .'/';
 
-    // Expectations.
-    $this->EE->config->expectOnce('item', array('theme_folder_url'));
+    $this->EE->config->setReturnValue('item', $theme_url,
+      array('theme_folder_url'));
 
-    // Return values.
-    $this->EE->config->setReturnValue('item', $theme_url, array('theme_folder_url'));
-
-    // Tests.
     $this->assertIdentical($package_url, $this->_subject->get_theme_url());
   }
 
@@ -801,7 +798,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   {
     // Set the cache.
     $this->EE->session->cache[$this->_namespace][$this->_package_name]
-      ['is_zoo_visitor_installed'] = FALSE;
+      ['is_zoo_visitor_installed'][$this->_site_id] = FALSE;
 
     $this->EE->db->expectNever('get_where');
   
@@ -828,8 +825,8 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__is_zoo_visitor_installed__caches_result()
   {
-    $cache =& $this->EE->session->cache[$this->_namespace]
-      [$this->_package_name];
+    $cache =& $this->EE->session->cache[$this->_namespace][$this->_package_name]
+      [$this->_site_id];
 
     // The cached value should not exist at this point.
     $this->assertIdentical(FALSE,
@@ -853,7 +850,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   {
     // Set the cache.
     $this->EE->session->cache[$this->_namespace][$this->_package_name]
-      ['is_zoo_visitor_installed'] = TRUE;
+      [$this->_site_id]['is_zoo_visitor_installed'] = TRUE;
 
     // The method should just use the cached value.
     $this->EE->db->expectNever('where');

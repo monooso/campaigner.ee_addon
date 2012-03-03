@@ -82,18 +82,24 @@ class Campaigner_model extends CI_Model {
     $this->_extension_class = $this->get_package_name() .'_ext';
 
     // Initialise the add-on cache.
-    if ( ! array_key_exists($this->_namespace, $this->EE->session->cache))
+    $cache =& $this->EE->session->cache;
+
+    if ( ! array_key_exists($this->_namespace, $cache))
     {
-      $this->EE->session->cache[$this->_namespace] = array();
+      $cache[$this->_namespace] = array();
     }
 
-    if ( ! array_key_exists(
-      $this->_package_name,
-      $this->EE->session->cache[$this->_namespace])
+    if ( ! array_key_exists($this->_package_name, $cache[$this->_namespace]))
+    {
+      $cache[$this->_namespace][$this->_package_name] = array();
+    }
+
+    if ( ! array_key_exists($this->get_site_id(),
+      $cache[$this->_namespace][$this->_package_name])
     )
     {
-      $this->EE->session->cache[$this->_namespace]
-        [$this->_package_name] = array();
+      $cache[$this->_namespace][$this->_package_name][$this->get_site_id()]
+        = array();
     }
   }
 
@@ -861,8 +867,7 @@ class Campaigner_model extends CI_Model {
    */
   public function is_zoo_visitor_installed()
   {
-    $cache =& $this->EE->session->cache[$this->_namespace]
-      [$this->_package_name];
+    $cache =& $this->_get_package_cache();
 
     // Use the cache whenever possible.
     if (array_key_exists('is_zoo_visitor_installed', $cache))
@@ -1313,6 +1318,24 @@ class Campaigner_model extends CI_Model {
 
     $settings->set_mailing_lists($mailing_lists);
     return $settings;
+  }
+
+
+  /* --------------------------------------------------------------
+   * PROTECTED METHODS
+   * ------------------------------------------------------------ */
+
+  /**
+   * Returns a reference to the package cache for the current site. Should be 
+   * called as follows: $cache =& $this->_get_package_cache();
+   *
+   * @access  protected
+   * @return  array
+   */
+  protected function &_get_package_cache()
+  {
+    return $this->EE->session->cache[$this->_namespace]
+      [$this->_package_name][$this->get_site_id()];
   }
 
 
