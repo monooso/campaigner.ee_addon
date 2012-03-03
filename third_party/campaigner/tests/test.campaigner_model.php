@@ -811,6 +811,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__is_zoo_visitor_installed__not_installed()
   {
+    // Is the Zoo Visitor module installed?
     $this->EE->db->expectOnce('where',
       array('LOWER(module_name)', 'zoo_visitor'));
 
@@ -825,16 +826,76 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__is_zoo_visitor_installed__installed_in_modules_table_but_zoo_visitor_settings_table_does_not_exist()
   {
+    // Is the Zoo Visitor module installed?
     $this->EE->db->expectOnce('where',
       array('LOWER(module_name)', 'zoo_visitor'));
 
     $this->EE->db->expectOnce('count_all_results', array('modules'));
     $this->EE->db->returns('count_all_results', 1);
 
+    // Does the Zoo Visitor settings table exist?
     $this->EE->db->expectOnce('table_exists', array('zoo_visitor_settings'));
     $this->EE->db->returns('table_exists', FALSE);
   
     $this->assertIdentical(FALSE, $this->_subject->is_zoo_visitor_installed());
+  }
+
+
+  public function test__is_zoo_visitor_installed__installed_but_not_configured()
+  {
+    $this->EE->db->expectCallCount('where', 3);
+    $this->EE->db->expectCallCount('count_all_results', 2);
+
+    // Is the Zoo Visitor module installed?
+    $this->EE->db->expectAt(0, 'where',
+      array('LOWER(module_name)', 'zoo_visitor'));
+
+    $this->EE->db->expectAt(0, 'count_all_results', array('modules'));
+    $this->EE->db->returnsAt(0, 'count_all_results', 1);
+
+    // Does the Zoo Visitor settings table exist?
+    $this->EE->db->expectOnce('table_exists', array('zoo_visitor_settings'));
+    $this->EE->db->returns('table_exists', TRUE);
+
+    // Is Zoo Visitor configured?
+    $this->EE->db->expectAt(1, 'where', array('var', 'member_channel_id'));
+    $this->EE->db->expectAt(2, 'where', array('var_value !=', ''));
+
+    $this->EE->db->expectAt(1, 'count_all_results',
+      array('zoo_visitor_settings'));
+
+    $this->EE->db->returnsAt(1, 'count_all_results', 0);
+
+    $this->assertIdentical(FALSE, $this->_subject->is_zoo_visitor_installed());
+  }
+
+
+  public function test__is_zoo_visitor_installed__installed_and_configured()
+  {
+    $this->EE->db->expectCallCount('where', 3);
+    $this->EE->db->expectCallCount('count_all_results', 2);
+
+    // Is the Zoo Visitor module installed?
+    $this->EE->db->expectAt(0, 'where',
+      array('LOWER(module_name)', 'zoo_visitor'));
+
+    $this->EE->db->expectAt(0, 'count_all_results', array('modules'));
+    $this->EE->db->returnsAt(0, 'count_all_results', 1);
+
+    // Does the Zoo Visitor settings table exist?
+    $this->EE->db->expectOnce('table_exists', array('zoo_visitor_settings'));
+    $this->EE->db->returns('table_exists', TRUE);
+
+    // Is Zoo Visitor configured?
+    $this->EE->db->expectAt(1, 'where', array('var', 'member_channel_id'));
+    $this->EE->db->expectAt(2, 'where', array('var_value !=', ''));
+
+    $this->EE->db->expectAt(1, 'count_all_results',
+      array('zoo_visitor_settings'));
+
+    $this->EE->db->returnsAt(1, 'count_all_results', 1);
+
+    $this->assertIdentical(TRUE, $this->_subject->is_zoo_visitor_installed());
   }
 
 

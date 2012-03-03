@@ -818,6 +818,7 @@ class Campaigner_model extends CI_Model {
    */
   public function is_zoo_visitor_installed()
   {
+    // Is the Zoo Visitor module installed?
     if ($this->EE->db
       ->where('LOWER(module_name)', 'zoo_visitor')
       ->count_all_results('modules') !== 1
@@ -826,10 +827,23 @@ class Campaigner_model extends CI_Model {
       return FALSE;
     }
 
+    // Does the Zoo Visitor settings table exist?
     if ( ! $this->EE->db->table_exists('zoo_visitor_settings'))
     {
       return FALSE;
     }
+
+    // Is Zoo Visitor configured?
+    if ($this->EE->db
+      ->where('var', 'member_channel_id')
+      ->where('var_value !=', '')
+      ->count_all_results('zoo_visitor_settings') !== 1
+    )
+    {
+      return FALSE;
+    }
+
+    return TRUE;
   }
 
 
