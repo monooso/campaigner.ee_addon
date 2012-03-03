@@ -33,7 +33,7 @@ require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_lists.php';
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_subscribers.php';
 
 class Campaigner_model extends CI_Model {
-    
+
   private $_ee;
   private $_extension_class;
   private $_extension_settings;
@@ -42,8 +42,8 @@ class Campaigner_model extends CI_Model {
   private $_settings;
   private $_site_id;
   private $_theme_url;
-  
-  
+
+
   /* --------------------------------------------------------------
    * PUBLIC METHODS
    * ------------------------------------------------------------ */
@@ -59,7 +59,7 @@ class Campaigner_model extends CI_Model {
     parent::__construct();
 
     $this->_ee =& get_instance();
-    
+
     $this->_package_name      = 'Campaigner';
     $this->_package_version   = '4.3.0';
     $this->_extension_class   = $this->get_package_name() .'_ext';
@@ -70,8 +70,8 @@ class Campaigner_model extends CI_Model {
       include_once PATH_THIRD .'omnilog/classes/omnilogger.php';
     }
   }
-  
-  
+
+
   /**
    * Activates the extension.
    *
@@ -84,8 +84,8 @@ class Campaigner_model extends CI_Model {
     $this->activate_extension_settings_table();
     $this->activate_extension_register_hooks();
   }
-  
-  
+
+
   /**
    * Creates the mailing lists table when the extension is activated.
    *
@@ -97,7 +97,7 @@ class Campaigner_model extends CI_Model {
     // Shortcuts.
     $this->_ee->load->dbforge();
     $dbforge = $this->_ee->dbforge;
-    
+
     // Table data.
     $fields = array(
       'list_id' => array(
@@ -121,14 +121,14 @@ class Campaigner_model extends CI_Model {
         'type'          => 'varchar'
       )
     );
-    
+
     $dbforge->add_field($fields);
     $dbforge->add_key('list_id', TRUE);
     $dbforge->add_key('site_id', TRUE);
     $dbforge->create_table('campaigner_mailing_lists');
   }
-  
-  
+
+
   /**
    * Registers the extension hooks when the extension is activated.
    *
@@ -150,7 +150,7 @@ class Campaigner_model extends CI_Model {
       'zoo_visitor_register_end',
       'zoo_visitor_update_end'
     );
-    
+
     $hook_data = array(
       'class'     => $this->get_extension_class(),
       'enabled'   => 'y',
@@ -160,17 +160,17 @@ class Campaigner_model extends CI_Model {
       'settings'  => '',
       'version'   => $this->get_package_version()
     );
-    
+
     foreach ($hooks AS $hook)
     {
       $hook_data['hook'] = $hook;
       $hook_data['method'] = 'on_' .$hook;
-      
+
       $this->_ee->db->insert('extensions', $hook_data);
     }
   }
-  
-  
+
+
   /**
    * Creates the settings table when the extension is activated.
    *
@@ -182,7 +182,7 @@ class Campaigner_model extends CI_Model {
     // Shortcuts.
     $this->_ee->load->dbforge();
     $dbforge = $this->_ee->dbforge;
-    
+
     // Table data.
     $fields = array(
       'site_id'   => array(
@@ -199,7 +199,7 @@ class Campaigner_model extends CI_Model {
         'type'          => 'varchar'
       )
     );
-    
+
     $dbforge->add_field($fields);
     $dbforge->add_key('site_id', TRUE);
     $dbforge->create_table('campaigner_settings');
@@ -218,7 +218,7 @@ class Campaigner_model extends CI_Model {
       'extensions',
       array('class' => $this->get_extension_class())
     );
-    
+
     $this->_ee->load->dbforge();
     $this->_ee->dbforge->drop_table('campaigner_error_log');
     $this->_ee->dbforge->drop_table('campaigner_settings');
@@ -364,8 +364,8 @@ class Campaigner_model extends CI_Model {
       $this
     );
   }
-  
-  
+
+
   /**
    * Returns the documentation URL.
    *
@@ -376,8 +376,8 @@ class Campaigner_model extends CI_Model {
   {
     return 'http://experienceinternet.co.uk/software/campaigner/docs/';
   }
-  
-  
+
+
   /**
    * Returns the extension class name. Assumed to be the package name,
    * with a `_ext` suffix.
@@ -389,8 +389,8 @@ class Campaigner_model extends CI_Model {
   {
     return $this->_extension_class;
   }
-  
-  
+
+
   /**
    * Returns the extension settings.
    *
@@ -404,11 +404,11 @@ class Campaigner_model extends CI_Model {
       $this->_settings = $this->get_settings_from_db();
       $this->_settings->set_mailing_lists($this->get_all_mailing_lists());
     }
-    
+
     return $this->_settings;
   }
-  
-  
+
+
   /**
    * Returns the installed extension version. If the extension is not
    * installed, returns an empty string.
@@ -419,13 +419,13 @@ class Campaigner_model extends CI_Model {
   public function get_installed_extension_version()
   {
     $db = $this->_ee->db;
-    
+
     $db_extension = $db->select('version')->get_where(
       'extensions',
       array('class' => $this->get_extension_class()),
       1
     );
-    
+
     return $db_extension->num_rows()
       ? $db_extension->row()->version
       : '';
@@ -444,14 +444,14 @@ class Campaigner_model extends CI_Model {
       'campaigner_mailing_lists',
       array('site_id' => $this->get_site_id())
     );
-    
+
     $mailing_lists = array();
-    
+
     foreach ($db_mailing_lists->result_array() AS $db_mailing_list)
     {
       $mailing_lists[] = new Campaigner_mailing_list($db_mailing_list);
     }
-    
+
     return $mailing_lists;
   }
 
@@ -475,12 +475,12 @@ class Campaigner_model extends CI_Model {
           array('list_id' => $list_id, 'site_id' => $site_id),
           1
         );
-    
+
     return $db_list->num_rows()
       ? new Campaigner_mailing_list($db_list->row_array())
       : FALSE;
   }
-  
+
 
   /**
    * Returns a Campaigner_subscriber object for the specified member
@@ -533,8 +533,8 @@ class Campaigner_model extends CI_Model {
 
     return $subscriber;
   }
-  
-  
+
+
   /**
    * Retrieves the information about the specified member from the database.
    *
@@ -546,13 +546,13 @@ class Campaigner_model extends CI_Model {
   public function get_member_by_id($member_id)
   {
     $member_data = array();
-    
+
     // Get out early.
     if ( ! valid_int($member_id, 1))
     {
       return $member_data;
     }
-    
+
     // Construct the query.
     $db_member = $this->_ee->db
       ->select(
@@ -561,17 +561,17 @@ class Campaigner_model extends CI_Model {
         member_data.*')
       ->join('member_data', 'member_data.member_id = members.member_id', 'inner')
       ->get_where('members', array('members.member_id' => $member_id), 1);
-    
+
     // Retrieve the member data.
     if ($db_member->num_rows())
     {
       $member_data = $db_member->row_array();
     }
-    
+
     return $member_data;
   }
-  
-  
+
+
   /**
    * Retrieves the member fields from the database.
    *
@@ -582,7 +582,7 @@ class Campaigner_model extends CI_Model {
   {
     // Shortcuts.
     $lang = $this->_ee->lang;
-    
+
     $trigger_fields = array();
     $member_groups = array();
 
@@ -598,7 +598,7 @@ class Campaigner_model extends CI_Model {
         'label' => $db_member_group['group_title']
       ));
     }
-    
+
     // ExpressionEngine hard-codes these member fields, so we must do the same.
     $standard_member_fields = array(
       array(
@@ -638,17 +638,17 @@ class Campaigner_model extends CI_Model {
         'type'      => 'text'
       )
     );
-    
+
     foreach ($standard_member_fields AS $member_field_data)
     {
       $trigger_fields[] = new Campaigner_trigger_field($member_field_data);
     }
-    
+
     // Load the custom member fields from the database.
     $db_member_fields = $this->_ee->db
       ->select("m_field_id, m_field_label, m_field_list_items, m_field_type")
       ->get('member_fields');
-    
+
     foreach ($db_member_fields->result_array() AS $db_row)
     {
       $trigger_field_options = array();
@@ -674,7 +674,7 @@ class Campaigner_model extends CI_Model {
 
       $trigger_fields[] = $trigger_field;
     }
-    
+
     return $trigger_fields;
   }
 
@@ -696,7 +696,7 @@ class Campaigner_model extends CI_Model {
     }
 
     $subscribe_lists = array();
-    
+
     foreach ($lists AS $list)
     {
       if ($this->member_should_be_subscribed_to_mailing_list(
@@ -707,7 +707,7 @@ class Campaigner_model extends CI_Model {
         $subscribe_lists[] = $list;
       }
     }
-    
+
     return $subscribe_lists;
   }
 
@@ -722,8 +722,8 @@ class Campaigner_model extends CI_Model {
   {
     return $this->_package_name;
   }
-  
-  
+
+
   /**
    * Returns the package version.
    *
@@ -734,8 +734,8 @@ class Campaigner_model extends CI_Model {
   {
     return $this->_package_version;
   }
-  
-  
+
+
   /**
    * Retrieves the settings from the `campaigner_settings` table.
    *
@@ -749,15 +749,15 @@ class Campaigner_model extends CI_Model {
       array('site_id' => $this->get_site_id()),
       1
     );
-    
+
     $settings_data = $db_settings->num_rows()
       ? $db_settings->row_array()
       : array();
-    
+
     return new Campaigner_settings($settings_data);
   }
-  
-  
+
+
   /**
    * Returns the site ID.
    *
@@ -770,11 +770,11 @@ class Campaigner_model extends CI_Model {
     {
       $this->_site_id = $this->_ee->config->item('site_id');
     }
-    
+
     return $this->_site_id;
   }
-  
-  
+
+
   /**
    * Returns the support URL.
    *
@@ -785,8 +785,8 @@ class Campaigner_model extends CI_Model {
   {
     return 'http://support.experienceinternet.co.uk/discussions/campaigner/';
   }
-  
-  
+
+
   /**
    * Returns the package theme URL.
    *
@@ -801,10 +801,10 @@ class Campaigner_model extends CI_Model {
       $theme_url = substr($theme_url, -1) == '/'
         ? $theme_url .'third_party/'
         : $theme_url .'/third_party/';
-      
+
       $this->_theme_url = $theme_url .strtolower($this->get_package_name()) .'/';
     }
-    
+
     return $this->_theme_url;
   }
 
@@ -851,8 +851,8 @@ class Campaigner_model extends CI_Model {
       OmniLogger::log($omnilog_entry);
     }
   }
-  
-  
+
+
   /**
    * Determines whether the specified member should be subscribed to the
    * specified mailing list, based on the value (or absence of) the list
@@ -903,8 +903,8 @@ class Campaigner_model extends CI_Model {
     return isset($member_data[$mailing_list->get_trigger_field()])
       && $member_data[$mailing_list->get_trigger_field()] == $mailing_list->get_trigger_value();
   }
-  
-  
+
+
   /**
    * Saves the extension settings.
    *
@@ -918,14 +918,14 @@ class Campaigner_model extends CI_Model {
     {
       throw new Campaigner_exception($this->_ee->lang->line('settings_not_saved'));
     }
-    
+
     if ( ! $this->save_mailing_lists_to_db($settings))
     {
       throw new Campaigner_exception($this->_ee->lang->line('mailing_lists_not_saved'));
     }
   }
-  
-  
+
+
   /**
    * Saves the supplied mailing lists to the database.
    *
@@ -937,26 +937,26 @@ class Campaigner_model extends CI_Model {
   {
     $db = $this->_ee->db;
     $site_id = $this->_ee->config->item('site_id');
-    
+
     // Delete the existing settings.
     $db->delete('campaigner_mailing_lists', array('site_id' => $site_id));
-    
+
     // Add the mailing lists.
     $mailing_lists = $settings->get_mailing_lists();
     $success = TRUE;
-    
+
     foreach ($mailing_lists AS $mailing_list)
     {
       $custom_field_data = array();
-      
+
       foreach ($mailing_list->get_custom_fields() AS $custom_field)
       {
         $custom_field_array = $custom_field->to_array();
         unset($custom_field_array['label']);
-        
+
         $custom_field_data[] = $custom_field_array;
       }
-      
+
       $mailing_list_data = array(
         'custom_fields' => serialize($custom_field_data),
         'list_id'       => $mailing_list->get_list_id(),
@@ -964,26 +964,26 @@ class Campaigner_model extends CI_Model {
         'trigger_field' => $mailing_list->get_trigger_field(),
         'trigger_value' => $mailing_list->get_trigger_value()
       );
-      
+
       $db->insert('campaigner_mailing_lists', $mailing_list_data);
-      
+
       if ($db->affected_rows() !== 1)
       {
         $success = FALSE;
         break;
       }
     }
-    
+
     // One bad badger sullies the set.
     if ( ! $success)
     {
       $db->delete('campaigner_mailing_lists', array('site_id' => $site_id));
     }
-    
+
     return $success;
   }
-  
-  
+
+
   /**
    * Saves the supplied settings to the database.
    *
@@ -995,22 +995,22 @@ class Campaigner_model extends CI_Model {
   {
     $db = $this->_ee->db;
     $site_id = $this->_ee->config->item('site_id');
-    
+
     // Delete any existing site settings.
     $db->delete('campaigner_settings', array('site_id' => $site_id));
-    
+
     /**
      * Retrieve the basic settings, remove the mailing lists (which
      * are handled separately), and add the site ID.
      */
-    
+
     $settings_data = $settings->to_array();
     unset($settings_data['mailing_lists']);
     $settings_data = array_merge(array('site_id' => $site_id), $settings_data);
-    
+
     // Save the settings to the database.
     $db->insert('campaigner_settings', $settings_data);
-    
+
     return (bool) $db->affected_rows();
   }
 
@@ -1026,7 +1026,7 @@ class Campaigner_model extends CI_Model {
   {
     $input  = $this->_ee->input;
     $props  = array('api_key', 'client_id');
-    
+
     foreach ($props AS $prop)
     {
       if ($prop_val = $input->get_post($prop))
@@ -1035,11 +1035,11 @@ class Campaigner_model extends CI_Model {
         $settings->$prop_method($prop_val);
       }
     }
-    
+
     return $settings;
   }
-  
-  
+
+
   /**
    * Updates the extension.
    *
@@ -1084,7 +1084,7 @@ class Campaigner_model extends CI_Model {
         'zoo_visitor_register_end',
         'zoo_visitor_update_end'
       );
-      
+
       $hook_data = array(
         'class'     => $this->get_extension_class(),
         'enabled'   => 'y',
@@ -1094,12 +1094,12 @@ class Campaigner_model extends CI_Model {
         'settings'  => '',
         'version'   => $package_version
       );
-      
+
       foreach ($hooks AS $hook)
       {
         $hook_data['hook'] = $hook;
         $hook_data['method'] = 'on_' .$hook;
-        
+
         $this->_ee->db->insert('extensions', $hook_data);
       }
     }
@@ -1111,7 +1111,7 @@ class Campaigner_model extends CI_Model {
         'cartthrob_create_member',
         'membrr_subscribe'
       );
-      
+
       $hook_data = array(
         'class'     => $this->get_extension_class(),
         'enabled'   => 'y',
@@ -1121,16 +1121,16 @@ class Campaigner_model extends CI_Model {
         'settings'  => '',
         'version'   => $package_version
       );
-      
+
       foreach ($hooks AS $hook)
       {
         $hook_data['hook'] = $hook;
         $hook_data['method'] = 'on_' .$hook;
-        
+
         $this->_ee->db->insert('extensions', $hook_data);
       }
     }
-    
+
     // Update the extension version in the database.
     $this->_ee->db->update(
       'extensions',
@@ -1138,8 +1138,8 @@ class Campaigner_model extends CI_Model {
       array('class' => $this->get_extension_class())
     );
   }
-  
-  
+
+
   /**
    * Updates the settings from any input data.
    *
@@ -1154,8 +1154,8 @@ class Campaigner_model extends CI_Model {
     return $this->update_mailing_list_settings_from_input(
       $this->update_basic_settings_from_input($settings));
   }
-  
-  
+
+
   /**
    * Updates the mailing list settings using input (GET / POST) data. Note that
    * "update" is something of a misnomer, used for consistency. In actuality,
@@ -1174,9 +1174,9 @@ class Campaigner_model extends CI_Model {
     {
       return $settings;
     }
-    
+
     $mailing_lists = array();
-    
+
     foreach ($input_lists AS $input_list)
     {
       // Only interested in "selected" mailing lists.
@@ -1184,7 +1184,7 @@ class Campaigner_model extends CI_Model {
       {
         continue;
       }
-      
+
       // The basics.
       $mailing_list = new Campaigner_mailing_list(array(
         'list_id'       => $input_list['checked'],
@@ -1195,12 +1195,12 @@ class Campaigner_model extends CI_Model {
           ? $input_list['trigger_value']
           : ''
       ));
-      
+
       // Custom fields.
       if (isset($input_list['custom_fields']))
       {
         $input_custom_fields = $input_list['custom_fields'];
-        
+
         foreach ($input_custom_fields AS $cm_key => $member_field_id)
         {
           // If no member field is associated with the custom field, ignore it.
@@ -1208,7 +1208,7 @@ class Campaigner_model extends CI_Model {
           {
             continue;
           }
-          
+
           // "Desanitize" the Campaign Monitor key, and create the custom field.
           $mailing_list->add_custom_field(new Campaigner_custom_field(array(
             'cm_key'            => desanitize_string($cm_key),
@@ -1216,10 +1216,10 @@ class Campaigner_model extends CI_Model {
           )));
         }
       }
-      
+
       $mailing_lists[] = $mailing_list;
     }
-    
+
     $settings->set_mailing_lists($mailing_lists);
     return $settings;
   }
