@@ -804,6 +804,20 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
+  public function test__get_zoo_visitor_member_fields__returns_an_empty_array_if_zoo_visitor_not_installed()
+  {
+    // Set the cache.
+    $this->EE->session->cache[$this->_namespace][$this->_package_name]
+      ['is_zoo_visitor_installed'] = FALSE;
+
+    $this->EE->db->expectNever('get_where');
+  
+    $this->assertIdentical(array(),
+      $this->_subject->get_zoo_visitor_member_fields());
+  }
+  
+
+
   public function test__is_zoo_visitor_installed__not_installed()
   {
     // Is the Zoo Visitor module installed?

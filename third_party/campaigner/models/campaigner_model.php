@@ -836,7 +836,25 @@ class Campaigner_model extends CI_Model {
 
 
   /**
-   * Determines whether the Zoo Visitor module is installed and activated.
+   * Retrieves the Zoo Visitor member fields for the current site.
+   *
+   * @access  public
+   * @return  array
+   */
+  public function get_zoo_visitor_member_fields()
+  {
+    $fields = array();
+
+    if ( ! $this->is_zoo_visitor_installed())
+    {
+      return $fields;
+    }
+  }
+
+
+  /**
+   * Determines whether the Zoo Visitor module is installed and activated
+   * for the current site.
    *
    * @access  public
    * @return  bool
