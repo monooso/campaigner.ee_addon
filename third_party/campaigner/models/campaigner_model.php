@@ -38,6 +38,7 @@ class Campaigner_model extends CI_Model {
 
   private $_extension_class;
   private $_extension_settings;
+  private $_namespace;
   private $_package_name;
   private $_package_version;
   private $_settings;
@@ -53,22 +54,46 @@ class Campaigner_model extends CI_Model {
    * Constructor.
    *
    * @access  public
+   * @param   string    $package_name     Package name. Used for testing.
+   * @param   string    $package_version  Package version. Used for testing.
+   * @param   string    $namespace        Session namespace. Used for testing.
    * @return  void
    */
-  public function __construct()
+  public function __construct($package_name = '', $package_version = '',
+    $namespace = ''
+  )
   {
     parent::__construct();
 
     $this->EE =& get_instance();
 
-    $this->_package_name      = 'Campaigner';
-    $this->_package_version   = '4.3.0';
-    $this->_extension_class   = $this->get_package_name() .'_ext';
-
     // Load the OmniLogger class.
     if (file_exists(PATH_THIRD .'omnilog/classes/omnilogger.php'))
     {
       include_once PATH_THIRD .'omnilog/classes/omnilogger.php';
+    }
+
+    $this->_namespace = $namespace ? strtolower($namespace) : 'experience';
+
+    $this->_package_name = $package_name
+      ? strtolower($package_name) : 'campaigner';
+
+    $this->_package_version = $package_version ? $package_version : '4.3.0';
+    $this->_extension_class = $this->get_package_name() .'_ext';
+
+    // Initialise the add-on cache.
+    if ( ! array_key_exists($this->_namespace, $this->EE->session->cache))
+    {
+      $this->EE->session->cache[$this->_namespace] = array();
+    }
+
+    if ( ! array_key_exists(
+      $this->_package_name,
+      $this->EE->session->cache[$this->_namespace])
+    )
+    {
+      $this->EE->session->cache[$this->_namespace]
+        [$this->_package_name] = array();
     }
   }
 
@@ -818,6 +843,12 @@ class Campaigner_model extends CI_Model {
    */
   public function is_zoo_visitor_installed()
   {
+    // Use the cache whenever possible.
+    /*
+    $this->EE->session->cache[$this->_namespace]
+      [$this->_package_name]['zoo_visitor_installed'];
+     */
+
     // Is the Zoo Visitor module installed?
     if ($this->EE->db
       ->where('LOWER(module_name)', 'zoo_visitor')

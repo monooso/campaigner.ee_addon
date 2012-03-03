@@ -13,8 +13,10 @@ require_once PATH_THIRD .'campaigner/models/campaigner_model.php';
 class Test_campaigner_model extends Testee_unit_test_case {
 
   private $_api_connector;
+  private $_namespace;
+  private $_package_name;
+  private $_package_version;
   private $_subject;
-
 
 
   /* --------------------------------------------------------------
@@ -30,7 +32,13 @@ class Test_campaigner_model extends Testee_unit_test_case {
   public function setUp()
   {
     parent::setUp();
-    $this->_subject = new Campaigner_model();
+
+    $this->_namespace       = 'test_namespace';
+    $this->_package_name    = 'test_package_name';
+    $this->_package_version = '10.1.0';
+
+    $this->_subject = new Campaigner_model(
+      $this->_package_name, $this->_package_version, $this->_namespace);
   }
 
 
@@ -306,15 +314,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__get_extension_class()
   {
-    $this->assertEqual(
-      strtolower($this->_subject->get_extension_class()),
-      'campaigner_ext'
-    );
+    $this->assertEqual($this->_subject->get_extension_class(),
+      $this->_package_name .'_ext');
 
-    $this->assertNotEqual(
-      strtolower($this->_subject->get_extension_class()),
-      'campaigner'
-    );
+    $this->assertNotEqual($this->_subject->get_extension_class(),
+      $this->_package_name);
   }
 
 
@@ -660,24 +664,15 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__get_package_name()
   {
-    $this->assertEqual(
-      strtolower($this->_subject->get_package_name()),
-      'campaigner'
-    );
-
-    $this->assertNotEqual(
-      strtolower($this->_subject->get_package_name()),
-      'wibble'
-    );
+    $this->assertEqual($this->_package_name,
+      $this->_subject->get_package_name());
   }
 
 
   public function test__get_package_version()
   {
-    $this->assertPattern(
-      '/^[0-9abcdehlprtv\.]+$/i',
-      $this->_subject->get_package_version()
-    );
+    $this->assertIdentical($this->_package_version,
+      $this->_subject->get_package_version());
   }
 
 
