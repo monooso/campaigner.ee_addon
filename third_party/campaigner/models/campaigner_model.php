@@ -34,7 +34,8 @@ require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_subscribers
 
 class Campaigner_model extends CI_Model {
 
-  private $_ee;
+  private $EE;
+
   private $_extension_class;
   private $_extension_settings;
   private $_package_name;
@@ -58,7 +59,7 @@ class Campaigner_model extends CI_Model {
   {
     parent::__construct();
 
-    $this->_ee =& get_instance();
+    $this->EE =& get_instance();
 
     $this->_package_name      = 'Campaigner';
     $this->_package_version   = '4.3.0';
@@ -95,8 +96,8 @@ class Campaigner_model extends CI_Model {
   public function activate_extension_mailing_lists_table()
   {
     // Shortcuts.
-    $this->_ee->load->dbforge();
-    $dbforge = $this->_ee->dbforge;
+    $this->EE->load->dbforge();
+    $dbforge = $this->EE->dbforge;
 
     // Table data.
     $fields = array(
@@ -166,7 +167,7 @@ class Campaigner_model extends CI_Model {
       $hook_data['hook'] = $hook;
       $hook_data['method'] = 'on_' .$hook;
 
-      $this->_ee->db->insert('extensions', $hook_data);
+      $this->EE->db->insert('extensions', $hook_data);
     }
   }
 
@@ -180,8 +181,8 @@ class Campaigner_model extends CI_Model {
   public function activate_extension_settings_table()
   {
     // Shortcuts.
-    $this->_ee->load->dbforge();
-    $dbforge = $this->_ee->dbforge;
+    $this->EE->load->dbforge();
+    $dbforge = $this->EE->dbforge;
 
     // Table data.
     $fields = array(
@@ -214,15 +215,15 @@ class Campaigner_model extends CI_Model {
    */
   public function disable_extension()
   {
-    $this->_ee->db->delete(
+    $this->EE->db->delete(
       'extensions',
       array('class' => $this->get_extension_class())
     );
 
-    $this->_ee->load->dbforge();
-    $this->_ee->dbforge->drop_table('campaigner_error_log');
-    $this->_ee->dbforge->drop_table('campaigner_settings');
-    $this->_ee->dbforge->drop_table('campaigner_mailing_lists');
+    $this->EE->load->dbforge();
+    $this->EE->dbforge->drop_table('campaigner_error_log');
+    $this->EE->dbforge->drop_table('campaigner_settings');
+    $this->EE->dbforge->drop_table('campaigner_mailing_lists');
   }
 
 
@@ -418,7 +419,7 @@ class Campaigner_model extends CI_Model {
    */
   public function get_installed_extension_version()
   {
-    $db = $this->_ee->db;
+    $db = $this->EE->db;
 
     $db_extension = $db->select('version')->get_where(
       'extensions',
@@ -440,7 +441,7 @@ class Campaigner_model extends CI_Model {
    */
   public function get_all_mailing_lists()
   {
-    $db_mailing_lists = $this->_ee->db->get_where(
+    $db_mailing_lists = $this->EE->db->get_where(
       'campaigner_mailing_lists',
       array('site_id' => $this->get_site_id())
     );
@@ -466,9 +467,9 @@ class Campaigner_model extends CI_Model {
    */
   public function get_mailing_list_by_id($list_id)
   {
-    $site_id = $this->_ee->config->item('site_id');
+    $site_id = $this->EE->config->item('site_id');
 
-    $db_list = $this->_ee->db
+    $db_list = $this->EE->db
       ->select('custom_fields, list_id, site_id, trigger_field, trigger_value')
       ->get_where(
           'campaigner_mailing_lists',
@@ -554,7 +555,7 @@ class Campaigner_model extends CI_Model {
     }
 
     // Construct the query.
-    $db_member = $this->_ee->db
+    $db_member = $this->EE->db
       ->select(
         'members.email, members.group_id, members.location, members.member_id,
         members.occupation, members.screen_name, members.url, members.username,
@@ -581,13 +582,13 @@ class Campaigner_model extends CI_Model {
   public function get_member_fields()
   {
     // Shortcuts.
-    $lang = $this->_ee->lang;
+    $lang = $this->EE->lang;
 
     $trigger_fields = array();
     $member_groups = array();
 
     // Retrieve the member groups.
-    $db_member_groups = $this->_ee->db
+    $db_member_groups = $this->EE->db
       ->select('group_id, group_title')
       ->get('member_groups');
 
@@ -645,7 +646,7 @@ class Campaigner_model extends CI_Model {
     }
 
     // Load the custom member fields from the database.
-    $db_member_fields = $this->_ee->db
+    $db_member_fields = $this->EE->db
       ->select("m_field_id, m_field_label, m_field_list_items, m_field_type")
       ->get('member_fields');
 
@@ -744,7 +745,7 @@ class Campaigner_model extends CI_Model {
    */
   public function get_settings_from_db()
   {
-    $db_settings = $this->_ee->db->get_where(
+    $db_settings = $this->EE->db->get_where(
       'campaigner_settings',
       array('site_id' => $this->get_site_id()),
       1
@@ -768,7 +769,7 @@ class Campaigner_model extends CI_Model {
   {
     if ( ! $this->_site_id)
     {
-      $this->_site_id = $this->_ee->config->item('site_id');
+      $this->_site_id = $this->EE->config->item('site_id');
     }
 
     return $this->_site_id;
@@ -797,7 +798,7 @@ class Campaigner_model extends CI_Model {
   {
     if ( ! $this->_theme_url)
     {
-      $theme_url = $this->_ee->config->item('theme_folder_url');
+      $theme_url = $this->EE->config->item('theme_folder_url');
       $theme_url = substr($theme_url, -1) == '/'
         ? $theme_url .'third_party/'
         : $theme_url .'/third_party/';
@@ -882,10 +883,10 @@ class Campaigner_model extends CI_Model {
      * handle such situations.
      */
 
-    if ($this->_ee->extensions->active_hook(
+    if ($this->EE->extensions->active_hook(
       'campaigner_should_subscribe_member') === TRUE)
     {
-      $subscribe = $this->_ee->extensions->call(
+      $subscribe = $this->EE->extensions->call(
         'campaigner_should_subscribe_member',
         $member_data, $mailing_list
       );
@@ -916,12 +917,12 @@ class Campaigner_model extends CI_Model {
   {
     if ( ! $this->save_settings_to_db($settings))
     {
-      throw new Campaigner_exception($this->_ee->lang->line('settings_not_saved'));
+      throw new Campaigner_exception($this->EE->lang->line('settings_not_saved'));
     }
 
     if ( ! $this->save_mailing_lists_to_db($settings))
     {
-      throw new Campaigner_exception($this->_ee->lang->line('mailing_lists_not_saved'));
+      throw new Campaigner_exception($this->EE->lang->line('mailing_lists_not_saved'));
     }
   }
 
@@ -935,8 +936,8 @@ class Campaigner_model extends CI_Model {
    */
   public function save_mailing_lists_to_db(Campaigner_settings $settings)
   {
-    $db = $this->_ee->db;
-    $site_id = $this->_ee->config->item('site_id');
+    $db = $this->EE->db;
+    $site_id = $this->EE->config->item('site_id');
 
     // Delete the existing settings.
     $db->delete('campaigner_mailing_lists', array('site_id' => $site_id));
@@ -993,8 +994,8 @@ class Campaigner_model extends CI_Model {
    */
   public function save_settings_to_db(Campaigner_settings $settings)
   {
-    $db = $this->_ee->db;
-    $site_id = $this->_ee->config->item('site_id');
+    $db = $this->EE->db;
+    $site_id = $this->EE->config->item('site_id');
 
     // Delete any existing site settings.
     $db->delete('campaigner_settings', array('site_id' => $site_id));
@@ -1024,7 +1025,7 @@ class Campaigner_model extends CI_Model {
    */
   public function update_basic_settings_from_input(Campaigner_settings $settings)
   {
-    $input  = $this->_ee->input;
+    $input  = $this->EE->input;
     $props  = array('api_key', 'client_id');
 
     foreach ($props AS $prop)
@@ -1058,7 +1059,7 @@ class Campaigner_model extends CI_Model {
     // Version 4.0.
     if (version_compare($installed_version, '4.0', '<'))
     {
-      $this->_ee->db->update(
+      $this->EE->db->update(
         'extensions',
         array('priority' => 5),
         array('class' => $this->get_extension_class())
@@ -1068,10 +1069,10 @@ class Campaigner_model extends CI_Model {
     // Version 4.1.
     if (version_compare($installed_version, '4.1.0', '<'))
     {
-      $this->_ee->db->query('ALTER TABLE exp_campaigner_mailing_lists
+      $this->EE->db->query('ALTER TABLE exp_campaigner_mailing_lists
         DROP PRIMARY KEY');
 
-      $this->_ee->db->query('ALTER TABLE exp_campaigner_mailing_lists
+      $this->EE->db->query('ALTER TABLE exp_campaigner_mailing_lists
         ADD PRIMARY KEY (list_id, site_id)');
     }
 
@@ -1100,7 +1101,7 @@ class Campaigner_model extends CI_Model {
         $hook_data['hook'] = $hook;
         $hook_data['method'] = 'on_' .$hook;
 
-        $this->_ee->db->insert('extensions', $hook_data);
+        $this->EE->db->insert('extensions', $hook_data);
       }
     }
 
@@ -1127,12 +1128,12 @@ class Campaigner_model extends CI_Model {
         $hook_data['hook'] = $hook;
         $hook_data['method'] = 'on_' .$hook;
 
-        $this->_ee->db->insert('extensions', $hook_data);
+        $this->EE->db->insert('extensions', $hook_data);
       }
     }
 
     // Update the extension version in the database.
-    $this->_ee->db->update(
+    $this->EE->db->update(
       'extensions',
       array('version' => $package_version),
       array('class' => $this->get_extension_class())
@@ -1170,7 +1171,7 @@ class Campaigner_model extends CI_Model {
   )
   {
     // Get out early.
-    if ( ! ($input_lists = $this->_ee->input->get_post('mailing_lists')))
+    if ( ! ($input_lists = $this->EE->input->get_post('mailing_lists')))
     {
       return $settings;
     }
