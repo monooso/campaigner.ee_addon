@@ -816,10 +816,26 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
     $this->EE->db->expectOnce('count_all_results', array('modules'));
     $this->EE->db->returns('count_all_results', 0);
+
+    $this->EE->db->expectNever('table_exists');
   
     $this->assertIdentical(FALSE, $this->_subject->is_zoo_visitor_installed());
   }
+
+
+  public function test__is_zoo_visitor_installed__installed_in_modules_table_but_zoo_visitor_settings_table_does_not_exist()
+  {
+    $this->EE->db->expectOnce('where',
+      array('LOWER(module_name)', 'zoo_visitor'));
+
+    $this->EE->db->expectOnce('count_all_results', array('modules'));
+    $this->EE->db->returns('count_all_results', 1);
+
+    $this->EE->db->expectOnce('table_exists', array('zoo_visitor_settings'));
+    $this->EE->db->returns('table_exists', FALSE);
   
+    $this->assertIdentical(FALSE, $this->_subject->is_zoo_visitor_installed());
+  }
 
 
   public function test__update_extension__update()

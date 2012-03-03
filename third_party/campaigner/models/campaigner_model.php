@@ -818,11 +818,15 @@ class Campaigner_model extends CI_Model {
    */
   public function is_zoo_visitor_installed()
   {
-    $result = $this->EE->db
+    if ($this->EE->db
       ->where('LOWER(module_name)', 'zoo_visitor')
-      ->count_all_results('modules');
+      ->count_all_results('modules') !== 1
+    )
+    {
+      return FALSE;
+    }
 
-    if ($result !== 1)
+    if ( ! $this->EE->db->table_exists('zoo_visitor_settings'))
     {
       return FALSE;
     }
