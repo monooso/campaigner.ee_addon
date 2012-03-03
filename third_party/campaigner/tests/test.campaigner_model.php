@@ -13,7 +13,7 @@ require_once PATH_THIRD .'campaigner/models/campaigner_model.php';
 class Test_campaigner_model extends Testee_unit_test_case {
 
   private $_api_connector;
-  private $_model;
+  private $_subject;
 
 
 
@@ -30,7 +30,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   public function setUp()
   {
     parent::setUp();
-    $this->_model = new Campaigner_model();
+    $this->_subject = new Campaigner_model();
   }
 
 
@@ -68,7 +68,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $loader->expectOnce('dbforge', array());
 
     // Tests.
-    $this->_model->activate_extension_settings_table();
+    $this->_subject->activate_extension_settings_table();
   }
 
 
@@ -111,7 +111,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $loader->expectOnce('dbforge', array());
 
     // Tests.
-    $this->_model->activate_extension_mailing_lists_table();
+    $this->_subject->activate_extension_mailing_lists_table();
   }
 
 
@@ -121,8 +121,8 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $db = $this->EE->db;
 
     // Dummy data.
-    $class      = $this->_model->get_extension_class();
-    $version    = $this->_model->get_package_version();
+    $class      = $this->_subject->get_extension_class();
+    $version    = $this->_subject->get_package_version();
 
     $hooks = array(
       'cp_members_member_create',
@@ -160,7 +160,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     }
 
     // Tests.
-    $this->_model->activate_extension_register_hooks();
+    $this->_subject->activate_extension_register_hooks();
   }
 
 
@@ -176,14 +176,14 @@ class Test_campaigner_model extends Testee_unit_test_case {
      * - Drop the mailing lists table.
      */
 
-    $db->expectOnce('delete', array('extensions', array('class' => $this->_model->get_extension_class())));
+    $db->expectOnce('delete', array('extensions', array('class' => $this->_subject->get_extension_class())));
 
     $dbf->expectCallCount('drop_table', 3);
     $dbf->expectAt(0, 'drop_table', array('campaigner_error_log'));
     $dbf->expectAt(1, 'drop_table', array('campaigner_settings'));
     $dbf->expectAt(2, 'drop_table', array('campaigner_mailing_lists'));
 
-    $this->_model->disable_extension();
+    $this->_subject->disable_extension();
   }
 
 
@@ -243,7 +243,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db->expectOnce('get_where', array('campaigner_mailing_lists', array('site_id' => $site_id)));
 
       // Run the test.
-      $this->assertIdentical($mailing_lists, $this->_model->get_all_mailing_lists());
+      $this->assertIdentical($mailing_lists, $this->_subject->get_all_mailing_lists());
   }
 
 
@@ -257,7 +257,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db->setReturnReference('get_where', $db_query);
 
       // Run the test.
-      $this->assertIdentical(array(), $this->_model->get_all_mailing_lists());
+      $this->assertIdentical(array(), $this->_subject->get_all_mailing_lists());
   }
 
 
@@ -293,26 +293,26 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db->setReturnReference('get_where', $db_query);
 
       // Run the test.
-      $this->assertIdentical($mailing_lists, $this->_model->get_all_mailing_lists());
+      $this->assertIdentical($mailing_lists, $this->_subject->get_all_mailing_lists());
   }
 
 
   public function test__get_docs_url__success()
   {
     $pattern = '#^http://experienceinternet.co.uk/#';
-    $this->assertPattern($pattern, $this->_model->get_docs_url());
+    $this->assertPattern($pattern, $this->_subject->get_docs_url());
   }
 
 
   public function test__get_extension_class()
   {
     $this->assertEqual(
-      strtolower($this->_model->get_extension_class()),
+      strtolower($this->_subject->get_extension_class()),
       'campaigner_ext'
     );
 
     $this->assertNotEqual(
-      strtolower($this->_model->get_extension_class()),
+      strtolower($this->_subject->get_extension_class()),
       'campaigner'
     );
   }
@@ -323,7 +323,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db = $this->EE->db;
 
       // Dummy values.
-      $criteria   = array('class' => $this->_model->get_extension_class());
+      $criteria   = array('class' => $this->_subject->get_extension_class());
       $limit      = 1;
       $table      = 'extensions';
       $version    = '1.1.0';
@@ -344,7 +344,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db_result->setReturnValue('row', $db_row);
 
       // Tests.
-      $this->assertIdentical($version, $this->_model->get_installed_extension_version());
+      $this->assertIdentical($version, $this->_subject->get_installed_extension_version());
   }
 
 
@@ -364,7 +364,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db_result->setReturnValue('num_rows', 0);
 
       // Tests.
-      $this->assertIdentical('', $this->_model->get_installed_extension_version());
+      $this->assertIdentical('', $this->_subject->get_installed_extension_version());
   }
 
 
@@ -420,7 +420,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     // Tests.
     $this->assertIdentical(
       $db_row,
-      $this->_model->get_member_by_id($member_id)
+      $this->_subject->get_member_by_id($member_id)
     );
   }
 
@@ -438,7 +438,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db_result->setReturnValue('num_rows', 0);
 
       // Tests.
-      $this->assertIdentical(array(), $this->_model->get_member_by_id(10));
+      $this->assertIdentical(array(), $this->_subject->get_member_by_id(10));
   }
 
 
@@ -448,7 +448,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->expectNever('get_where');
 
       // Tests.
-      $this->_model->get_member_by_id(NULL);
+      $this->_subject->get_member_by_id(NULL);
   }
 
 
@@ -568,7 +568,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db_member_fields->expectOnce('result_array');
       $db_member_fields->setReturnValue('result_array', $db_member_field_rows);
 
-      $this->assertIdentical($trigger_fields, $this->_model->get_member_fields());
+      $this->assertIdentical($trigger_fields, $this->_subject->get_member_fields());
   }
 
 
@@ -654,19 +654,19 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db_member_fields->expectOnce('result_array');
       $db_member_fields->setReturnValue('result_array', array());
 
-      $this->assertIdentical($trigger_fields, $this->_model->get_member_fields());
+      $this->assertIdentical($trigger_fields, $this->_subject->get_member_fields());
   }
 
 
   public function test__get_package_name()
   {
     $this->assertEqual(
-      strtolower($this->_model->get_package_name()),
+      strtolower($this->_subject->get_package_name()),
       'campaigner'
     );
 
     $this->assertNotEqual(
-      strtolower($this->_model->get_package_name()),
+      strtolower($this->_subject->get_package_name()),
       'wibble'
     );
   }
@@ -676,7 +676,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   {
     $this->assertPattern(
       '/^[0-9abcdehlprtv\.]+$/i',
-      $this->_model->get_package_version()
+      $this->_subject->get_package_version()
     );
   }
 
@@ -717,7 +717,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $settings = new Campaigner_settings($db_row);
 
       // Run the test.
-      $this->assertIdentical($settings, $this->_model->get_settings_from_db());
+      $this->assertIdentical($settings, $this->_subject->get_settings_from_db());
   }
 
 
@@ -734,7 +734,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db_query->expectNever('row_array');
 
       // Run the test.
-      $this->assertIdentical(new Campaigner_settings(), $this->_model->get_settings_from_db());
+      $this->assertIdentical(new Campaigner_settings(), $this->_subject->get_settings_from_db());
   }
 
 
@@ -769,7 +769,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $settings = new Campaigner_settings();
 
       // Run the test.
-      $this->assertIdentical($settings, $this->_model->get_settings_from_db());
+      $this->assertIdentical($settings, $this->_subject->get_settings_from_db());
   }
 
 
@@ -781,14 +781,14 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $config->expectOnce('item', array('site_id'));
     $config->setReturnValue('item', $site_id, array('site_id'));
 
-    $this->assertIdentical($site_id, $this->_model->get_site_id());
+    $this->assertIdentical($site_id, $this->_subject->get_site_id());
   }
 
 
   public function test__get_support_url__success()
   {
     $pattern = '#^http://support.experienceinternet.co.uk/#';
-    $this->assertPattern($pattern, $this->_model->get_support_url());
+    $this->assertPattern($pattern, $this->_subject->get_support_url());
   }
 
 
@@ -796,7 +796,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   {
     // Dummy values.
     $theme_url      = '/path/to/themes';
-    $package_url    = $theme_url .'/third_party/' .strtolower($this->_model->get_package_name()) .'/';
+    $package_url    = $theme_url .'/third_party/' .strtolower($this->_subject->get_package_name()) .'/';
 
     // Expectations.
     $this->EE->config->expectOnce('item', array('theme_folder_url'));
@@ -805,7 +805,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $this->EE->config->setReturnValue('item', $theme_url, array('theme_folder_url'));
 
     // Tests.
-    $this->assertIdentical($package_url, $this->_model->get_theme_url());
+    $this->assertIdentical($package_url, $this->_subject->get_theme_url());
   }
 
 
@@ -817,7 +817,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $this->EE->db->expectOnce('count_all_results', array('modules'));
     $this->EE->db->returns('count_all_results', 0);
   
-    $this->assertIdentical(FALSE, $this->_model->is_zoo_visitor_installed());
+    $this->assertIdentical(FALSE, $this->_subject->is_zoo_visitor_installed());
   }
   
 
@@ -831,11 +831,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
     // Update the extension version number in the database.
     $data = array('version' => $package_version);
-    $criteria = array('class' => $this->_model->get_extension_class());
+    $criteria = array('class' => $this->_subject->get_extension_class());
 
     $db->expectOnce('update', array('extensions', $data, $criteria));
 
-    $this->assertIdentical(NULL, $this->_model->update_extension($installed_version, $package_version));
+    $this->assertIdentical(NULL, $this->_subject->update_extension($installed_version, $package_version));
   }
 
 
@@ -856,7 +856,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       );
 
       // Run the tests.
-      $this->assertIdentical(TRUE, $this->_model->member_should_be_subscribed_to_mailing_list($member_data, $list));
+      $this->assertIdentical(TRUE, $this->_subject->member_should_be_subscribed_to_mailing_list($member_data, $list));
   }
 
 
@@ -877,7 +877,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     );
 
     // Run the tests.
-    $this->assertIdentical(FALSE, $this->_model->member_should_be_subscribed_to_mailing_list($member_data, $list));
+    $this->assertIdentical(FALSE, $this->_subject->member_should_be_subscribed_to_mailing_list($member_data, $list));
   }
 
 
@@ -892,7 +892,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $member_data = array('member_id' => 10);
 
     // Run the tests.
-    $this->assertIdentical(TRUE, $this->_model->member_should_be_subscribed_to_mailing_list($member_data, $list));
+    $this->assertIdentical(TRUE, $this->_subject->member_should_be_subscribed_to_mailing_list($member_data, $list));
   }
 
 
@@ -901,7 +901,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $installed_version  = '1.0.0';
     $package_version    = '1.0.0';
 
-    $this->assertIdentical(FALSE, $this->_model->update_extension($installed_version, $package_version));
+    $this->assertIdentical(FALSE, $this->_subject->update_extension($installed_version, $package_version));
   }
 
 
@@ -910,7 +910,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $installed_version  = '';
     $package_version    = '1.0.0';
 
-    $this->assertIdentical(FALSE, $this->_model->update_extension($installed_version, $package_version));
+    $this->assertIdentical(FALSE, $this->_subject->update_extension($installed_version, $package_version));
   }
 
 
@@ -922,14 +922,14 @@ class Test_campaigner_model extends Testee_unit_test_case {
     // Dummy values.
     $installed_version  = '3.0.0';
     $package_version    = '4.0.0';
-    $criteria           = array('class' => $this->_model->get_extension_class());
+    $criteria           = array('class' => $this->_subject->get_extension_class());
     $data               = array('priority' => 5);
 
     $db->expectCallCount('update', 2);
     $db->expectAt(0, 'update', array('extensions', $data, $criteria));
 
     // Run the tests.
-    $this->_model->update_extension($installed_version, $package_version);
+    $this->_subject->update_extension($installed_version, $package_version);
   }
 
 
@@ -949,7 +949,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $db->expectAt(0, 'query', array(new EqualWithoutWhitespaceExpectation($sql_drop)));
     $db->expectAt(1, 'query', array(new EqualWithoutWhitespaceExpectation($sql_add)));
 
-    $this->_model->update_extension($installed_version, $package_version);
+    $this->_subject->update_extension($installed_version, $package_version);
   }
 
 
@@ -961,7 +961,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $package_version    = '4.2.0';
 
     $hook_data = array(
-      'class'     => $this->_model->get_extension_class(),
+      'class'     => $this->_subject->get_extension_class(),
       'enabled'   => 'y',
       'hook'      => '',
       'method'    => '',
@@ -995,7 +995,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       ));
     }
 
-    $this->_model->update_extension($installed_version, $package_version);
+    $this->_subject->update_extension($installed_version, $package_version);
   }
 
 
@@ -1025,14 +1025,14 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db->expectOnce('insert', array('campaigner_settings', $settings_data));
 
       // Run the test.
-      $this->assertIdentical(TRUE, $this->_model->save_settings_to_db($settings));
+      $this->assertIdentical(TRUE, $this->_subject->save_settings_to_db($settings));
   }
 
 
   public function test__save_settings_to_db__failure()
   {
       $this->EE->db->setReturnValue('affected_rows', 0);
-      $this->assertIdentical(FALSE, $this->_model->save_settings_to_db(new Campaigner_settings()));
+      $this->assertIdentical(FALSE, $this->_subject->save_settings_to_db(new Campaigner_settings()));
   }
 
 
@@ -1104,7 +1104,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db->setReturnValue('affected_rows', 1);
 
       // Run the test.
-      $this->assertIdentical(TRUE, $this->_model->save_mailing_lists_to_db($settings));
+      $this->assertIdentical(TRUE, $this->_subject->save_mailing_lists_to_db($settings));
   }
 
 
@@ -1146,7 +1146,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db->setReturnValue('affected_rows', 1);
 
       // Run the test.
-      $this->assertIdentical(TRUE, $this->_model->save_mailing_lists_to_db($settings));
+      $this->assertIdentical(TRUE, $this->_subject->save_mailing_lists_to_db($settings));
   }
 
 
@@ -1167,7 +1167,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db->expectCallCount('delete', 2, array('campaigner_mailing_lists', array('site_id' => $site_id)));
 
       // Run the test.
-      $this->assertIdentical(FALSE, $this->_model->save_mailing_lists_to_db($settings));
+      $this->assertIdentical(FALSE, $this->_subject->save_mailing_lists_to_db($settings));
   }
 
 
@@ -1184,7 +1184,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       // Run the test.
       try
       {
-          $this->_model->save_extension_settings(new Campaigner_settings());
+          $this->_subject->save_extension_settings(new Campaigner_settings());
           $this->fail();
       }
       catch (Campaigner_exception $e)
@@ -1214,7 +1214,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       // Run the test.
       try
       {
-          $this->_model->save_extension_settings($settings);
+          $this->_subject->save_extension_settings($settings);
           $this->fail();
       }
       catch (Campaigner_exception $e)
@@ -1244,7 +1244,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $new_settings = new Campaigner_settings(array('api_key' => $api_key, 'client_id' => $client_id));
 
       // Run the test.
-      $this->assertIdentical($new_settings, $this->_model->update_basic_settings_from_input($old_settings));
+      $this->assertIdentical($new_settings, $this->_subject->update_basic_settings_from_input($old_settings));
   }
 
 
@@ -1264,7 +1264,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $settings = new Campaigner_settings(array('api_key' => $api_key, 'client_id' => $client_id));
 
       // Run the test.
-      $this->assertIdentical($settings, $this->_model->update_basic_settings_from_input(new Campaigner_settings()));
+      $this->assertIdentical($settings, $this->_subject->update_basic_settings_from_input(new Campaigner_settings()));
   }
 
 
@@ -1277,7 +1277,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $settings = new Campaigner_settings(array('api_key' => 'old_api_key', 'client_id' => 'old_client_id'));
 
       // Run the test.
-      $this->assertIdentical($settings, $this->_model->update_basic_settings_from_input($settings));
+      $this->assertIdentical($settings, $this->_subject->update_basic_settings_from_input($settings));
   }
 
 
@@ -1338,7 +1338,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $input->setReturnValue('get_post', $mailing_list_data, array('mailing_lists'));
 
       // Tests.
-      $updated_settings = $this->_model->update_mailing_list_settings_from_input($settings);
+      $updated_settings = $this->_subject->update_mailing_list_settings_from_input($settings);
       $this->assertIdentical($settings, $updated_settings);
 
       // Need to check the mailing lists separately. Bah.
@@ -1388,7 +1388,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Run the test.
-      $connector = $this->_model->get_api_connector($api_key, new Campaigner_model());
+      $connector = $this->_subject->get_api_connector($api_key, new Campaigner_model());
       $this->assertIsA($connector, 'Campaigner_api_connector');
   }
 
@@ -1415,7 +1415,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Tests.
-      $this->assertIdentical(FALSE, $this->_model->get_api_connector());
+      $this->assertIdentical(FALSE, $this->_subject->get_api_connector());
   }
 
 
@@ -1492,7 +1492,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
           )
       ));
 
-      $this->assertIdentical($subscriber, $this->_model->get_member_as_subscriber($member_id, $list_id));
+      $this->assertIdentical($subscriber, $this->_subject->get_member_as_subscriber($member_id, $list_id));
   }
 
 
@@ -1548,7 +1548,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $list_result->setReturnValue('row_array', $list_row);
 
       // Tests.
-      $this->assertIdentical(FALSE, $this->_model->get_member_as_subscriber($member_id, $list_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_member_as_subscriber($member_id, $list_id));
   }
 
 
@@ -1589,7 +1589,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $list_result->setReturnValue('row_array', $list_row);
 
       // Tests.
-      $this->assertIdentical(FALSE, $this->_model->get_member_as_subscriber($member_id, $list_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_member_as_subscriber($member_id, $list_id));
   }
 
 
@@ -1629,7 +1629,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $list_result->setReturnValue('num_rows', 0);
 
       // Tests.
-      $this->assertIdentical(FALSE, $this->_model->get_member_as_subscriber($member_id, $list_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_member_as_subscriber($member_id, $list_id));
   }
 
 
@@ -1681,7 +1681,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db_result->setReturnValue('num_rows', 1);
 
       // Tests.
-      $this->assertIdentical($list_object, $this->_model->get_mailing_list_by_id($list_id));
+      $this->assertIdentical($list_object, $this->_subject->get_mailing_list_by_id($list_id));
   }
 
 
@@ -1708,7 +1708,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $db_result->setReturnValue('num_rows', 0);
 
       // Tests.
-      $this->assertIdentical(FALSE, $this->_model->get_mailing_list_by_id($list_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_mailing_list_by_id($list_id));
   }
 
 
@@ -1733,7 +1733,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Run the tests.
-      $this->assertIdentical(new CS_REST_Clients($client_id, $api_key), $this->_model->get_api_class_clients($client_id));
+      $this->assertIdentical(new CS_REST_Clients($client_id, $api_key), $this->_subject->get_api_class_clients($client_id));
   }
 
 
@@ -1755,7 +1755,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Run the tests.
-      $this->assertIdentical(FALSE, $this->_model->get_api_class_clients($client_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_api_class_clients($client_id));
   }
 
 
@@ -1769,7 +1769,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->expectNever('get_where');
 
       // Run the tests.
-      $this->assertIdentical(FALSE, $this->_model->get_api_class_clients($client_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_api_class_clients($client_id));
   }
 
 
@@ -1793,7 +1793,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Run the tests.
-      $this->assertIdentical(new CS_REST_General($api_key), $this->_model->get_api_class_general());
+      $this->assertIdentical(new CS_REST_General($api_key), $this->_subject->get_api_class_general());
   }
 
 
@@ -1814,7 +1814,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Run the tests.
-      $this->assertIdentical(FALSE, $this->_model->get_api_class_general());
+      $this->assertIdentical(FALSE, $this->_subject->get_api_class_general());
   }
 
 
@@ -1839,7 +1839,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Run the tests.
-      $this->assertIdentical(new CS_REST_Lists($list_id, $api_key), $this->_model->get_api_class_lists($list_id));
+      $this->assertIdentical(new CS_REST_Lists($list_id, $api_key), $this->_subject->get_api_class_lists($list_id));
   }
 
 
@@ -1861,7 +1861,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Run the tests.
-      $this->assertIdentical(FALSE, $this->_model->get_api_class_lists($list_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_api_class_lists($list_id));
   }
 
 
@@ -1875,7 +1875,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->expectNever('get_where');
 
       // Run the tests.
-      $this->assertIdentical(FALSE, $this->_model->get_api_class_lists($list_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_api_class_lists($list_id));
   }
 
 
@@ -1900,7 +1900,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Run the tests.
-      $this->assertIdentical(new CS_REST_Subscribers($list_id, $api_key), $this->_model->get_api_class_subscribers($list_id));
+      $this->assertIdentical(new CS_REST_Subscribers($list_id, $api_key), $this->_subject->get_api_class_subscribers($list_id));
   }
 
 
@@ -1922,7 +1922,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
 
       // Run the tests.
-      $this->assertIdentical(FALSE, $this->_model->get_api_class_subscribers($list_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_api_class_subscribers($list_id));
   }
 
 
@@ -1936,7 +1936,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
       $this->EE->db->expectNever('get_where');
 
       // Run the tests.
-      $this->assertIdentical(FALSE, $this->_model->get_api_class_subscribers($list_id));
+      $this->assertIdentical(FALSE, $this->_subject->get_api_class_subscribers($list_id));
   }
 
 
