@@ -887,6 +887,7 @@ class Campaigner_model extends CI_Model {
 
     // Is Zoo Visitor configured?
     if ($this->EE->db
+      ->where('site_id', $this->get_site_id())
       ->where('var', 'member_channel_id')
       ->where('var_value !=', '')
       ->count_all_results('zoo_visitor_settings') !== 1

@@ -16,6 +16,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   private $_namespace;
   private $_package_name;
   private $_package_version;
+  private $_site_id;
   private $_subject;
 
 
@@ -37,6 +38,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $this->_package_name    = 'test_package_name';
     $this->_package_version = '10.1.0';
 
+    // The site ID is referenced so frequently that we just mock it here.
+    $this->_site_id = 123;
+    $this->EE->config->returns('item', $this->_site_id, array('site_id'));
+
+    // Create the test subject.
     $this->_subject = new Campaigner_model(
       $this->_package_name, $this->_package_version, $this->_namespace);
   }
@@ -197,61 +203,62 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__get_all_mailing_lists__success()
   {
-      $db         = $this->EE->db;
-      $db_query   = $this->_get_mock('db_query');
-      $site_id    = '10';
+    $db       = $this->EE->db;
+    $db_query = $this->_get_mock('db_query');
 
-      // Site ID.
-      $this->EE->config->setReturnValue('item', $site_id, array('site_id'));
+    // Custom fields.
+    $custom_fields_data = array();
+    $custom_fields      = array();
 
-      // Custom fields.
-      $custom_fields_data = array();
-      $custom_fields      = array();
+    for ($list_count = 0; $list_count < 10; $list_count++)
+    {
+      $data = array(
+        'member_field_id' => 'm_field_id_' .$list_count,
+        'cm_key'          => 'cm_key_' .$list_count
+      );
 
-      for ($list_count = 0; $list_count < 10; $list_count++)
-      {
-          $data = array('member_field_id' => 'm_field_id_' .$list_count, 'cm_key' => 'cm_key_' .$list_count);
+      $custom_fields_data[] = $data;
+      $custom_fields[]      = new Campaigner_custom_field($data);
+    }
 
-          $custom_fields_data[]   = $data;
-          $custom_fields[]        = new Campaigner_custom_field($data);
-      }
+    $custom_fields_data = serialize($custom_fields_data);
 
-      $custom_fields_data = serialize($custom_fields_data);
+    // Rows / mailing lists.
+    $db_rows        = array();
+    $mailing_lists  = array();
 
-      // Rows / mailing lists.
-      $db_rows        = array();
-      $mailing_lists  = array();
+    for ($list_count = 0; $list_count < 10; $list_count++)
+    {
+      $db_rows[] = array(
+        'site_id'       => $this->_site_id,
+        'custom_fields' => $custom_fields_data,
+        'list_id'       => 'list_id_' .$list_count,
+        'trigger_field' => 'm_field_id_' .$list_count,
+        'trigger_value' => 'trigger_value_' .$list_count
+      );
 
-      for ($list_count = 0; $list_count < 10; $list_count++)
-      {
-          $db_rows[] = array(
-              'site_id'       => $site_id,
-              'custom_fields' => $custom_fields_data,
-              'list_id'       => 'list_id_' .$list_count,
-              'trigger_field' => 'm_field_id_' .$list_count,
-              'trigger_value' => 'trigger_value_' .$list_count
-          );
+      $mailing_lists[] = new Campaigner_mailing_list(array(
+        'site_id'       => $this->_site_id,
+        'custom_fields' => $custom_fields,
+        'list_id'       => 'list_id_' .$list_count,
+        'trigger_field' => 'm_field_id_' .$list_count,
+        'trigger_value' => 'trigger_value_' .$list_count
+      ));
+    }
 
-          $mailing_lists[] = new Campaigner_mailing_list(array(
-              'site_id'       => $site_id,
-              'custom_fields' => $custom_fields,
-              'list_id'       => 'list_id_' .$list_count,
-              'trigger_field' => 'm_field_id_' .$list_count,
-              'trigger_value' => 'trigger_value_' .$list_count
-          ));
-      }
+    // Return values.
+    $db_query->setReturnValue('num_rows', count($db_rows));
+    $db_query->setReturnValue('result_array', $db_rows);
+    $db->setReturnReference('get_where', $db_query);
 
-      // Return values.
-      $db_query->setReturnValue('num_rows', count($db_rows));
-      $db_query->setReturnValue('result_array', $db_rows);
-      $db->setReturnReference('get_where', $db_query);
+    // Expectations.
+    $db_query->expectOnce('result_array');
 
-      // Expectations.
-      $db_query->expectOnce('result_array');
-      $db->expectOnce('get_where', array('campaigner_mailing_lists', array('site_id' => $site_id)));
+    $db->expectOnce('get_where',
+      array('campaigner_mailing_lists', array('site_id' => $this->_site_id)));
 
-      // Run the test.
-      $this->assertIdentical($mailing_lists, $this->_subject->get_all_mailing_lists());
+    $this->assertIdentical($mailing_lists,
+      $this->_subject->get_all_mailing_lists());
   }
 
 
@@ -678,105 +685,91 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__get_settings_from_db__success()
   {
-      $config     = $this->EE->config;
-      $db         = $this->EE->db;
+    $config = $this->EE->config;
+    $db     = $this->EE->db;
 
-      $site_id    = '10';
-      $api_key    = 'api_key';
-      $client_id  = 'client_id';
+    $api_key    = 'api_key';
+    $client_id  = 'client_id';
 
-      // Return the site ID.
-      $config->expectOnce('item', array('site_id'));
-      $config->setReturnValue('item', $site_id, array('site_id'));
+    // Settings db row.
+    $db_row = array(
+      'site_id'   => $this->_site_id,
+      'api_key'   => $api_key,
+      'client_id' => $client_id
+    );
 
-      // Settings db row.
-      $db_row = array(
-          'site_id'   => $site_id,
-          'api_key'   => $api_key,
-          'client_id' => $client_id
-      );
+    $db_query = $this->_get_mock('db_query');
 
-      $db_query = $this->_get_mock('db_query');
+    // Return values.
+    $db_query->setReturnValue('num_rows', 1);
+    $db_query->setReturnValue('row_array', $db_row);
+    $db->setReturnReference('get_where', $db_query);
 
-      // Return values.
-      $db_query->setReturnValue('num_rows', 1);
-      $db_query->setReturnValue('row_array', $db_row);
-      $db->setReturnReference('get_where', $db_query);
+    // Expectations.
+    $db_query->expectOnce('num_rows');
+    $db_query->expectOnce('row_array');
 
-      // Expectations.
-      $db_query->expectOnce('num_rows');
-      $db_query->expectOnce('row_array');
-      $db->expectOnce('get_where', array('campaigner_settings', array('site_id' => $site_id), 1));
+    $db->expectOnce('get_where',
+      array('campaigner_settings', array('site_id' => $this->_site_id), 1));
 
-      // Create the settings object.
-      $settings = new Campaigner_settings($db_row);
+    // Create the settings object.
+    $settings = new Campaigner_settings($db_row);
 
-      // Run the test.
-      $this->assertIdentical($settings, $this->_subject->get_settings_from_db());
+    $this->assertIdentical($settings,
+      $this->_subject->get_settings_from_db());
   }
 
 
   public function test__get_settings_from_db__no_settings()
   {
-      $db = $this->EE->db;
-      $db_query = $this->_get_mock('db_query');
+    $db = $this->EE->db;
+    $db_query = $this->_get_mock('db_query');
 
-      // Return values.
-      $db_query->setReturnValue('num_rows', 0);
-      $db->setReturnReference('get_where', $db_query);
+    // Return values.
+    $db_query->setReturnValue('num_rows', 0);
+    $db->setReturnReference('get_where', $db_query);
 
-      // Expectations.
-      $db_query->expectNever('row_array');
+    // Expectations.
+    $db_query->expectNever('row_array');
 
-      // Run the test.
-      $this->assertIdentical(new Campaigner_settings(), $this->_subject->get_settings_from_db());
+    $this->assertIdentical(new Campaigner_settings(),
+      $this->_subject->get_settings_from_db());
   }
 
 
   public function test__get_settings_from_db__empty_settings()
   {
-      $config     = $this->EE->config;
-      $db         = $this->EE->db;
+    $config     = $this->EE->config;
+    $db         = $this->EE->db;
+    $api_key    = 'api_key';
+    $client_id  = 'client_id';
 
-      $site_id    = '10';
-      $api_key    = 'api_key';
-      $client_id  = 'client_id';
+    // Settings db row.
+    $db_row     = array();
+    $db_query   = $this->_get_mock('db_query');
 
-      // Return the site ID.
-      $config->expectOnce('item', array('site_id'));
-      $config->setReturnValue('item', $site_id, array('site_id'));
+    // Return values.
+    $db_query->setReturnValue('num_rows', 1);
+    $db_query->setReturnValue('row_array', $db_row);
+    $db->setReturnReference('get_where', $db_query);
 
-      // Settings db row.
-      $db_row     = array();
-      $db_query   = $this->_get_mock('db_query');
+    // Expectations.
+    $db_query->expectOnce('num_rows');
+    $db_query->expectOnce('row_array');
 
-      // Return values.
-      $db_query->setReturnValue('num_rows', 1);
-      $db_query->setReturnValue('row_array', $db_row);
-      $db->setReturnReference('get_where', $db_query);
+    $db->expectOnce('get_where',
+      array('campaigner_settings', array('site_id' => $this->_site_id), 1));
 
-      // Expectations.
-      $db_query->expectOnce('num_rows');
-      $db_query->expectOnce('row_array');
-      $db->expectOnce('get_where', array('campaigner_settings', array('site_id' => $site_id), 1));
+    // Create the settings object.
+    $settings = new Campaigner_settings();
 
-      // Create the settings object.
-      $settings = new Campaigner_settings();
-
-      // Run the test.
-      $this->assertIdentical($settings, $this->_subject->get_settings_from_db());
+    $this->assertIdentical($settings, $this->_subject->get_settings_from_db());
   }
 
 
   public function test__get_site_id()
   {
-    $config = $this->EE->config;
-    $site_id = '10';
-
-    $config->expectOnce('item', array('site_id'));
-    $config->setReturnValue('item', $site_id, array('site_id'));
-
-    $this->assertIdentical($site_id, $this->_subject->get_site_id());
+    $this->assertIdentical($this->_site_id, $this->_subject->get_site_id());
   }
 
 
@@ -890,7 +883,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__is_zoo_visitor_installed__installed_but_not_configured()
   {
-    $this->EE->db->expectCallCount('where', 3);
+    $this->EE->db->expectCallCount('where', 4);
     $this->EE->db->expectCallCount('count_all_results', 2);
 
     // Is the Zoo Visitor module installed?
@@ -905,8 +898,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $this->EE->db->returns('table_exists', TRUE);
 
     // Is Zoo Visitor configured?
-    $this->EE->db->expectAt(1, 'where', array('var', 'member_channel_id'));
-    $this->EE->db->expectAt(2, 'where', array('var_value !=', ''));
+    $this->EE->db->expectAt(1, 'where', array('site_id', $this->_site_id));
+    $this->EE->db->expectAt(2, 'where', array('var', 'member_channel_id'));
+    $this->EE->db->expectAt(3, 'where', array('var_value !=', ''));
 
     $this->EE->db->expectAt(1, 'count_all_results',
       array('zoo_visitor_settings'));
@@ -919,7 +913,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__is_zoo_visitor_installed__installed_and_configured()
   {
-    $this->EE->db->expectCallCount('where', 3);
+    $this->EE->db->expectCallCount('where', 4);
     $this->EE->db->expectCallCount('count_all_results', 2);
 
     // Is the Zoo Visitor module installed?
@@ -934,8 +928,9 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $this->EE->db->returns('table_exists', TRUE);
 
     // Is Zoo Visitor configured?
-    $this->EE->db->expectAt(1, 'where', array('var', 'member_channel_id'));
-    $this->EE->db->expectAt(2, 'where', array('var_value !=', ''));
+    $this->EE->db->expectAt(1, 'where', array('site_id', $this->_site_id));
+    $this->EE->db->expectAt(2, 'where', array('var', 'member_channel_id'));
+    $this->EE->db->expectAt(3, 'where', array('var_value !=', ''));
 
     $this->EE->db->expectAt(1, 'count_all_results',
       array('zoo_visitor_settings'));
@@ -1125,31 +1120,30 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__save_settings_to_db__success()
   {
-      $config     = $this->EE->config;
-      $db         = $this->EE->db;
-      $site_id    = '10';
+    $config = $this->EE->config;
+    $db     = $this->EE->db;
 
-      // Settings.
-      $settings = new Campaigner_settings(array(
-          'api_key'   => 'API key',
-          'client_id' => 'Client ID'
-      ));
+    // Settings.
+    $settings = new Campaigner_settings(array(
+      'api_key'   => 'API key',
+      'client_id' => 'Client ID'
+    ));
 
-      $settings_data = $settings->to_array();
-      unset($settings_data['mailing_lists']);
-      $settings_data = array_merge(array('site_id' => $site_id), $settings_data);
+    $settings_data = $settings->to_array();
+    unset($settings_data['mailing_lists']);
 
-      // Return values.
-      $config->setReturnValue('item', $site_id, array('site_id'));
-      $db->setReturnValue('affected_rows', 1);
+    $settings_data = array_merge(array('site_id' => $this->_site_id),
+      $settings_data);
 
-      // Expectations.
-      $config->expectOnce('item', array('site_id'));
-      $db->expectOnce('delete', array('campaigner_settings', array('site_id' => $site_id)));
-      $db->expectOnce('insert', array('campaigner_settings', $settings_data));
+    $db->setReturnValue('affected_rows', 1);
 
-      // Run the test.
-      $this->assertIdentical(TRUE, $this->_subject->save_settings_to_db($settings));
+    $db->expectOnce('delete',
+      array('campaigner_settings', array('site_id' => $this->_site_id)));
+
+    $db->expectOnce('insert', array('campaigner_settings', $settings_data));
+
+    $this->assertIdentical(TRUE,
+      $this->_subject->save_settings_to_db($settings));
   }
 
 
@@ -1162,115 +1156,107 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__save_mailing_lists_to_db__success()
   {
-      // Shortcuts.
-      $config = $this->EE->config;
-      $db     = $this->EE->db;
+    $config = $this->EE->config;
+    $db     = $this->EE->db;
 
-      // Dummy values.
-      $site_id = '10';
+    $custom_field_data = array(
+      'cm_key'            => '[Gender]',
+      'member_field_id'   => 'm_field_id_100'
+    );
 
-      $custom_field_data = array(
-          'cm_key'            => '[Gender]',
-          'member_field_id'   => 'm_field_id_100'
-      );
+    $custom_fields = array(new Campaigner_custom_field($custom_field_data));
 
-      $custom_fields = array(new Campaigner_custom_field($custom_field_data));
+    $mailing_list_a_data = array(
+      'custom_fields' => $custom_fields,
+      'list_id'       => 'ABC123',
+      'trigger_field' => 'm_field_id_10',
+      'trigger_value' => 'Yes'
+    );
 
-      $mailing_list_a_data = array(
-          'custom_fields' => $custom_fields,
-          'list_id'       => 'ABC123',
-          'trigger_field' => 'm_field_id_10',
-          'trigger_value' => 'Yes'
-      );
+    $mailing_list_b_data = array(
+      'custom_fields' => $custom_fields,
+      'list_id'       => 'XYZ987',
+      'trigger_field' => 'm_field_id_20',
+      'trigger_value' => 'Octopus'
+    );
 
-      $mailing_list_b_data = array(
-          'custom_fields' => $custom_fields,
-          'list_id'       => 'XYZ987',
-          'trigger_field' => 'm_field_id_20',
-          'trigger_value' => 'Octopus'
-      );
+    // Mailing lists.
+    $mailing_lists = array(
+      new Campaigner_mailing_list($mailing_list_a_data),
+      new Campaigner_mailing_list($mailing_list_b_data)
+    );
 
-      // Mailing lists.
-      $mailing_lists = array(
-          new Campaigner_mailing_list($mailing_list_a_data),
-          new Campaigner_mailing_list($mailing_list_b_data)
-      );
+    $insert_array_a = array(
+      'custom_fields' => serialize(array($custom_field_data)),
+      'list_id'       => $mailing_list_a_data['list_id'],
+      'site_id'       => $this->_site_id,
+      'trigger_field' => $mailing_list_a_data['trigger_field'],
+      'trigger_value' => $mailing_list_a_data['trigger_value']
+    );
 
-      $insert_array_a = array(
-          'custom_fields' => serialize(array($custom_field_data)),
-          'list_id'       => $mailing_list_a_data['list_id'],
-          'site_id'       => $site_id,
-          'trigger_field' => $mailing_list_a_data['trigger_field'],
-          'trigger_value' => $mailing_list_a_data['trigger_value']
-      );
+    $insert_array_b = array(
+      'custom_fields' => serialize(array($custom_field_data)),
+      'list_id'       => $mailing_list_b_data['list_id'],
+      'site_id'       => $this->_site_id,
+      'trigger_field' => $mailing_list_b_data['trigger_field'],
+      'trigger_value' => $mailing_list_b_data['trigger_value']
+    );
 
-      $insert_array_b = array(
-          'custom_fields' => serialize(array($custom_field_data)),
-          'list_id'       => $mailing_list_b_data['list_id'],
-          'site_id'       => $site_id,
-          'trigger_field' => $mailing_list_b_data['trigger_field'],
-          'trigger_value' => $mailing_list_b_data['trigger_value']
-      );
+    // Settings.
+    $settings = new Campaigner_settings(
+      array('mailing_lists' => $mailing_lists));
 
-      // Settings.
-      $settings = new Campaigner_settings(array('mailing_lists' => $mailing_lists));
+    $db->expectOnce('delete',
+      array('campaigner_mailing_lists', array('site_id' => $this->_site_id)));
 
+    $db->expectCallCount('insert', count($mailing_lists));
 
-      // Expectations.
-      $config->expectOnce('item', array('site_id'));
-      $db->expectOnce('delete', array('campaigner_mailing_lists', array('site_id' => $site_id)));
-      $db->expectCallCount('insert', count($mailing_lists));
-      $db->expectAt(0, 'insert', array('campaigner_mailing_lists', $insert_array_a));
-      $db->expectAt(1, 'insert', array('campaigner_mailing_lists', $insert_array_b));
+    $db->expectAt(0, 'insert',
+      array('campaigner_mailing_lists', $insert_array_a));
 
-      // Return values.
-      $config->setReturnValue('item', $site_id, array('site_id'));
-      $db->setReturnValue('affected_rows', 1);
+    $db->expectAt(1, 'insert',
+      array('campaigner_mailing_lists', $insert_array_b));
 
-      // Run the test.
-      $this->assertIdentical(TRUE, $this->_subject->save_mailing_lists_to_db($settings));
+    $db->setReturnValue('affected_rows', 1);
+
+    $this->assertIdentical(TRUE,
+      $this->_subject->save_mailing_lists_to_db($settings));
   }
 
 
   public function test__save_mailing_lists_to_db__no_custom_fields()
   {
-      // Shortcuts.
-      $config = $this->EE->config;
-      $db     = $this->EE->db;
+    $config = $this->EE->config;
+    $db     = $this->EE->db;
 
-      // Dummy values.
-      $site_id = '10';
+    $mailing_list_a_data = array(
+      'list_id'       => 'ABC123',
+      'trigger_field' => 'm_field_id_10',
+      'trigger_value' => 'Yes'
+    );
 
-      $mailing_list_a_data = array(
-          'list_id'       => 'ABC123',
-          'trigger_field' => 'm_field_id_10',
-          'trigger_value' => 'Yes'
-      );
+    // Mailing lists.
+    $mailing_lists = array(new Campaigner_mailing_list($mailing_list_a_data));
 
-      // Mailing lists.
-      $mailing_lists = array(new Campaigner_mailing_list($mailing_list_a_data));
+    $insert_array_a = array(
+      'custom_fields' => serialize(array()),
+      'list_id'       => $mailing_list_a_data['list_id'],
+      'site_id'       => $this->_site_id,
+      'trigger_field' => $mailing_list_a_data['trigger_field'],
+      'trigger_value' => $mailing_list_a_data['trigger_value']
+    );
 
-      $insert_array_a = array(
-          'custom_fields' => serialize(array()),
-          'list_id'       => $mailing_list_a_data['list_id'],
-          'site_id'       => $site_id,
-          'trigger_field' => $mailing_list_a_data['trigger_field'],
-          'trigger_value' => $mailing_list_a_data['trigger_value']
-      );
+    // Settings.
+    $settings = new Campaigner_settings(
+      array('mailing_lists' => $mailing_lists));
 
-      // Settings.
-      $settings = new Campaigner_settings(array('mailing_lists' => $mailing_lists));
+    $db->expectAt(0, 'insert',
+      array('campaigner_mailing_lists', $insert_array_a));
 
+    $db->setReturnValue('affected_rows', 1);
 
-      // Expectations.
-      $db->expectAt(0, 'insert', array('campaigner_mailing_lists', $insert_array_a));
-
-      // Return values.
-      $config->setReturnValue('item', $site_id, array('site_id'));
-      $db->setReturnValue('affected_rows', 1);
-
-      // Run the test.
-      $this->assertIdentical(TRUE, $this->_subject->save_mailing_lists_to_db($settings));
+    $this->assertIdentical(TRUE,
+      $this->_subject->save_mailing_lists_to_db($settings));
   }
 
 
@@ -1759,127 +1745,122 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__get_mailing_list_by_id__success()
   {
-      // Shortcuts.
-      $config = $this->EE->config;
-      $db     = $this->EE->db;
+    $config = $this->EE->config;
+    $db     = $this->EE->db;
 
-      // Dummy values.
-      $db_result      = $this->_get_mock('db_query');
-      $fields_data    = array();
-      $fields         = array();
-      $list_id        = 'abc123';
-      $site_id        = 10;
+    $db_result    = $this->_get_mock('db_query');
+    $fields_data  = array();
+    $fields       = array();
+    $list_id      = 'abc123';
 
-      for ($count = 1; $count <= 10; $count++)
-      {
-          $data           = array('member_field_id' => 'm_field_id_' .$count, 'cm_key' => 'cm_key_' .$count);
-          $fields_data[]  = $data;
-          $fields[]       = new Campaigner_custom_field($data);
-      }
-
-      $db_row = array(
-          'custom_fields'     => serialize($fields_data),
-          'list_id'           => $list_id,
-          'site_id'           => '1',
-          'trigger_field'     => 'm_field_id_10',
-          'trigger_value'     => 'y'
+    for ($count = 1; $count <= 10; $count++)
+    {
+      $data = array(
+        'member_field_id' => 'm_field_id_' .$count,
+        'cm_key'          => 'cm_key_' .$count
       );
 
-      $list_object = new Campaigner_mailing_list(array(
-          'custom_fields'     => $fields,
-          'list_id'           => $db_row['list_id'],
-          'trigger_field'     => $db_row['trigger_field'],
-          'trigger_value'     => $db_row['trigger_value']
-      ));
+      $fields_data[]  = $data;
+      $fields[]       = new Campaigner_custom_field($data);
+    }
 
-      // Expectations.
-      $db->expectOnce('select', array('custom_fields, list_id, site_id, trigger_field, trigger_value'));
-      $db->expectOnce('get_where', array('campaigner_mailing_lists', array('list_id' => $list_id, 'site_id' => $site_id), 1));
-      $db_result->expectOnce('num_rows');
-      $db_result->expectOnce('row_array');
+    $db_row = array(
+      'custom_fields' => serialize($fields_data),
+      'list_id'       => $list_id,
+      'site_id'       => '1',
+      'trigger_field' => 'm_field_id_10',
+      'trigger_value' => 'y'
+    );
 
-      // Return values.
-      $config->setReturnValue('item', $site_id, array('site_id'));
-      $db->setReturnReference('get_where', $db_result);
-      $db_result->setReturnReference('row_array', $db_row);
-      $db_result->setReturnValue('num_rows', 1);
+    $list_object = new Campaigner_mailing_list(array(
+      'custom_fields' => $fields,
+      'list_id'       => $db_row['list_id'],
+      'trigger_field' => $db_row['trigger_field'],
+      'trigger_value' => $db_row['trigger_value']
+    ));
 
-      // Tests.
-      $this->assertIdentical($list_object, $this->_subject->get_mailing_list_by_id($list_id));
+    // Expectations.
+    $db->expectOnce('select',
+      array('custom_fields, list_id, site_id, trigger_field, trigger_value'));
+
+    $db->expectOnce('get_where', array('campaigner_mailing_lists',
+      array('list_id' => $list_id, 'site_id' => $this->_site_id), 1));
+
+    $db_result->expectOnce('num_rows');
+    $db_result->expectOnce('row_array');
+
+    $db->setReturnReference('get_where', $db_result);
+    $db_result->setReturnReference('row_array', $db_row);
+    $db_result->setReturnValue('num_rows', 1);
+
+    $this->assertIdentical($list_object, $this->_subject->get_mailing_list_by_id($list_id));
   }
 
 
   public function test__get_mailing_list_by_id__no_matching_list()
   {
-      // Shortcuts.
-      $config = $this->EE->config;
-      $db     = $this->EE->db;
+    $config = $this->EE->config;
+    $db     = $this->EE->db;
 
-      // Dummy values.
-      $db_result      = $this->_get_mock('db_query');
-      $list_id        = 'abc123';
-      $site_id        = 10;
+    $db_result  = $this->_get_mock('db_query');
+    $list_id    = 'abc123';
+    $db_row     = array();
 
-      $db_row = array();
+    $db_result->expectOnce('num_rows');
+    $db_result->expectNever('row_array');
 
-      // Expectations.
-      $db_result->expectOnce('num_rows');
-      $db_result->expectNever('row_array');
+    $db->setReturnReference('get_where', $db_result);
+    $db_result->setReturnValue('num_rows', 0);
 
-      // Return values.
-      $config->setReturnValue('item', $site_id, array('site_id'));
-      $db->setReturnReference('get_where', $db_result);
-      $db_result->setReturnValue('num_rows', 0);
-
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->get_mailing_list_by_id($list_id));
+    $this->assertIdentical(FALSE, $this->_subject->get_mailing_list_by_id($list_id));
   }
 
 
   public function test__get_api_class_clients__success()
   {
-      // Dummy values.
-      $api_key    = 'API_KEY';
-      $client_id  = 'abc123';
-      $site_id    = 10;
+    // Dummy values.
+    $api_key    = 'API_KEY';
+    $client_id  = 'abc123';
 
-      // Method calls `get_extension_settings`, so we need to mock that. Boo.
-      $db_lists           = $this->_get_mock('db_query');
-      $db_settings        = $this->_get_mock('db_query');
-      $db_settings_row    = array('api_key' => $api_key);
+    // Method calls `get_extension_settings`, so we need to mock that. Boo.
+    $db_lists         = $this->_get_mock('db_query');
+    $db_settings      = $this->_get_mock('db_query');
+    $db_settings_row  = array('api_key' => $api_key);
 
-      $db_lists->setReturnValue('result_array', array());
-      $db_settings->setReturnValue('num_rows', 1);
-      $db_settings->setReturnValue('row_array', $db_settings_row);
+    $db_lists->setReturnValue('result_array', array());
+    $db_settings->setReturnValue('num_rows', 1);
+    $db_settings->setReturnValue('row_array', $db_settings_row);
 
-      $this->EE->config->setReturnValue('item', $site_id, array('site_id'));
-      $this->EE->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
-      $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+    $this->EE->db->setReturnReference('get_where', $db_lists,
+      array('campaigner_mailing_lists', '*'));
 
-      // Run the tests.
-      $this->assertIdentical(new CS_REST_Clients($client_id, $api_key), $this->_subject->get_api_class_clients($client_id));
+    $this->EE->db->setReturnReference('get_where', $db_settings,
+      array('campaigner_settings', '*', '*'));
+
+    $this->assertIdentical(new CS_REST_Clients($client_id, $api_key),
+      $this->_subject->get_api_class_clients($client_id));
   }
 
 
   public function test__get_api_class_clients__no_settings()
   {
-      // Dummy values.
-      $client_id  = 'abc123';
-      $site_id    = 10;
+    $client_id = 'abc123';
 
-      // Method calls `get_extension_settings`, so we need to mock that. Boo.
-      $db_lists           = $this->_get_mock('db_query');
-      $db_settings        = $this->_get_mock('db_query');
+    // Method calls `get_extension_settings`, so we need to mock that. Boo.
+    $db_lists     = $this->_get_mock('db_query');
+    $db_settings  = $this->_get_mock('db_query');
 
-      $db_lists->setReturnValue('result_array', array());
-      $db_settings->setReturnValue('num_rows', 0);
+    $db_lists->setReturnValue('result_array', array());
+    $db_settings->setReturnValue('num_rows', 0);
 
-      $this->EE->config->setReturnValue('item', $site_id, array('site_id'));
-      $this->EE->db->setReturnReference('get_where', $db_lists, array('campaigner_mailing_lists', '*'));
-      $this->EE->db->setReturnReference('get_where', $db_settings, array('campaigner_settings', '*', '*'));
+    $this->EE->db->setReturnReference('get_where', $db_lists,
+      array('campaigner_mailing_lists', '*'));
 
-      // Run the tests.
-      $this->assertIdentical(FALSE, $this->_subject->get_api_class_clients($client_id));
+    $this->EE->db->setReturnReference('get_where', $db_settings,
+      array('campaigner_settings', '*', '*'));
+
+    $this->assertIdentical(FALSE,
+      $this->_subject->get_api_class_clients($client_id));
   }
 
 
