@@ -811,6 +811,25 @@ class Campaigner_model extends CI_Model {
 
 
   /**
+   * Determines whether the Zoo Visitor module is installed and activated.
+   *
+   * @access  public
+   * @return  bool
+   */
+  public function is_zoo_visitor_installed()
+  {
+    $result = $this->EE->db
+      ->where('LOWER(module_name)', 'zoo_visitor')
+      ->count_all_results('modules');
+
+    if ($result !== 1)
+    {
+      return FALSE;
+    }
+  }
+
+
+  /**
    * Logs an error to OmniLog.
    *
    * @access  public

@@ -809,6 +809,19 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
+  public function test__is_zoo_visitor_installed__not_installed()
+  {
+    $this->EE->db->expectOnce('where',
+      array('LOWER(module_name)', 'zoo_visitor'));
+
+    $this->EE->db->expectOnce('count_all_results', array('modules'));
+    $this->EE->db->returns('count_all_results', 0);
+  
+    $this->assertIdentical(FALSE, $this->_model->is_zoo_visitor_installed());
+  }
+  
+
+
   public function test__update_extension__update()
   {
     $db = $this->EE->db;
