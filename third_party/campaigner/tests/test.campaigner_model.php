@@ -438,234 +438,20 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__get_member_by_id__no_member()
   {
-      // Dummy values.
-      $db_result = $this->_get_mock('db_query');
+    $db_result = $this->_get_mock('db_query');
+    $db_result->expectNever('row_array');
 
-      // Expectations.
-      $db_result->expectNever('row_array');
+    $this->EE->db->setReturnReference('get_where', $db_result);
+    $db_result->setReturnValue('num_rows', 0);
 
-      // Return values.
-      $this->EE->db->setReturnReference('get_where', $db_result);
-      $db_result->setReturnValue('num_rows', 0);
-
-      // Tests.
-      $this->assertIdentical(array(), $this->_subject->get_member_by_id(10));
+    $this->assertIdentical(array(), $this->_subject->get_member_by_id(10));
   }
 
 
   public function test__get_member_by_id__invalid_member()
   {
-      // Expectations.
-      $this->EE->db->expectNever('get_where');
-
-      // Tests.
-      $this->_subject->get_member_by_id(NULL);
-  }
-
-
-  public function test__get_member_fields__success()
-  {
-      // Language strings.
-      $dummy_label = 'Label';
-      $this->EE->lang->setReturnValue('line', $dummy_label);
-
-      // Retrieve the member groups.
-      $db_member_groups = $this->_get_mock('db_query');
-      $db_member_group_rows = array(
-          array('group_id' => '5', 'group_title' => 'Super Admins'),
-          array('group_id' => '10', 'group_title' => 'Authors'),
-          array('group_id' => '15', 'group_title' => 'Editors')
-      );
-
-      $this->EE->db->expectAt(0, 'select', array('group_id, group_title'));
-      $this->EE->db->expectAt(0, 'get', array('member_groups'));
-      $this->EE->db->setReturnReferenceAt(0, 'get', $db_member_groups);
-      $db_member_groups->setReturnValue('result_array', $db_member_group_rows);
-
-      $member_groups = array();
-      foreach ($db_member_group_rows AS $db_member_group_row)
-      {
-          $member_groups[] = new Campaigner_trigger_field_option(array(
-              'id'    => $db_member_group_row['group_id'],
-              'label' => $db_member_group_row['group_title']
-          ));
-      }
-
-      // Retrieve the member fields.
-      $trigger_fields  = array();
-      $standard_member_fields = array(
-          array(
-              'id'        => 'group_id',
-              'label'     => $dummy_label,
-              'options'   => $member_groups,
-              'type'      => 'select'
-          ),
-          array(
-              'id'        => 'location',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          ),
-          array(
-              'id'        => 'occupation',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          ),
-          array(
-              'id'        => 'screen_name',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          ),
-          array(
-              'id'        => 'url',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          ),
-          array(
-              'id'        => 'username',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          )
-      );
-
-      foreach ($standard_member_fields AS $member_field_data)
-      {
-          $trigger_fields[] = new Campaigner_trigger_field($member_field_data);
-      }
-
-      $db_member_fields = $this->_get_mock('db_query');
-      $db_member_field_rows = array(
-          array('m_field_id' => '10', 'm_field_label' => 'Name', 'm_field_list_items' => '', 'm_field_type' => 'text'),
-          array('m_field_id' => '20', 'm_field_label' => 'Email', 'm_field_list_items' => '', 'm_field_type' => 'text'),
-          array('m_field_id' => '30', 'm_field_label' => 'Address', 'm_field_list_items' => '', 'm_field_type' => 'textarea'),
-          array('m_field_id' => '40', 'm_field_label' => 'Gender', 'm_field_list_items' => "Male\nFemale", 'm_field_type' => 'select')
-      );
-
-      foreach ($db_member_field_rows AS $db_member_field_row)
-      {
-          $trigger_field_options = array();
-
-          if ($db_member_field_row['m_field_type'] == Campaigner_trigger_field::DATATYPE_SELECT)
-          {
-              $db_member_field_options = explode("\n", $db_member_field_row['m_field_list_items']);
-              foreach ($db_member_field_options AS $option)
-              {
-                  $trigger_field_options[] = new Campaigner_trigger_field_option(array(
-                      'id'    => $option,
-                      'label' => $option
-                  ));
-              }
-          }
-
-          $trigger_field_data = array(
-              'id'        => 'm_field_id_' .$db_member_field_row['m_field_id'],
-              'label'     => $db_member_field_row['m_field_label'],
-              'options'   => $trigger_field_options,
-              'type'      => $db_member_field_row['m_field_type']
-          );
-
-          $trigger_field = new Campaigner_trigger_field($trigger_field_data);
-          $trigger_fields[] = $trigger_field;
-      }
-
-      $this->EE->db->expectAt(1, 'select', array('m_field_id, m_field_label, m_field_list_items, m_field_type'));
-      $this->EE->db->expectAt(1, 'get', array('member_fields'));
-      $this->EE->db->setReturnReferenceAt(1, 'get', $db_member_fields);
-
-      $db_member_fields->expectOnce('result_array');
-      $db_member_fields->setReturnValue('result_array', $db_member_field_rows);
-
-      $this->assertIdentical($trigger_fields, $this->_subject->get_member_fields());
-  }
-
-
-  public function test__get_member_fields__no_custom_member_fields()
-  {
-      // Language strings.
-      $dummy_label = 'Label';
-      $this->EE->lang->setReturnValue('line', $dummy_label);
-
-      // Retrieve the member groups.
-      $db_member_groups = $this->_get_mock('db_query');
-      $db_member_group_rows = array(
-          array('group_id' => '5', 'group_title' => 'Super Admins'),
-          array('group_id' => '10', 'group_title' => 'Authors'),
-          array('group_id' => '15', 'group_title' => 'Editors')
-      );
-
-      $this->EE->db->expectAt(0, 'select', array('group_id, group_title'));
-      $this->EE->db->expectAt(0, 'get', array('member_groups'));
-      $this->EE->db->setReturnReferenceAt(0, 'get', $db_member_groups);
-      $db_member_groups->setReturnValue('result_array', $db_member_group_rows);
-
-      $member_groups = array();
-      foreach ($db_member_group_rows AS $db_member_group_row)
-      {
-          $member_groups[] = new Campaigner_trigger_field_option(array(
-              'id'    => $db_member_group_row['group_id'],
-              'label' => $db_member_group_row['group_title']
-          ));
-      }
-
-      // Retrieve the member fields.
-      $trigger_fields  = array();
-      $standard_member_fields = array(
-          array(
-              'id'        => 'group_id',
-              'label'     => $dummy_label,
-              'options'   => $member_groups,
-              'type'      => 'select'
-          ),
-          array(
-              'id'        => 'location',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          ),
-          array(
-              'id'        => 'occupation',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          ),
-          array(
-              'id'        => 'screen_name',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          ),
-          array(
-              'id'        => 'url',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          ),
-          array(
-              'id'        => 'username',
-              'label'     => $dummy_label,
-              'options'   => array(),
-              'type'      => 'text'
-          )
-      );
-
-      foreach ($standard_member_fields AS $member_field_data)
-      {
-          $trigger_fields[] = new Campaigner_trigger_field($member_field_data);
-      }
-
-      $db_member_fields = $this->_get_mock('db_query');
-      $this->EE->db->expectAt(1, 'select', array('m_field_id, m_field_label, m_field_list_items, m_field_type'));
-      $this->EE->db->expectAt(1, 'get', array('member_fields'));
-      $this->EE->db->setReturnReferenceAt(1, 'get', $db_member_fields);
-
-      $db_member_fields->expectOnce('result_array');
-      $db_member_fields->setReturnValue('result_array', array());
-
-      $this->assertIdentical($trigger_fields, $this->_subject->get_member_fields());
+    $this->EE->db->expectNever('get_where');
+    $this->_subject->get_member_by_id(NULL);
   }
 
 
@@ -794,7 +580,161 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test__get_zoo_visitor_member_fields__returns_an_empty_array_if_zoo_visitor_not_installed()
+  public function test__get_trigger_fields__custom_member__returns_an_array_of_trigger_fields()
+  {
+    $db_result = $this->_get_mock('db_query');
+    $db_rows = array(
+      (object) array(
+        'm_field_id'          => '10',
+        'm_field_label'       => 'Name',
+        'm_field_list_items'  => '',
+        'm_field_type'        => 'text'
+      ),
+      (object) array(
+        'm_field_id'          => '20',
+        'm_field_label'       => 'Address',
+        'm_field_list_items'  => '',
+        'm_field_type'        => 'textarea'
+      ),
+      (object) array(
+        'm_field_id'          => '30',
+        'm_field_label'       => 'Gender',
+        'm_field_list_items'  => "Male\nFemale",
+        'm_field_type'        => 'select'
+      )
+    );
+
+    $this->EE->db->expectOnce('select',
+      array('m_field_id, m_field_label, m_field_list_items, m_field_type'));
+
+    $this->EE->db->expectOnce('get', array('member_fields'));
+    $this->EE->db->returnsByReference('get', $db_result);
+
+    $db_result->expectOnce('result');
+    $db_result->returns('result', $db_rows);
+
+    $expected_result = array(
+      new Campaigner_trigger_field(array(
+        'id'    => 'm_field_id_10',
+        'label' => 'Name',
+        'type'  => 'text'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'    => 'm_field_id_20',
+        'label' => 'Address',
+        'type'  => 'textarea'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'      => 'm_field_id_30',
+        'label'   => 'Gender',
+        'options' => array(
+          new Campaigner_trigger_field_option(array(
+            'id'    => 'Male',
+            'label' => 'Male'
+          )),
+          new Campaigner_trigger_field_option(array(
+            'id'    => 'Female',
+            'label' => 'Female'
+          ))
+        ),
+        'type' => 'select'
+      ))
+    );
+
+    $this->assertIdentical($expected_result,
+      $this->_subject->get_trigger_fields__custom_member());
+  }
+
+
+  public function test__get_trigger_fields__custom_member__returns_empty_array_if_no_custom_member_fields_exist()
+  {
+    $db_result = $this->_get_mock('db_query');
+    $db_rows = array();
+
+    $this->EE->db->expectOnce('select');
+    $this->EE->db->expectOnce('get');
+    $this->EE->db->returnsByReference('get', $db_result);
+
+    $db_result->expectOnce('result');
+    $db_result->returns('result', $db_rows);
+
+    $this->assertIdentical(array(),
+      $this->_subject->get_trigger_fields__custom_member());
+  }
+
+
+  public function test__get_trigger_fields__default_member__returns_an_array_of_trigger_fields()
+  {
+    $dummy_label = 'Label';
+    $this->EE->lang->setReturnValue('line', $dummy_label);
+
+    // Retrieve the member groups.
+    $db_result = $this->_get_mock('db_query');
+    $db_rows = array(
+      (object) array('group_id' => '5', 'group_title' => 'Super Admins'),
+      (object) array('group_id' => '10', 'group_title' => 'Authors'),
+      (object) array('group_id' => '15', 'group_title' => 'Editors')
+    );
+
+    $this->EE->db->expectOnce('select', array('group_id, group_title'));
+    $this->EE->db->expectOnce('get', array('member_groups'));
+    $this->EE->db->returnsByReference('get', $db_result);
+
+    $db_result->returns('result', $db_rows);
+
+    $expected_result = array(
+      new Campaigner_trigger_field(array(
+        'id'      => 'group_id',
+        'label'   => $dummy_label,
+        'options' => array(
+          new Campaigner_trigger_field_option(array(
+            'id'    => '5',
+            'label' => 'Super Admins'
+          )),
+          new Campaigner_trigger_field_option(array(
+            'id'    => '10',
+            'label' => 'Authors'
+          )),
+          new Campaigner_trigger_field_option(array(
+            'id'    => '15',
+            'label' => 'Editors'
+          ))
+        ),
+        'type' => 'select'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'    => 'location',
+        'label' => $dummy_label,
+        'type'  => 'text'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'    => 'occupation',
+        'label' => $dummy_label,
+        'type'  => 'text'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'    => 'screen_name',
+        'label' => $dummy_label,
+        'type'  => 'text'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'    => 'url',
+        'label' => $dummy_label,
+        'type'  => 'text'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'    => 'username',
+        'label' => $dummy_label,
+        'type'  => 'text'
+      ))
+    );
+
+    $this->assertIdentical($expected_result,
+      $this->_subject->get_trigger_fields__default_member());
+  }
+
+
+  public function test__get_trigger_fields__zoo_visitor__returns_an_empty_array_if_zoo_visitor_not_installed()
   {
     // Set the cache.
     $this->EE->session->cache[$this->_namespace][$this->_package_name]
@@ -803,11 +743,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $this->EE->db->expectNever('get_where');
   
     $this->assertIdentical(array(),
-      $this->_subject->get_zoo_visitor_member_fields());
+      $this->_subject->get_trigger_fields__zoo_visitor());
   }
 
 
-  public function test__get_zoo_visitor_member_fields__returns_an_array_of_campaigner_trigger_fields()
+  public function test__get_trigger_fields__zoo_visitor__returns_an_array_of_campaigner_trigger_fields()
   {
     // Set the cache.
     $this->EE->session->cache[$this->_namespace][$this->_package_name]
@@ -897,11 +837,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
     // Run the tests.
     $this->assertIdentical($expected_result,
-      $this->_subject->get_zoo_visitor_member_fields());
+      $this->_subject->get_trigger_fields__zoo_visitor());
   }
 
 
-  public function test__get_zoo_visitor_member_fields__returns_an_empty_array_if_no_member_fields_are_found()
+  public function test__get_trigger_fields__zoo_visitor__returns_an_empty_array_if_no_member_fields_are_found()
   {
     // Set the cache.
     $this->EE->session->cache[$this->_namespace][$this->_package_name]
@@ -921,7 +861,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
     // Run the tests.
     $this->assertIdentical(array(),
-      $this->_subject->get_zoo_visitor_member_fields());
+      $this->_subject->get_trigger_fields__zoo_visitor());
   }
 
 

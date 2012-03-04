@@ -605,113 +605,6 @@ class Campaigner_model extends CI_Model {
 
 
   /**
-   * Retrieves the member fields from the database.
-   *
-   * @access  public
-   * @return  array
-   */
-  public function get_member_fields()
-  {
-    // Shortcuts.
-    $lang = $this->EE->lang;
-
-    $trigger_fields = array();
-    $member_groups = array();
-
-    // Retrieve the member groups.
-    $db_member_groups = $this->EE->db
-      ->select('group_id, group_title')
-      ->get('member_groups');
-
-    foreach ($db_member_groups->result_array() AS $db_member_group)
-    {
-      $member_groups[] = new Campaigner_trigger_field_option(array(
-        'id'    => $db_member_group['group_id'],
-        'label' => $db_member_group['group_title']
-      ));
-    }
-
-    // ExpressionEngine hard-codes these member fields, so we must do the same.
-    $standard_member_fields = array(
-      array(
-        'id'        => 'group_id',
-        'label'     => $lang->line('mbr_group_id'),
-        'options'   => $member_groups,
-        'type'      => 'select'
-      ),
-      array(
-        'id'        => 'location',
-        'label'     => $lang->line('mbr_location'),
-        'options'   => array(),
-        'type'      => 'text'
-      ),
-      array(
-        'id'        => 'occupation',
-        'label'     => $lang->line('mbr_occupation'),
-        'options'   => array(),
-        'type'      => 'text'
-      ),
-      array(
-        'id'        => 'screen_name',
-        'label'     => $lang->line('mbr_screen_name'),
-        'options'   => array(),
-        'type'      => 'text'
-      ),
-      array(
-        'id'        => 'url',
-        'label'     => $lang->line('mbr_url'),
-        'options'   => array(),
-        'type'      => 'text'
-      ),
-      array(
-        'id'        => 'username',
-        'label'     => $lang->line('mbr_username'),
-        'options'   => array(),
-        'type'      => 'text'
-      )
-    );
-
-    foreach ($standard_member_fields AS $member_field_data)
-    {
-      $trigger_fields[] = new Campaigner_trigger_field($member_field_data);
-    }
-
-    // Load the custom member fields from the database.
-    $db_member_fields = $this->EE->db
-      ->select("m_field_id, m_field_label, m_field_list_items, m_field_type")
-      ->get('member_fields');
-
-    foreach ($db_member_fields->result_array() AS $db_row)
-    {
-      $trigger_field_options = array();
-
-      if ($db_row['m_field_type'] == Campaigner_trigger_field::DATATYPE_SELECT)
-      {
-        $list_items = explode("\n", $db_row['m_field_list_items']);
-        foreach ($list_items AS $list_item)
-        {
-          $trigger_field_options[] = new Campaigner_trigger_field_option(array(
-            'id'    => $list_item,
-            'label' => $list_item
-          ));
-        }
-      }
-
-      $trigger_field = new Campaigner_trigger_field(array(
-        'id'        => 'm_field_id_' .$db_row['m_field_id'],
-        'label'     => $db_row['m_field_label'],
-        'options'   => $trigger_field_options,
-        'type'      => $db_row['m_field_type']
-      ));
-
-      $trigger_fields[] = $trigger_field;
-    }
-
-    return $trigger_fields;
-  }
-
-
-  /**
    * Returns an array of mailing list IDs to which the specified member
    * should be subscribed.
    *
@@ -842,12 +735,114 @@ class Campaigner_model extends CI_Model {
 
 
   /**
-   * Retrieves the Zoo Visitor member fields for the current site.
+   * Retrieves the custom member trigger fields.
    *
    * @access  public
    * @return  array
    */
-  public function get_zoo_visitor_member_fields()
+  public function get_trigger_fields__custom_member()
+  {
+    $fields = array();
+
+    $db_fields = $this->EE->db
+      ->select('m_field_id, m_field_label, m_field_list_items, m_field_type')
+      ->get('member_fields');
+
+    foreach ($db_fields->result() AS $db_row)
+    {
+      $field = new Campaigner_trigger_field(array(
+        'id'    => 'm_field_id_' .$db_row->m_field_id,
+        'label' => $db_row->m_field_label,
+        'type'  => $db_row->m_field_type
+      ));
+
+      if ($db_row->m_field_type == Campaigner_trigger_field::DATATYPE_SELECT)
+      {
+        $list_items = explode("\n", $db_row->m_field_list_items);
+
+        foreach ($list_items AS $list_item)
+        {
+          $field->add_option(new Campaigner_trigger_field_option(array(
+            'id'    => $list_item,
+            'label' => $list_item
+          )));
+        }
+      }
+
+      $fields[] = $field;
+    }
+
+    return $fields;
+  }
+
+
+  /**
+   * Retrieves the default member trigger fields.
+   *
+   * @access  public
+   * @return  array
+   */
+  public function get_trigger_fields__default_member()
+  {
+    // Retrieve the Member Group IDs.
+    $group_id_field = new Campaigner_trigger_field(array(
+      'id'      => 'group_id',
+      'label'   => $this->EE->lang->line('mbr_group_id'),
+      'options' => array(),
+      'type'    => 'select'
+    ));
+
+    $db_groups = $this->EE->db
+      ->select('group_id, group_title')
+      ->get('member_groups');
+
+    foreach ($db_groups->result() AS $db_group)
+    {
+      $group_id_field->add_option(new Campaigner_trigger_field_option(array(
+        'id'    => $db_group->group_id,
+        'label' => $db_group->group_title
+      )));
+    }
+
+    // ExpressionEngine hard-codes these member fields, so we must do the same.
+    return array(
+      $group_id_field,
+      new Campaigner_trigger_field(array(
+        'id'      => 'location',
+        'label'   => $this->EE->lang->line('mbr_location'),
+        'type'    => 'text'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'      => 'occupation',
+        'label'   => $this->EE->lang->line('mbr_occupation'),
+        'type'    => 'text'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'      => 'screen_name',
+        'label'   => $this->EE->lang->line('mbr_screen_name'),
+        'type'    => 'text'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'      => 'url',
+        'label'   => $this->EE->lang->line('mbr_url'),
+        'type'    => 'text'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'      => 'username',
+        'label'   => $this->EE->lang->line('mbr_username'),
+        'type'    => 'text'
+      ))
+    );
+  }
+
+
+  /**
+   * Retrieves the Zoo Visitor trigger fields.
+   *
+   * @access  public
+   * @return  array
+   */
+  public function get_trigger_fields__zoo_visitor()
   {
     $fields = array();
 
@@ -882,11 +877,11 @@ class Campaigner_model extends CI_Model {
 
     foreach ($db_result->result() AS $db_row)
     {
-      $field_data = array(
+      $field = new Campaigner_trigger_field(array(
         'id'      => 'field_id_' .$db_row->field_id,
         'options' => array(),
         'type'    => $db_row->field_type
-      );
+      ));
 
       if ($db_row->field_type === Campaigner_trigger_field::DATATYPE_SELECT)
       {
@@ -894,14 +889,14 @@ class Campaigner_model extends CI_Model {
 
         foreach ($field_options AS $field_option)
         {
-          $field_data['options'][] = new Campaigner_trigger_field_option(array(
+          $field->add_option(new Campaigner_trigger_field_option(array(
             'id'    => $field_option,
             'label' => $field_option
-          ));
+          )));
         }
       }
 
-      $fields[] = new Campaigner_trigger_field($field_data);
+      $fields[] = $field;
     }
 
     return $fields;
