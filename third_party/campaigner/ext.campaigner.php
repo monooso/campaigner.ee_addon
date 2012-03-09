@@ -731,7 +731,7 @@ class Campaigner_ext {
 
     try
     {
-      $fields = $this->_connector->get_list_fields($list_id);
+      $cm_fields = $this->_connector->get_list_fields($list_id);
     }
     catch (Campaigner_exception $e)
     {
@@ -739,32 +739,46 @@ class Campaigner_ext {
       return $this->_display_custom_fields_error($list_id);
     }
 
-    // Restore any saved field settings.
-    if ($saved_list = $this->settings->get_mailing_list_by_id($list_id))
+    // Declare the 'field' view variables here, in case there are no CM fields.
+    $view_fields = $view_fields_dd = array();
+
+    if ($cm_fields)
     {
-      // Restore the saved custom field settings.
-      foreach ($fields AS $field)
+      // Restore any saved field settings.
+      if ($saved_list = $this->settings->get_mailing_list_by_id($list_id))
       {
-        if (($saved_field = $saved_list->get_custom_field_by_cm_key(
-          $field->get_cm_key())
-        ))
+        // Restore the saved custom field settings.
+        foreach ($cm_fields AS $cm_field)
         {
-          $field->set_member_field_id($saved_field->get_member_field_id());
+          if (($saved_field = $saved_list->get_custom_field_by_cm_key(
+            $cm_field->get_cm_key())
+          ))
+          {
+            $cm_field->set_member_field_id($saved_field->get_member_field_id());
+          }
         }
+      }
+
+      // Retrieve the member fields.
+      $member_fields = $this->_get_member_fields();
+
+      foreach ($member_fields AS $m_field_group => $m_fields)
+      {
+        $field_group_label = $this->EE->lang->line('lbl_' .$m_field_group);
+
+        $view_fields = array_merge($view_fields, $m_fields);
+
+        $view_fields_dd[$field_group_label]
+          = $this->_build_member_fields_dropdown($m_fields);
       }
     }
 
-    // Retrieve the member fields.
-    $member_fields = $this->_model->get_member_fields();
-    $member_fields_dd_data = $this->_build_member_fields_dropdown(
-      $member_fields);
-
     // Define the view variables.
     $view_vars = array(
-      'custom_fields'         => $fields,
+      'custom_fields'         => $cm_fields,
       'list_id'               => $list_id,
-      'member_fields'         => $member_fields,
-      'member_fields_dd_data' => $member_fields_dd_data
+      'member_fields'         => $view_fields,
+      'member_fields_dd_data' => $view_fields_dd
     );
 
     $view_name = '_custom_fields';
@@ -843,20 +857,57 @@ class Campaigner_ext {
     }
 
     // Retrieve the member fields.
-    $member_fields = $this->_model->get_member_fields();
-    $member_fields_dd_data = $this->_build_member_fields_dropdown(
-      $member_fields);
+    $member_fields = $this->_get_member_fields();
+    $view_fields = $view_fields_dd = array();
+
+    foreach ($member_fields AS $field_group => $fields)
+    {
+      $field_group_label = $this->EE->lang->line('lbl_' .$field_group);
+
+      $view_fields = array_merge($view_fields, $fields);
+
+      $view_fields_dd[$field_group_label]
+        = $this->_build_member_fields_dropdown($fields);
+    }
 
     // Define the view variables.
     $view_vars = array(
       'mailing_lists'         => $lists,
-      'member_fields'         => $member_fields,
-      'member_fields_dd_data' => $member_fields_dd_data,
+      'member_fields'         => $view_fields,
+      'member_fields_dd_data' => $view_fields_dd,
       'settings'              => $this->settings
     );
 
     $view_name = '_mailing_lists';
     return $this->EE->load->view($view_name, $view_vars, TRUE);
+  }
+
+
+  /**
+   * Returns an array of member fields, grouped by 'type' (default, custom, or 
+   * Zoo Visitor).
+   *
+   * @access  private
+   * @return  array
+   */
+  private function _get_member_fields()
+  {
+    $fields = array();
+
+    $fields['default_member']
+      = $this->_model->get_trigger_fields__default_member();
+
+    if ($custom_fields = $this->_model->get_trigger_fields__custom_member())
+    {
+      $fields['custom_member'] = $custom_fields;
+    }
+
+    if ($zoo_fields = $this->_model->get_trigger_fields__zoo_visitor())
+    {
+      $fields['zoo_visitor'] = $zoo_fields;
+    }
+
+    return $fields;
   }
 
 

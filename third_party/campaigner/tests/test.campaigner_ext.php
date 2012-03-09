@@ -10,6 +10,7 @@
 
 require_once PATH_THIRD .'campaigner/ext.campaigner.php';
 require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
+require_once PATH_THIRD .'campaigner/models/campaigner_model.php';
 require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_cm_api_connector.php';
 
 class Test_campaigner_ext extends Testee_unit_test_case {
@@ -179,10 +180,11 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test__display_custom_fields__has_custom_fields()
+  public function test__display_custom_fields__works_with_custom_campaign_monitor_fields_and_default_custom_and_zoo_member_fields()
   {
     // AJAX request.
     $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
     $list_id = 'abc123';
 
@@ -199,8 +201,6 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       ))
     );
 
-    $this->EE->input->returns('get', 'get_custom_fields', array('request'));
-
     // Retrieve the AJAX-supplied list ID.
     $this->EE->input->expectOnce('get_post', array('list_id'));
     $this->EE->input->returns('get_post', $list_id, array('list_id'));
@@ -211,8 +211,66 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     // @todo Test restoration of saved custom field settings.
 
-    // Retrieve the member fields. Don't really care about this.
-    $this->_model->returns('get_member_fields', array());
+    $lbl_custom_fields  = 'Custom Member Fields';
+    $lbl_default_fields = 'Standard Member Fields';
+    $lbl_zoo_fields     = 'Zoo Visitor Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
+    );
+
+    $custom_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'm_field_id_10',
+        'label' => 'Profile', 'type' => 'textarea')),
+      new Campaigner_trigger_field(array('id' => 'm_field_id_20',
+        'label' => 'Favourite Colour', 'type' => 'text'))
+    );
+
+    $zoo_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'field_id_10',
+        'label' => 'Age', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'field_id_20',
+        'label' => 'Gender', 'type' => 'radio'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      ),
+      $lbl_custom_fields => array(
+        'm_field_id_10' => 'Profile',
+        'm_field_id_20' => 'Favourite Colour'
+      ),
+      $lbl_zoo_fields => array(
+        'field_id_10' => 'Age',
+        'field_id_20' => 'Gender'
+      )
+    );
+
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->EE->lang->returns('line', $lbl_custom_fields,
+      array('lbl_custom_member'));
+
+    $this->EE->lang->returns('line', $lbl_zoo_fields,
+      array('lbl_zoo_visitor'));
+
+    $this->_model->expectOnce('get_trigger_fields__default_member');
+    $this->_model->returns('get_trigger_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_trigger_fields__custom_member');
+    $this->_model->returns('get_trigger_fields__custom_member',
+      $custom_member_fields);
+
+    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
+    $this->_model->returns('get_trigger_fields__zoo_visitor',
+      $zoo_member_fields);
 
     // Load the view.
     $this->EE->load->expectOnce('view', array(
@@ -220,8 +278,10 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       array(
         'custom_fields' => $fields,
         'list_id'       => $list_id,
-        'member_fields' => array(),
-        'member_fields_dd_data' => array()
+        'member_fields' => array_merge($default_member_fields,
+          $custom_member_fields, $zoo_member_fields),
+
+        'member_fields_dd_data' => $dd_data,
       ),
       TRUE
     ));
@@ -230,7 +290,81 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test__display_custom_fields__no_custom_fields()
+  public function test__display_custom_fields__works_with_custom_campaign_monitor_fields_and_only_default_member_fields()
+  {
+    // AJAX request.
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('get', 'get_custom_fields', array('request'));
+
+    $list_id = 'abc123';
+
+    $fields = array(
+      new Campaigner_custom_field(array(
+        'cm_key'  => 'xyz987',
+        'label'   => 'Age',
+        'member_field_id' => 'm_field_id_10'
+      )),
+      new Campaigner_custom_field(array(
+        'cm_key'  => 'klm666',
+        'label'   => 'Occupation',
+        'member_field_id' => 'm_field_id_20'
+      ))
+    );
+
+    // Retrieve the AJAX-supplied list ID.
+    $this->EE->input->expectOnce('get_post', array('list_id'));
+    $this->EE->input->returns('get_post', $list_id, array('list_id'));
+
+    // Retrieve the custom list fields from the API.
+    $this->_connector->expectOnce('get_list_fields', array($list_id));
+    $this->_connector->returns('get_list_fields', $fields);
+
+    $lbl_default_fields = 'Standard Member Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      )
+    );
+
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->_model->expectOnce('get_trigger_fields__default_member');
+    $this->_model->returns('get_trigger_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_trigger_fields__custom_member');
+    $this->_model->returns('get_trigger_fields__custom_member', array());
+
+    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
+    $this->_model->returns('get_trigger_fields__zoo_visitor', array());
+
+    // Load the view.
+    $this->EE->load->expectOnce('view', array(
+      '_custom_fields',
+      array(
+        'custom_fields'         => $fields,
+        'list_id'               => $list_id,
+        'member_fields'         => $default_member_fields,
+        'member_fields_dd_data' => $dd_data,
+      ),
+      TRUE
+    ));
+
+    $this->_subject->display_settings();
+  }
+
+
+  public function test__display_custom_fields__works_with_no_custom_fields()
   {
     // AJAX request.
     $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
@@ -249,7 +383,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->_connector->returns('get_list_fields', $fields);
 
     // Retrieve the member fields. Don't really care about this.
-    $this->_model->returns('get_member_fields', array());
+    $this->_model->expectNever('get_trigger_fields__custom_member');
+    $this->_model->expectNever('get_trigger_fields__default_member');
+    $this->_model->expectNever('get_trigger_fields__zoo_visitor');
 
     // Load the view.
     $this->EE->load->expectOnce('view', array(
@@ -267,7 +403,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test__display_custom_fields__missing_list_id()
+  public function test__display_custom_fields__handles_missing_list_id()
   {
     // AJAX request.
     $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
@@ -282,7 +418,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     // Should never get this far.
     $this->_connector->expectNever('get_list_fields');
-    $this->_model->expectNever('get_member_fields');
+    $this->_model->expectNever('get_trigger_fields__custom_member');
+    $this->_model->expectNever('get_trigger_fields__default_member');
+    $this->_model->expectNever('get_trigger_fields__zoo_visitor');
 
     // Log the error, and display the error view.
     $error_message = 'Oh noes!';
@@ -303,7 +441,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test__display_custom_fields__api_exception()
+  public function test__display_custom_fields__handles_api_exception()
   {
     // AJAX request.
     $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
@@ -324,7 +462,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->_connector->throwOn('get_list_fields', $api_exception);
 
     // Should never get this far.
-    $this->_model->expectNever('get_member_fields');
+    $this->_model->expectNever('get_trigger_fields__custom_member');
+    $this->_model->expectNever('get_trigger_fields__default_member');
+    $this->_model->expectNever('get_trigger_fields__zoo_visitor');
 
     /**
      * NOTE:
@@ -342,7 +482,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test__display_mailing_lists__success()
+  public function test__display_mailing_lists__works_with_default_custom_and_zoo_visitor_member_fields()
   {
     // AJAX request.
     $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
@@ -350,14 +490,54 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
 
     // Dummy values.
-    $lists                  = array();
-    $member_fields          = array();
-    $member_fields_dd_data  = array();
+    $lists = array();
+
+    $lbl_custom_fields  = 'Custom Member Fields';
+    $lbl_default_fields = 'Standard Member Fields';
+    $lbl_zoo_fields     = 'Zoo Visitor Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
+    );
+
+    $custom_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'm_field_id_10',
+        'label' => 'Profile', 'type' => 'textarea')),
+      new Campaigner_trigger_field(array('id' => 'm_field_id_20',
+        'label' => 'Favourite Colour', 'type' => 'text'))
+    );
+
+    $zoo_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'field_id_10',
+        'label' => 'Age', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'field_id_20',
+        'label' => 'Gender', 'type' => 'radio'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      ),
+      $lbl_custom_fields => array(
+        'm_field_id_10' => 'Profile',
+        'm_field_id_20' => 'Favourite Colour'
+      ),
+      $lbl_zoo_fields => array(
+        'field_id_10' => 'Age',
+        'field_id_20' => 'Gender'
+      )
+    );
 
     $view_vars = array(
-      'mailing_lists'         => $lists,
-      'member_fields'         => $member_fields,
-      'member_fields_dd_data' => $member_fields_dd_data,
+      'mailing_lists' => $lists,
+      'member_fields' => array_merge($default_member_fields,
+        $custom_member_fields, $zoo_member_fields),
+
+      'member_fields_dd_data' => $dd_data,
       'settings'              => $this->_settings
     );
 
@@ -366,8 +546,178 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     $this->_connector->returns('get_client_lists', $lists);
 
-    $this->_model->expectOnce('get_member_fields');
-    $this->_model->returns('get_member_fields', $member_fields);
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->EE->lang->returns('line', $lbl_custom_fields,
+      array('lbl_custom_member'));
+
+    $this->EE->lang->returns('line', $lbl_zoo_fields,
+      array('lbl_zoo_visitor'));
+
+    $this->_model->expectOnce('get_trigger_fields__default_member');
+    $this->_model->returns('get_trigger_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_trigger_fields__custom_member');
+    $this->_model->returns('get_trigger_fields__custom_member',
+      $custom_member_fields);
+
+    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
+    $this->_model->returns('get_trigger_fields__zoo_visitor',
+      $zoo_member_fields);
+
+    $this->EE->load->expectOnce('view',
+      array('_mailing_lists', $view_vars, TRUE));
+
+    $this->_subject->display_settings();
+  }
+
+
+  public function test__display_mailing_lists__works_with_no_custom_member_fields()
+  {
+    // AJAX request.
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+
+    $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
+
+    // Dummy values.
+    $lists = array();
+
+    $lbl_default_fields = 'Standard Member Fields';
+    $lbl_zoo_fields     = 'Zoo Visitor Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
+    );
+
+    $zoo_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'field_id_10',
+        'label' => 'Age', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'field_id_20',
+        'label' => 'Gender', 'type' => 'radio'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      ),
+      $lbl_zoo_fields => array(
+        'field_id_10' => 'Age',
+        'field_id_20' => 'Gender'
+      )
+    );
+
+    $view_vars = array(
+      'mailing_lists' => $lists,
+      'member_fields' => array_merge($default_member_fields,
+        $zoo_member_fields),
+
+      'member_fields_dd_data' => $dd_data,
+      'settings'              => $this->_settings
+    );
+
+    $this->_connector->expectOnce('get_client_lists',
+      array($this->_settings->get_client_id()));
+
+    $this->_connector->returns('get_client_lists', $lists);
+
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->EE->lang->returns('line', $lbl_zoo_fields,
+      array('lbl_zoo_visitor'));
+
+    $this->_model->expectOnce('get_trigger_fields__default_member');
+    $this->_model->returns('get_trigger_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_trigger_fields__custom_member');
+    $this->_model->returns('get_trigger_fields__custom_member', array());
+
+    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
+    $this->_model->returns('get_trigger_fields__zoo_visitor',
+      $zoo_member_fields);
+
+    $this->EE->load->expectOnce('view',
+      array('_mailing_lists', $view_vars, TRUE));
+
+    $this->_subject->display_settings();
+  }
+
+
+  public function test__display_mailing_lists__works_with_no_zoo_visitor_member_fields()
+  {
+    // AJAX request.
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+
+    $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
+
+    // Dummy values.
+    $lists = array();
+
+    $lbl_custom_fields  = 'Custom Member Fields';
+    $lbl_default_fields = 'Standard Member Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
+    );
+
+    $custom_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'm_field_id_10',
+        'label' => 'Profile', 'type' => 'textarea')),
+      new Campaigner_trigger_field(array('id' => 'm_field_id_20',
+        'label' => 'Favourite Colour', 'type' => 'text'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      ),
+      $lbl_custom_fields => array(
+        'm_field_id_10' => 'Profile',
+        'm_field_id_20' => 'Favourite Colour'
+      )
+    );
+
+    $view_vars = array(
+      'mailing_lists' => $lists,
+      'member_fields' => array_merge($default_member_fields,
+        $custom_member_fields),
+
+      'member_fields_dd_data' => $dd_data,
+      'settings'              => $this->_settings
+    );
+
+    $this->_connector->expectOnce('get_client_lists',
+      array($this->_settings->get_client_id()));
+
+    $this->_connector->returns('get_client_lists', $lists);
+
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->EE->lang->returns('line', $lbl_custom_fields,
+      array('lbl_custom_member'));
+
+    $this->_model->expectOnce('get_trigger_fields__default_member');
+    $this->_model->returns('get_trigger_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_trigger_fields__custom_member');
+    $this->_model->returns('get_trigger_fields__custom_member',
+      $custom_member_fields);
+
+    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
+    $this->_model->returns('get_trigger_fields__zoo_visitor', array());
 
     $this->EE->load->expectOnce('view',
       array('_mailing_lists', $view_vars, TRUE));
@@ -394,6 +744,10 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       array($this->_settings->get_client_id()));
 
     $this->_connector->throwOn('get_client_lists', $exception);
+
+    $this->_model->expectNever('get_trigger_fields__custom_member');
+    $this->_model->expectNever('get_trigger_fields__default_member');
+    $this->_model->expectNever('get_trigger_fields__zoo_visitor');
 
     $this->_model->expectOnce('log_error', array('*'));
     $this->EE->load->expectOnce('view', array('_error', $view_vars, TRUE));
@@ -542,96 +896,96 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__subscribe_member__extension_hook()
   {
-      // Shortcuts.
-      $extensions = $this->EE->extensions;
-      $model = $this->_model;
+    // Shortcuts.
+    $extensions = $this->EE->extensions;
+    $model = $this->_model;
 
-      // Dummy values.
-      $member_id = 10;
-      $member_subscribe_lists = array(
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'abc123',
-              'list_name' => 'LIST A'
-          )),
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'cde456',
-              'list_name' => 'LIST B'
-          ))
-      );
+    // Dummy values.
+    $member_id = 10;
+    $member_subscribe_lists = array(
+        new Campaigner_mailing_list(array(
+            'list_id'   => 'abc123',
+            'list_name' => 'LIST A'
+        )),
+        new Campaigner_mailing_list(array(
+            'list_id'   => 'cde456',
+            'list_name' => 'LIST B'
+        ))
+    );
 
-      $pre_subscriber = new Campaigner_subscriber(array(
-          'email' => 'me@here.com',
-          'name'  => 'John Doe'
-      ));
+    $pre_subscriber = new Campaigner_subscriber(array(
+        'email' => 'me@here.com',
+        'name'  => 'John Doe'
+    ));
 
-      $post_subscriber = new Campaigner_subscriber(array(
-          'email' => 'you@there.com',
-          'name'  => 'Jane Doe'
-      ));
+    $post_subscriber = new Campaigner_subscriber(array(
+        'email' => 'you@there.com',
+        'name'  => 'Jane Doe'
+    ));
 
-      // Expectations.
-      $extensions->expectCallCount('active_hook', count($member_subscribe_lists), array('campaigner_subscribe_start'));
-      $this->_connector->expectCallCount('add_list_subscriber', count($member_subscribe_lists));
+    // Expectations.
+    $extensions->expectCallCount('active_hook', count($member_subscribe_lists), array('campaigner_subscribe_start'));
+    $this->_connector->expectCallCount('add_list_subscriber', count($member_subscribe_lists));
 
-      $count = 0;
+    $count = 0;
 
-      foreach ($member_subscribe_lists AS $list)
-      {
-          $this->_connector->expectAt($count, 'add_list_subscriber', array($list->get_list_id(), $post_subscriber, FALSE));
-          $count++;
-      }
+    foreach ($member_subscribe_lists AS $list)
+    {
+      $this->_connector->expectAt($count, 'add_list_subscriber', array($list->get_list_id(), $post_subscriber, FALSE));
+      $count++;
+    }
 
-      // Return values.
-      $extensions->returns('active_hook', TRUE, array('campaigner_subscribe_start'));
-      $extensions->returns('call', $post_subscriber, array('campaigner_subscribe_start', $member_id, $pre_subscriber));
-      $extensions->returns('__get', FALSE, array('end_script'));
+    // Return values.
+    $extensions->end_script = FALSE;
+    $extensions->returns('active_hook', TRUE, array('campaigner_subscribe_start'));
+    $extensions->returns('call', $post_subscriber, array('campaigner_subscribe_start', $member_id, $pre_subscriber));
 
-      $model->returns('get_member_subscribe_lists', $member_subscribe_lists);
-      $model->returns('get_member_as_subscriber', $pre_subscriber);
+    $model->returns('get_member_subscribe_lists', $member_subscribe_lists);
+    $model->returns('get_member_as_subscriber', $pre_subscriber);
 
-      // Tests.
-      $this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
+    // Tests.
+    $this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
   }
 
 
   public function test__subscribe_member__extension_hook_end_script()
   {
-      // Shortcuts.
-      $extensions = $this->EE->extensions;
-      $model = $this->_model;
+    // Shortcuts.
+    $extensions = $this->EE->extensions;
+    $model = $this->_model;
 
-      // Dummy values.
-      $member_id = 10;
-      $member_subscribe_lists = array(
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'abc123',
-              'list_name' => 'LIST A'
-          )),
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'cde456',
-              'list_name' => 'LIST B'
-          ))
-      );
+    // Dummy values.
+    $member_id = 10;
+    $member_subscribe_lists = array(
+        new Campaigner_mailing_list(array(
+            'list_id'   => 'abc123',
+            'list_name' => 'LIST A'
+        )),
+        new Campaigner_mailing_list(array(
+            'list_id'   => 'cde456',
+            'list_name' => 'LIST B'
+        ))
+    );
 
-      $subscriber = new Campaigner_subscriber(array(
-          'email' => 'me@here.com',
-          'name'  => 'John Doe'
-      ));
+    $subscriber = new Campaigner_subscriber(array(
+        'email' => 'me@here.com',
+        'name'  => 'John Doe'
+    ));
 
-      // Expectations.
-      $extensions->expectCallCount('active_hook', 1);
-      $this->_connector->expectNever('add_list_subscriber');
+    // Expectations.
+    $extensions->expectCallCount('active_hook', 1);
+    $this->_connector->expectNever('add_list_subscriber');
 
-      // Return values.
-      $extensions->returns('active_hook', TRUE, array('campaigner_subscribe_start'));
-      $extensions->returns('call', $subscriber, array('campaigner_subscribe_start', $member_id, $subscriber));
-      $extensions->returns('__get', TRUE, array('end_script'));
+    // Return values.
+    $extensions->end_script = TRUE;
+    $extensions->returns('active_hook', TRUE, array('campaigner_subscribe_start'));
+    $extensions->returns('call', $subscriber, array('campaigner_subscribe_start', $member_id, $subscriber));
 
-      $model->returns('get_member_subscribe_lists', $member_subscribe_lists);
-      $model->returns('get_member_as_subscriber', $subscriber);
+    $model->returns('get_member_subscribe_lists', $member_subscribe_lists);
+    $model->returns('get_member_as_subscriber', $subscriber);
 
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
+    // Tests.
+    $this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
   }
 
 
