@@ -54,6 +54,11 @@ $lang = array(
 
 'lbl_save_settings'         => 'Save Settings',
 
+// 'Member fields' dropdown option group headings.
+'lbl_custom_member'   => 'Custom Member Fields',
+'lbl_default_member'  => 'Standard Member Fields',
+'lbl_zoo_visitor'     => 'Zoo Visitor Member Fields',
+
 /* --------------------------------------------------------------
  * JAVASCRIPT MESSAGES
  * ------------------------------------------------------------ */
