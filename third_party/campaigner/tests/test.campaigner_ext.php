@@ -9,9 +9,9 @@
  */
 
 require_once PATH_THIRD .'campaigner/ext.campaigner.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector.php';
 require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
 require_once PATH_THIRD .'campaigner/models/campaigner_model.php';
-require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_cm_api_connector.php';
 
 class Test_campaigner_ext extends Testee_unit_test_case {
 
@@ -36,13 +36,16 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   {
     parent::setUp();
 
-    Mock::generate('Campaigner_model', get_class($this) .'_mock_model');
 
-    // Assign the model to the EE object, which is what the 'load->model' does.
+    // Generate the mock model.
+    Mock::generate('Campaigner_model', get_class($this) .'_mock_model');
     $this->EE->campaigner_model = $this->_model = $this->_get_mock('model');
 
-    Mock::generate('Mock_campaigner_cm_api_connector', 'Mock_api_connector');
-    $this->_connector = new Mock_api_connector();
+    // Generate the mock API connector.
+    Mock::generate('Campaigner_cm_api_connector',
+      get_class($this) .'_mock_connector');
+
+    $this->_connector = $this->_get_mock('connector');
 
     $this->_settings = new Campaigner_settings(array(
       'api_key'   => 'API_KEY',
