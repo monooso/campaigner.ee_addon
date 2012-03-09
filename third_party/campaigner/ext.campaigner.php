@@ -13,14 +13,15 @@ require_once PATH_THIRD .'campaigner/classes/campaigner_exception.php';
 
 class Campaigner_ext {
 
+  private $EE;
   private $_connector;
-  private $_ee;
+  private $_model;
 
   public $description;
   public $docs_url;
   public $name;
-  public $settings = array();
-  public $settings_exist = 'y';
+  public $settings;
+  public $settings_exist;
   public $version;
 
 
@@ -38,37 +39,41 @@ class Campaigner_ext {
    */
   public function __construct($settings = array())
   {
-    $this->_ee =& get_instance();
+    $this->EE =& get_instance();
 
     // Load the model.
-    $this->_ee->load->add_package_path(PATH_THIRD .'campaigner/');
-    $this->_ee->load->model('campaigner_model');
+    $this->EE->load->add_package_path(PATH_THIRD .'campaigner/');
+    $this->EE->load->model('campaigner_model');
 
-    // Shortcut.
-    $model = $this->_ee->campaigner_model;
+    $this->_model = $this->EE->campaigner_model;
 
     // Load the language file.
-    $this->_ee->lang->loadfile('campaigner');
+    $this->EE->lang->loadfile('campaigner');
 
     // Set the instance properties.
-    $this->description  = $this->_ee->lang->line('campaigner_extension_description');
-    $this->docs_url     = $model->get_docs_url();
-    $this->name         = $this->_ee->lang->line('campaigner_extension_name');
-    $this->settings     = $settings;
-    $this->version      = $model->get_package_version();
+    $this->description
+      = $this->EE->lang->line('campaigner_extension_description');
+
+    $this->docs_url = $this->_model->get_docs_url();
+    $this->name     = $this->EE->lang->line('campaigner_extension_name');
+
+    $this->settings       = $settings;
+    $this->settings_exist = 'y';
+
+    $this->version  = $this->_model->get_package_version();
 
     // Is the extension installed?
-    if ( ! $model->get_installed_extension_version())
+    if ( ! $this->_model->get_installed_extension_version())
     {
       return;
     }
 
     // Load the settings from the database, and update them with any input data.
-    $this->settings = $model->update_extension_settings_from_input(
-      $model->get_extension_settings());
+    $this->settings = $this->_model->update_extension_settings_from_input(
+      $this->_model->get_extension_settings());
 
     // Retrieve the API connector.
-    $this->_connector = $model->get_api_connector();
+    $this->_connector = $this->_model->get_api_connector();
   }
 
 
@@ -80,7 +85,7 @@ class Campaigner_ext {
    */
   public function activate_extension()
   {
-    $this->_ee->campaigner_model->activate_extension();
+    $this->_model->activate_extension();
   }
 
 
@@ -92,7 +97,7 @@ class Campaigner_ext {
    */
   public function disable_extension()
   {
-    $this->_ee->campaigner_model->disable_extension();
+    $this->_model->disable_extension();
   }
 
 
@@ -120,12 +125,12 @@ class Campaigner_ext {
     if ( ! $this->_connector)
     {
       $response = $this->_display_error(
-        $this->_ee->lang->line('error_no_api_connector')
+        $this->EE->lang->line('error_no_api_connector')
       );
     }
     else
     {
-      switch (strtolower($this->_ee->input->get('request')))
+      switch (strtolower($this->EE->input->get('request')))
       {
         case 'get_clients':
           $response = $this->_display_clients();
@@ -141,13 +146,13 @@ class Campaigner_ext {
 
         default:
           $response = $this->_display_error(
-            $this->_ee->lang->line('error_unknown_ajax_request')
+            $this->EE->lang->line('error_unknown_ajax_request')
           );
           break;
       }
     }
 
-    $this->_ee->output->send_ajax_response($response);
+    $this->EE->output->send_ajax_response($response);
   }
 
 
@@ -161,16 +166,16 @@ class Campaigner_ext {
   {
     try
     {
-      $this->_ee->campaigner_model->save_extension_settings($this->settings);
-      $this->_ee->session->set_flashdata('message_success', $this->_ee->lang->line('msg_settings_saved'));
+      $this->_model->save_extension_settings($this->settings);
+      $this->EE->session->set_flashdata('message_success',
+        $this->EE->lang->line('msg_settings_saved'));
     }
     catch (Campaigner_exception $e)
     {
-      $this->_ee->session->set_flashdata(
-          'message_failure',
-          $this->_ee->lang->line('msg_settings_not_saved')
-            .' (' .$e->getMessage() .')'
-      );
+      $message = $this->EE->lang->line('msg_settings_not_saved')
+        .' (' .$e->getMessage() .')';
+
+      $this->EE->session->set_flashdata('message_failure', $message);
     }
   }
 
@@ -184,16 +189,16 @@ class Campaigner_ext {
   public function settings_form()
   {
     // Load our glamorous assistants.
-    $this->_ee->load->helper('form');
-    $this->_ee->load->library('table');
+    $this->EE->load->helper('form');
+    $this->EE->load->library('table');
 
     // Define the navigation.
     $base_url = BASE .AMP .'C=addons_extensions' .AMP .'M=extension_settings'
       .AMP .'file=campaigner' .AMP .'tab=';
 
-    $this->_ee->cp->set_right_nav(array(
+    $this->EE->cp->set_right_nav(array(
       'nav_settings'  => $base_url .'settings',
-      'nav_support'   => $this->_ee->campaigner_model->get_support_url()
+      'nav_support'   => $this->_model->get_support_url()
     ));
 
     return $this->display_settings();
@@ -210,37 +215,36 @@ class Campaigner_ext {
    */
   public function subscribe_member($member_id, $force_resubscribe = FALSE)
   {
-    $model = $this->_ee->campaigner_model;
-
     // Get out early.
     if ( ! valid_int($member_id, 1))
     {
-      $log_message = $this->_ee->lang->line('error_missing_or_invalid_member_id');
-      $log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
+      $log_message
+        = $this->EE->lang->line('error_missing_or_invalid_member_id')
+          .' ' .__METHOD__ .' (' .__LINE__ .')';
 
-      $model->log_error(new Campaigner_exception($log_message), 3);
+      $this->_model->log_error(new Campaigner_exception($log_message), 3);
       return FALSE;
     }
 
     // Retrieve the mailing lists to which the member should be subscribed.
-    $lists = $model->get_member_subscribe_lists($member_id);
+    $lists = $this->_model->get_member_subscribe_lists($member_id);
 
     foreach ($lists AS $list)
     {
       try
       {
-        if ($subscriber = $model->get_member_as_subscriber(
+        if ($subscriber = $this->_model->get_member_as_subscriber(
           $member_id, $list->get_list_id())
         )
         {
-          if ($this->_ee->extensions->active_hook('campaigner_subscribe_start') === TRUE)
+          if ($this->EE->extensions->active_hook('campaigner_subscribe_start')
+            === TRUE
+          )
           {
-            $subscriber = $this->_ee->extensions->call(
-              'campaigner_subscribe_start',
-              $member_id, $subscriber
-            );
+            $subscriber = $this->EE->extensions->call(
+              'campaigner_subscribe_start', $member_id, $subscriber);
 
-            if ($this->_ee->extensions->end_script === TRUE)
+            if ($this->EE->extensions->end_script === TRUE)
             {
               return FALSE;
             }
@@ -252,8 +256,8 @@ class Campaigner_ext {
       }
       catch (Campaigner_exception $e)
       {
-          $model->log_error($e, 3);
-          return FALSE;
+        $this->_model->log_error($e, 3);
+        return FALSE;
       }
     }
 
@@ -270,29 +274,28 @@ class Campaigner_ext {
    */
   public function unsubscribe_member($member_id)
   {
-    $model = $this->_ee->campaigner_model;
-
     // Get out early.
     if ( ! valid_int($member_id, 1))
     {
-      $log_message = $this->_ee->lang->line('error_missing_or_invalid_member_id');
-      $log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
+      $log_message
+        = $this->EE->lang->line('error_missing_or_invalid_member_id')
+          .' ' .__METHOD__ .' (' .__LINE__ .')';
 
-      $model->log_error(new Campaigner_exception($log_message), 3);
+      $this->_model->log_error(new Campaigner_exception($log_message), 3);
       return FALSE;
     }
 
     // Retrieve the member information.
-    if ( ! $member_data = $model->get_member_by_id($member_id))
+    if ( ! $member_data = $this->_model->get_member_by_id($member_id))
     {
-      $log_message = $this->_ee->lang->line('error_unknown_member');
-      $log_message .= ' ' .__METHOD__ .' (' .__LINE__ .')';
+      $log_message = $this->EE->lang->line('error_unknown_member')
+        .' ' .__METHOD__ .' (' .__LINE__ .')';
 
-      $model->log_error(new Campaigner_exception($log_message), 3);
+      $this->_model->log_error(new Campaigner_exception($log_message), 3);
       return FALSE;
     }
 
-    $lists = $model->get_all_mailing_lists();
+    $lists = $this->_model->get_all_mailing_lists();
     $email = $member_data['email'];
 
     foreach ($lists AS $list)
@@ -306,8 +309,9 @@ class Campaigner_ext {
        * such lists here.
        */
 
-      if ($model->member_should_be_subscribed_to_mailing_list(
-        $member_data, $list))
+      if ($this->_model->member_should_be_subscribed_to_mailing_list(
+        $member_data, $list)
+      )
       {
         continue;
       }
@@ -323,7 +327,7 @@ class Campaigner_ext {
       }
       catch (Campaigner_exception $e)
       {
-        $model->log_error($e, 3);
+        $this->_model->log_error($e, 3);
         return FALSE;
       }
     }
@@ -341,7 +345,7 @@ class Campaigner_ext {
    */
   public function update_extension($installed_version = '')
   {
-    return $this->_ee->campaigner_model->update_extension(
+    return $this->_model->update_extension(
       $installed_version, $this->version);
   }
 
@@ -392,8 +396,8 @@ class Campaigner_ext {
    */
   public function on_cp_members_validate_members()
   {
-    if ($this->_ee->config->item('req_mbr_activation') != 'manual'
-      OR ! ($member_ids = $this->_ee->input->post('toggle')))
+    if ($this->EE->config->item('req_mbr_activation') != 'manual'
+      OR ! ($member_ids = $this->EE->input->post('toggle')))
     {
       return;
     }
@@ -431,7 +435,7 @@ class Campaigner_ext {
      * new member as having been created by BR. Hence this long winded note.
      */
 
-    if ($this->_ee->config->item('req_mbr_activation') != 'none')
+    if ($this->EE->config->item('req_mbr_activation') != 'none')
     {
       return;
     }
@@ -452,7 +456,7 @@ class Campaigner_ext {
    */
   public function on_member_register_validate_members($member_id)
   {
-    if ($this->_ee->config->item('req_mbr_activation') != 'email')
+    if ($this->EE->config->item('req_mbr_activation') != 'email')
     {
       return;
     }
@@ -489,9 +493,7 @@ class Campaigner_ext {
    * @param   array           $member_custom_data     Member custom field data.
    * @return  void
    */
-  public function on_user_edit_end(
-    $member_id,
-    Array $member_data,
+  public function on_user_edit_end($member_id, Array $member_data,
     Array $member_custom_data
   )
   {
@@ -513,7 +515,7 @@ class Campaigner_ext {
    */
   public function on_user_register_end($user, $member_id)
   {
-    if ($this->_ee->config->item('req_mbr_activation') != 'none')
+    if ($this->EE->config->item('req_mbr_activation') != 'none')
     {
       return;
     }
@@ -530,8 +532,7 @@ class Campaigner_ext {
    * @param   int|string    $member_id      The member ID.
    * @return  void
    */
-  public function on_zoo_visitor_cp_register_end(
-    Array $member_data = array(),
+  public function on_zoo_visitor_cp_register_end(Array $member_data = array(),
     $member_id = 0
   )
   {
@@ -547,8 +548,7 @@ class Campaigner_ext {
    * @param   int|string    $member_id      The member ID.
    * @return  void
    */
-  public function on_zoo_visitor_cp_update_end(
-    Array $member_data = array(),
+  public function on_zoo_visitor_cp_update_end(Array $member_data = array(),
     $member_id = 0
   )
   {
@@ -565,8 +565,7 @@ class Campaigner_ext {
    * @param   int|string    $member_id      The member ID.
    * @return  void
    */
-  public function on_zoo_visitor_update_end(
-    Array $member_data = array(),
+  public function on_zoo_visitor_update_end(Array $member_data = array(),
     $member_id = 0
   )
   {
@@ -583,12 +582,11 @@ class Campaigner_ext {
    * @param   int|string    $member_id      The member ID.
    * @return  void
    */
-  public function on_zoo_visitor_register_end(
-    Array $member_data = array(),
+  public function on_zoo_visitor_register_end(Array $member_data = array(),
     $member_id = 0
   )
   {
-    if ($this->_ee->config->item('req_mbr_activation') != 'none')
+    if ($this->EE->config->item('req_mbr_activation') != 'none')
     {
       return;
     }
@@ -615,8 +613,7 @@ class Campaigner_ext {
 
     foreach ($member_fields AS $member_field)
     {
-      $dropdown[$member_field->get_id()] =
-        $member_field->get_label();
+      $dropdown[$member_field->get_id()] = $member_field->get_label();
     }
 
     return $dropdown;
@@ -631,46 +628,39 @@ class Campaigner_ext {
    */
   private function _display_base_settings()
   {
-    // Shortcuts.
-    $cp     = $this->_ee->cp;
-    $lang   = $this->_ee->lang;
-    $model  = $this->_ee->campaigner_model;
+    $lower_package_name = strtolower($this->_model->get_package_name());
 
-    $lower_package_name = strtolower($model->get_package_name());
-
-    // View variables.
     $view_vars = array(
-      'action_url'    => 'C=addons_extensions' .AMP .'M=save_extension_settings',
-      'cp_page_title' => $lang->line('campaigner_extension_name'),
+      'action_url'  => 'C=addons_extensions' .AMP .'M=save_extension_settings',
+      'cp_page_title' => $this->EE->lang->line('campaigner_extension_name'),
       'hidden_fields' => array('file' => $lower_package_name),
-      'settings'      => $this->settings      // Loaded in the constructor.
+      'settings'      => $this->settings
     );
 
-    // Theme URL.
-    $theme_url = $model->get_theme_url();
+    $theme_url = $this->_model->get_theme_url();
 
     // Add the CSS.
-    $cp->add_to_foot('<link media="screen, projection" rel="stylesheet"
-      type="text/css" href="' .$theme_url .'css/cp.css" />');
+    $this->EE->cp->add_to_foot('<link media="screen, projection"'
+      .' rel="stylesheet" type="text/css"'
+      .' href="' .$theme_url .'css/cp.css" />');
 
     // Load the JavaScript library, and set a shortcut.
-    $this->_ee->load->library('javascript');
-    $js = $this->_ee->javascript;
+    $this->EE->load->library('javascript');
 
-    $cp->add_to_foot('<script type="text/javascript" src="' .$theme_url
-      .'js/cp.js"></script>');
+    $this->EE->cp->add_to_foot('<script type="text/javascript" src="'
+      .$theme_url .'js/cp.js"></script>');
 
-    $cp->add_to_foot('<script type="text/javascript" src="' .$theme_url
-      .'js/jquery.activity-indicator.min.js"></script>');
+    $this->EE->cp->add_to_foot('<script type="text/javascript" src="'
+      .$theme_url .'js/jquery.activity-indicator.min.js"></script>');
 
     // JavaScript globals.
-    $js->set_global('campaigner.lang', array(
-      'missingApiKey'     => $lang->line('msg_missing_api_key'),
-      'missingClientId'   => $lang->line('msg_missing_client_id')
+    $this->EE->javascript->set_global('campaigner.lang', array(
+      'missingApiKey'   => $this->EE->lang->line('msg_missing_api_key'),
+      'missingClientId' => $this->EE->lang->line('msg_missing_client_id')
     ));
 
     // Prepare the member fields.
-    $member_fields = $model->get_member_fields();
+    $member_fields = $this->_model->get_member_fields();
     $js_member_fields = array();
 
     foreach ($member_fields AS $member_field)
@@ -678,20 +668,20 @@ class Campaigner_ext {
       $js_member_fields[$member_field->get_id()] = $member_field->to_array();
     }
 
-    $js->set_global('campaigner.memberFields',
-      $js->generate_json($js_member_fields));
+    $this->EE->javascript->set_global('campaigner.memberFields',
+      $this->EE->javascript->generate_json($js_member_fields));
 
-    $js->set_global('campaigner.ajaxUrl',
+    $this->EE->javascript->set_global('campaigner.ajaxUrl',
       str_replace(AMP, '&', BASE)
       .'&C=addons_extensions&M=extension_settings&file='
       .$lower_package_name
     );
 
     // Compile the JavaScript.
-    $js->compile();
+    $this->EE->javascript->compile();
 
     // Load the view.
-    return $this->_ee->load->view('settings', $view_vars, TRUE);
+    return $this->EE->load->view('settings', $view_vars, TRUE);
   }
 
 
@@ -711,11 +701,11 @@ class Campaigner_ext {
       );  
 
       $view_name = '_clients';
-      return $this->_ee->load->view($view_name, $view_vars, TRUE);
+      return $this->EE->load->view($view_name, $view_vars, TRUE);
     }
     catch (Campaigner_exception $e)
     {
-      $this->_ee->campaigner_model->log_error($e);
+      $this->_model->log_error($e);
       return $this->_display_error($e->getMessage(), $e->getCode());
     }
   }
@@ -729,15 +719,13 @@ class Campaigner_ext {
    */
   private function _display_custom_fields()
   {
-    $model = $this->_ee->campaigner_model;
-
     // At the very least, we need a list ID.
-    if ( ! ($list_id = $this->_ee->input->get_post('list_id')))
+    if ( ! ($list_id = $this->EE->input->get_post('list_id')))
     {
-      $error_message = $this->_ee->lang->line(
+      $error_message = $this->EE->lang->line(
         'error_missing_or_invalid_list_id');
 
-      $model->log_error(new Campaigner_exception($error_message));
+      $this->_model->log_error(new Campaigner_exception($error_message));
       return $this->_display_custom_fields_error();
     }
 
@@ -747,7 +735,7 @@ class Campaigner_ext {
     }
     catch (Campaigner_exception $e)
     {
-      $model->log_error($e);
+      $this->_model->log_error($e);
       return $this->_display_custom_fields_error($list_id);
     }
 
@@ -767,7 +755,7 @@ class Campaigner_ext {
     }
 
     // Retrieve the member fields.
-    $member_fields = $model->get_member_fields();
+    $member_fields = $this->_model->get_member_fields();
     $member_fields_dd_data = $this->_build_member_fields_dropdown(
       $member_fields);
 
@@ -780,7 +768,7 @@ class Campaigner_ext {
     );
 
     $view_name = '_custom_fields';
-    return $this->_ee->load->view($view_name, $view_vars, TRUE);
+    return $this->EE->load->view($view_name, $view_vars, TRUE);
   }
 
 
@@ -792,7 +780,7 @@ class Campaigner_ext {
    */
   private function _display_custom_fields_error()
   {
-    return $this->_ee->load->view('_custom_fields_error', array(), TRUE);
+    return $this->EE->load->view('_custom_fields_error', array(), TRUE);
   }
 
 
@@ -807,13 +795,13 @@ class Campaigner_ext {
   private function _display_error($error_message = '', $error_code = '')
   {
     $view_vars = array(
-        'error_code'    => $error_code,
-        'error_message' => $error_message
-          ? $error_message
-          : $this->_ee->lang->line('error_unknown')
+      'error_code'    => $error_code,
+      'error_message' => $error_message
+        ? $error_message
+        : $this->EE->lang->line('error_unknown')
     );
 
-    return $this->_ee->load->view('_error', $view_vars, TRUE);
+    return $this->EE->load->view('_error', $view_vars, TRUE);
   }
 
 
@@ -825,8 +813,6 @@ class Campaigner_ext {
    */
   private function _display_mailing_lists()
   {
-    $model = $this->_ee->campaigner_model;
-
     // Retrieve all the available mailing lists from the API.
     try
     {
@@ -835,7 +821,7 @@ class Campaigner_ext {
     }
     catch (Campaigner_exception $e)
     {
-      $model->log_error($e);
+      $this->_model->log_error($e);
       return $this->_display_error($e->getMessage(), $e->getCode());
     }
 
@@ -857,7 +843,7 @@ class Campaigner_ext {
     }
 
     // Retrieve the member fields.
-    $member_fields = $model->get_member_fields();
+    $member_fields = $this->_model->get_member_fields();
     $member_fields_dd_data = $this->_build_member_fields_dropdown(
       $member_fields);
 
@@ -870,7 +856,7 @@ class Campaigner_ext {
     );
 
     $view_name = '_mailing_lists';
-    return $this->_ee->load->view($view_name, $view_vars, TRUE);
+    return $this->EE->load->view($view_name, $view_vars, TRUE);
   }
 
 
