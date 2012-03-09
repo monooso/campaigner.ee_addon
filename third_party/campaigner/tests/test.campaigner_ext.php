@@ -14,17 +14,17 @@ require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_cm_api_connecto
 require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model.php';
 
 class Test_campaigner_ext extends Testee_unit_test_case {
-    
+
   private $_installed_extension_version;
   private $_package_version;
   private $_settings;
   private $_subject;
-  
-  
+
+
   /* --------------------------------------------------------------
    * PUBLIC METHODS
    * ------------------------------------------------------------ */
-  
+
   /**
    * Runs before each test.
    *
@@ -40,7 +40,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     Mock::generate('Mock_campaigner_cm_api_connector', 'Mock_api_connector');
     $this->_connector = new Mock_api_connector();
-    
+
     /**
      * Dummy return values. Called from subject constructor.
      */
@@ -54,60 +54,60 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->_package_version     = '1.0.0';
 
     $model = $this->_ee->campaigner_model;
-    
+
     $model->setReturnReference('get_api_connector', $this->_connector);
     $model->setReturnReference('get_extension_settings', $this->_settings);
     $model->setReturnReference('update_extension_settings_from_input', $this->_settings);
     $model->setReturnValue('get_installed_extension_version', $this->_installed_version);
     $model->setReturnValue('get_package_version', $this->_package_version);
-    
+
     // Test subject.
     $this->_subject = new Campaigner_ext();
   }
 
-  
-  
+
+
   /* --------------------------------------------------------------
    * TEST METHODS
    * ------------------------------------------------------------ */
-  
+
   public function test_activate_extension__success()
   {
     $this->_ee->campaigner_model->expectOnce('activate_extension');
     $this->_subject->activate_extension();
   }
-  
-  
+
+
   public function test_disable_extension__success()
   {
     $this->_ee->campaigner_model->expectOnce('disable_extension');
     $this->_subject->disable_extension();
   }
-  
-  
+
+
   public function test_save_settings__success()
   {
     $model      = $this->_ee->campaigner_model;
     $session    = $this->_ee->session;
-    
+
     $model->expectOnce('save_extension_settings', array($this->_settings));
     $session->expectOnce('set_flashdata', array('message_success', '*'));
-    
+
     $this->_subject->save_settings();
   }
-  
-  
+
+
   public function test_save_settings__failure()
   {
     $model      = $this->_ee->campaigner_model;
     $session    = $this->_ee->session;
-    
+
     $session->expectOnce('set_flashdata', array('message_failure', '*'));
     $model->throwOn('save_extension_settings', new Campaigner_exception('EXCEPTION'));
     $this->_subject->save_settings();
   }
-  
-  
+
+
   public function test_update_extension__update_required()
   {
     $model = $this->_ee->campaigner_model;
@@ -115,21 +115,21 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $installed_version = '1.1.0';
     $model->expectOnce('update_extension', array($installed_version, $this->_package_version));
     $model->setReturnValue('update_extension', TRUE);
-    
+
     $this->assertIdentical(
       TRUE,
       $this->_subject->update_extension($installed_version)
     );
   }
-  
-  
+
+
   public function test_update_extension__no_update_required()
   {
     $model = $this->_ee->campaigner_model;
-    
+
     $installed_version = '1.1.0';       // Can be anything.
     $model->setReturnValue('update_extension', FALSE);
-    
+
     $this->assertIdentical(
       FALSE,
       $this->_subject->update_extension($installed_version)
@@ -174,9 +174,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
        * required parameters), so we can be confident that the lang::line method was
        * called.
        */
-      
+
       $loader->expectOnce('view', array('_error', $view_vars, TRUE));
-      
+
       // Return values.
       $lang->setReturnValue('line', $error_message, array('error_unknown'));
       $loader->setReturnValue('view', $view_data, array('_error', $view_vars, TRUE));
@@ -184,8 +184,8 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       // Tests.
       $this->_subject->display_error();
   }
-  
-  
+
+
   public function test__display_clients__success()
   {
     // AJAX request.
@@ -199,23 +199,23 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     // Shortcuts.
     $loader = $this->_ee->load;
-    
+
     // Dummy values.
     $clients    = array();
     $view_vars  = array('clients' => $clients, 'settings' => $this->_settings);
-    
+
     // Expectations.
     $this->_connector->expectOnce('get_clients');
     $loader->expectOnce('view', array('_clients', $view_vars, TRUE));
-    
+
     // Return values.
     $this->_connector->setReturnValue('get_clients', $clients);
-    
+
     // Tests.
     $this->_subject->display_settings();
   }
-  
-  
+
+
   public function test__display_clients__exception()
   {
     // AJAX request.
@@ -230,22 +230,22 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     // Shortcuts.
     $loader = $this->_ee->load;
     $model = $this->_ee->campaigner_model;
-    
+
     // Dummy values.
     $exception = new Campaigner_exception('Invalid API key', 100);
     $view_vars = array(
         'error_code'    => $exception->getCode(),
         'error_message' => $exception->getMessage()
     );
-    
+
     // Expectations.
     $this->_connector->expectOnce('get_clients');
     $model->expectOnce('log_error', array('*'));
     $loader->expectOnce('view', array('_error', $view_vars, TRUE));
-    
+
     // Return values.
     $this->_connector->throwOn('get_clients', $exception);
-    
+
     // Tests.
     $this->_subject->display_settings();
   }
@@ -302,7 +302,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       ),
       TRUE
     ));
-  
+
     $this->_subject->display_settings();
   }
 
@@ -344,7 +344,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       ),
       TRUE
     ));
-  
+
     $this->_subject->display_settings();
   }
 
@@ -385,11 +385,11 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     $this->_ee->load->expectOnce('view', array(
       '_custom_fields_error', array(), TRUE));
-  
+
     $this->_subject->display_settings();
   }
-  
-  
+
+
   public function test__display_custom_fields__api_exception()
   {
     // AJAX request.
@@ -448,35 +448,35 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     // Shortcuts.
     $loader = $this->_ee->load;
     $model  = $this->_ee->campaigner_model;
-    
+
     // Dummy values.
     $lists                  = array();
     $member_fields          = array();
     $member_fields_dd_data  = array();
-    
+
     $view_vars = array(
         'mailing_lists'         => $lists,
         'member_fields'         => $member_fields,
         'member_fields_dd_data' => $member_fields_dd_data,
         'settings'              => $this->_settings
     );
-    
+
     // Expectations.
     $this->_connector->expectOnce('get_client_lists',
       array($this->_settings->get_client_id()));
 
     $loader->expectOnce('view', array('_mailing_lists', $view_vars, TRUE));
     $model->expectOnce('get_member_fields');
-    
+
     // Return values.
     $this->_connector->setReturnValue('get_client_lists', $lists);
     $model->setReturnValue('get_member_fields', $member_fields);
-    
+
     // Tests.
     $this->_subject->display_settings();
   }
-  
-  
+
+
   public function test__display_mailing_lists__exception()
   {
     // AJAX request.
@@ -491,17 +491,17 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     // Shortcuts.
     $loader = $this->_ee->load;
     $model = $this->_ee->campaigner_model;
-    
+
     // Dummy values.
     $exception = new Campaigner_exception('Invalid API key', 100);
     $view_vars = array(
         'error_code'    => $exception->getCode(),
         'error_message' => $exception->getMessage()
     );
-    
+
     // Return values.
     $this->_connector->throwOn('get_client_lists', $exception);
-    
+
     // Expectations.
     $this->_connector->expectOnce('get_client_lists',
       array($this->_settings->get_client_id()));
@@ -810,7 +810,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
           $count++;
       }
-      
+
       // Run the tests.
       $this->assertIdentical(TRUE, $this->_subject->unsubscribe_member($member_id));
   }
@@ -912,8 +912,8 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       // Run the tests.
       $this->assertIdentical(FALSE, $this->_subject->unsubscribe_member($member_id));
   }
-      
-  
+
+
   public function test__unsubscribe_member__no_mailing_lists()
   {
       // Shortcuts.
@@ -993,10 +993,11 @@ class Test_campaigner_ext extends Testee_unit_test_case {
        */
 
       $model->expectOnce('log_error', array('*', 3));
-      
+
       // Run the tests.
       $this->assertIdentical(FALSE, $this->_subject->unsubscribe_member($member_id));
   }
+
 
 }
 

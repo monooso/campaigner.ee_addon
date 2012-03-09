@@ -12,19 +12,19 @@ require_once PATH_THIRD .'campaigner/helpers/EI_number_helper.php';
 require_once PATH_THIRD .'campaigner/classes/campaigner_exception.php';
 
 class Campaigner_ext {
-    
+
   private $_connector;
   private $_ee;
-  
+
   public $description;
   public $docs_url;
   public $name;
   public $settings = array();
   public $settings_exist = 'y';
   public $version;
-  
-  
-  
+
+
+
   /* --------------------------------------------------------------
    * PUBLIC METHODS
    * ------------------------------------------------------------ */
@@ -39,24 +39,24 @@ class Campaigner_ext {
   public function __construct($settings = array())
   {
     $this->_ee =& get_instance();
-    
+
     // Load the model.
     $this->_ee->load->add_package_path(PATH_THIRD .'campaigner/');
     $this->_ee->load->model('campaigner_model');
-    
+
     // Shortcut.
     $model = $this->_ee->campaigner_model;
-    
+
     // Load the language file.
     $this->_ee->lang->loadfile('campaigner');
-    
+
     // Set the instance properties.
     $this->description  = $this->_ee->lang->line('campaigner_extension_description');
     $this->docs_url     = $model->get_docs_url();
     $this->name         = $this->_ee->lang->line('campaigner_extension_name');
     $this->settings     = $settings;
     $this->version      = $model->get_package_version();
-    
+
     // Is the extension installed?
     if ( ! $model->get_installed_extension_version())
     {
@@ -70,8 +70,8 @@ class Campaigner_ext {
     // Retrieve the API connector.
     $this->_connector = $model->get_api_connector();
   }
-  
-  
+
+
   /**
    * Activates the extension.
    *
@@ -82,8 +82,8 @@ class Campaigner_ext {
   {
     $this->_ee->campaigner_model->activate_extension();
   }
-  
-  
+
+
   /**
    * Disables the extension.
    *
@@ -111,7 +111,7 @@ class Campaigner_ext {
     {
       return $this->_display_base_settings();
     }
-    
+
     /**
      * Handle AJAX requests. Both types of AJAX request require
      * valid API connector, so we perform that check here.
@@ -134,11 +134,11 @@ class Campaigner_ext {
         case 'get_custom_fields':
           $response = $this->_display_custom_fields();
           break;
-            
+
         case 'get_mailing_lists':
           $response = $this->_display_mailing_lists();
           break;
-        
+
         default:
           $response = $this->_display_error(
             $this->_ee->lang->line('error_unknown_ajax_request')
@@ -149,8 +149,8 @@ class Campaigner_ext {
 
     $this->_ee->output->send_ajax_response($response);
   }
-  
-  
+
+
   /**
    * Saves the extension settings.
    *
@@ -173,8 +173,8 @@ class Campaigner_ext {
       );
     }
   }
-  
-  
+
+
   /**
    * Displays the extension settings form.
    *
@@ -186,19 +186,19 @@ class Campaigner_ext {
     // Load our glamorous assistants.
     $this->_ee->load->helper('form');
     $this->_ee->load->library('table');
-    
+
     // Define the navigation.
     $base_url = BASE .AMP .'C=addons_extensions' .AMP .'M=extension_settings'
       .AMP .'file=campaigner' .AMP .'tab=';
-    
+
     $this->_ee->cp->set_right_nav(array(
       'nav_settings'  => $base_url .'settings',
       'nav_support'   => $this->_ee->campaigner_model->get_support_url()
     ));
-    
+
     return $this->display_settings();
   }
-  
+
 
   /**
    * Subscribes the specified member to the configured mailing lists.
@@ -331,7 +331,7 @@ class Campaigner_ext {
     return TRUE;
   }
 
-  
+
   /**
    * Updates the extension.
    *
@@ -344,9 +344,9 @@ class Campaigner_ext {
     return $this->_ee->campaigner_model->update_extension(
       $installed_version, $this->version);
   }
-  
-  
-  
+
+
+
   /* --------------------------------------------------------------
    * HOOK HANDLERS
    * ------------------------------------------------------------ */
@@ -361,7 +361,7 @@ class Campaigner_ext {
    */
   public function on_cartthrob_create_member(Array $member_data, &$cartthrob)
   {
-    
+
   }
 
 
@@ -379,8 +379,8 @@ class Campaigner_ext {
   {
     $this->subscribe_member($member_id);
   }
-  
-  
+
+
   /**
    * Handles the `cp_members_validate_members` hook. Used when the membership
    * preferences are set to "Manual activation by an administrator"
@@ -397,14 +397,14 @@ class Campaigner_ext {
     {
       return;
     }
-    
+
     foreach ($member_ids AS $member_id)
     {
       $this->subscribe_member($member_id);
     }
   }
-  
-  
+
+
   /**
    * Handles the `member_member_register` hook. Used when the membership
    * preferences are set to "No activation required"
@@ -435,11 +435,11 @@ class Campaigner_ext {
     {
       return;
     }
-    
+
     $this->subscribe_member($member_id);
   }
-  
-  
+
+
   /**
    * Handles the `member_register_validate_members` hook. Used when the
    * membership preferences are set to "Self-activation via email"
@@ -456,7 +456,7 @@ class Campaigner_ext {
     {
       return;
     }
-    
+
     $this->subscribe_member($member_id);
   }
 
@@ -477,8 +477,8 @@ class Campaigner_ext {
   {
     $this->subscribe_member($member_id);
   }
-  
-  
+
+
   /**
    * Handles the `user_edit_end` hook.
    *
@@ -498,8 +498,8 @@ class Campaigner_ext {
     $this->unsubscribe_member($member_id);
     $this->subscribe_member($member_id, TRUE);
   }
-  
-  
+
+
   /**
    * Handles the `user_register_end` hook. Used when registering via the User
    * module's {exp:user:register} form, with the membership preferences set
@@ -517,7 +517,7 @@ class Campaigner_ext {
     {
       return;
     }
-    
+
     $this->subscribe_member($member_id);
   }
 
@@ -601,7 +601,7 @@ class Campaigner_ext {
   /* --------------------------------------------------------------
    * PRIVATE METHODS
    * ------------------------------------------------------------ */
-  
+
   /**
    * Converts an array of member field objects for use in a dropdown menu.
    *
@@ -621,8 +621,8 @@ class Campaigner_ext {
 
     return $dropdown;
   }
-  
-  
+
+
   /**
    * Displays the "base" settings form.
    *
@@ -635,9 +635,9 @@ class Campaigner_ext {
     $cp     = $this->_ee->cp;
     $lang   = $this->_ee->lang;
     $model  = $this->_ee->campaigner_model;
-    
+
     $lower_package_name = strtolower($model->get_package_name());
-    
+
     // View variables.
     $view_vars = array(
       'action_url'    => 'C=addons_extensions' .AMP .'M=save_extension_settings',
@@ -645,10 +645,10 @@ class Campaigner_ext {
       'hidden_fields' => array('file' => $lower_package_name),
       'settings'      => $this->settings      // Loaded in the constructor.
     );
-    
+
     // Theme URL.
     $theme_url = $model->get_theme_url();
-    
+
     // Add the CSS.
     $cp->add_to_foot('<link media="screen, projection" rel="stylesheet"
       type="text/css" href="' .$theme_url .'css/cp.css" />');
@@ -656,7 +656,7 @@ class Campaigner_ext {
     // Load the JavaScript library, and set a shortcut.
     $this->_ee->load->library('javascript');
     $js = $this->_ee->javascript;
-    
+
     $cp->add_to_foot('<script type="text/javascript" src="' .$theme_url
       .'js/cp.js"></script>');
 
@@ -668,16 +668,16 @@ class Campaigner_ext {
       'missingApiKey'     => $lang->line('msg_missing_api_key'),
       'missingClientId'   => $lang->line('msg_missing_client_id')
     ));
-    
+
     // Prepare the member fields.
     $member_fields = $model->get_member_fields();
     $js_member_fields = array();
-    
+
     foreach ($member_fields AS $member_field)
     {
       $js_member_fields[$member_field->get_id()] = $member_field->to_array();
     }
-    
+
     $js->set_global('campaigner.memberFields',
       $js->generate_json($js_member_fields));
 
@@ -689,12 +689,12 @@ class Campaigner_ext {
 
     // Compile the JavaScript.
     $js->compile();
-    
+
     // Load the view.
     return $this->_ee->load->view('settings', $view_vars, TRUE);
   }
-  
-  
+
+
   /**
    * Displays the "clients" settings form fragment.
    *
@@ -740,7 +740,7 @@ class Campaigner_ext {
       $model->log_error(new Campaigner_exception($error_message));
       return $this->_display_custom_fields_error();
     }
-    
+
     try
     {
       $fields = $this->_connector->get_list_fields($list_id);
@@ -778,7 +778,7 @@ class Campaigner_ext {
       'member_fields'         => $member_fields,
       'member_fields_dd_data' => $member_fields_dd_data
     );
-    
+
     $view_name = '_custom_fields';
     return $this->_ee->load->view($view_name, $view_vars, TRUE);
   }
@@ -815,8 +815,8 @@ class Campaigner_ext {
 
     return $this->_ee->load->view('_error', $view_vars, TRUE);
   }
-  
-  
+
+
   /**
    * Displays the "mailing lists" settings form fragment.
    *
@@ -826,7 +826,7 @@ class Campaigner_ext {
   private function _display_mailing_lists()
   {
     $model = $this->_ee->campaigner_model;
-    
+
     // Retrieve all the available mailing lists from the API.
     try
     {
@@ -838,7 +838,7 @@ class Campaigner_ext {
       $model->log_error($e);
       return $this->_display_error($e->getMessage(), $e->getCode());
     }
-        
+
     // Loop through the lists. Note any list settings.
     foreach ($lists AS $list)
     {
@@ -868,12 +868,12 @@ class Campaigner_ext {
       'member_fields_dd_data' => $member_fields_dd_data,
       'settings'              => $this->settings
     );
-    
+
     $view_name = '_mailing_lists';
     return $this->_ee->load->view($view_name, $view_vars, TRUE);
   }
-  
-  
+
+
 }
 
 
