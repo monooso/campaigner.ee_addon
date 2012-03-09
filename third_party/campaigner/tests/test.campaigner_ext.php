@@ -11,11 +11,11 @@
 require_once PATH_THIRD .'campaigner/ext.campaigner.php';
 require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
 require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_cm_api_connector.php';
-require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model.php';
 
 class Test_campaigner_ext extends Testee_unit_test_case {
 
   private $_installed_extension_version;
+  private $_model;
   private $_package_version;
   private $_settings;
   private $_subject;
@@ -35,15 +35,11 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   {
     parent::setUp();
 
-    Mock::generate('Mock_campaigner_model', 'Mock_model');
-    $this->_ee->campaigner_model = new Mock_model();
+    Mock::generate('Campaigner_model', get_class($this) .'_mock_model');
+    $this->EE->campaigner_model = $this->_model = $this->_get_mock('model');
 
     Mock::generate('Mock_campaigner_cm_api_connector', 'Mock_api_connector');
     $this->_connector = new Mock_api_connector();
-
-    /**
-     * Dummy return values. Called from subject constructor.
-     */
 
     $this->_settings = new Campaigner_settings(array(
       'api_key'   => 'API_KEY',
@@ -53,13 +49,19 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->_installed_version   = '1.0.0';
     $this->_package_version     = '1.0.0';
 
-    $model = $this->_ee->campaigner_model;
+    // Called from the constructor.
+    $this->_model->returnsByReference('get_api_connector', $this->_connector);
 
-    $model->setReturnReference('get_api_connector', $this->_connector);
-    $model->setReturnReference('get_extension_settings', $this->_settings);
-    $model->setReturnReference('update_extension_settings_from_input', $this->_settings);
-    $model->setReturnValue('get_installed_extension_version', $this->_installed_version);
-    $model->setReturnValue('get_package_version', $this->_package_version);
+    $this->_model->returnsByReference('get_extension_settings',
+      $this->_settings);
+
+    $this->_model->returnsByReference('update_extension_settings_from_input',
+      $this->_settings);
+
+    $this->_model->returns('get_installed_extension_version',
+      $this->_installed_version);
+
+    $this->_model->returns('get_package_version', $this->_package_version);
 
     // Test subject.
     $this->_subject = new Campaigner_ext();
@@ -73,22 +75,22 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test_activate_extension__success()
   {
-    $this->_ee->campaigner_model->expectOnce('activate_extension');
+    $this->_model->expectOnce('activate_extension');
     $this->_subject->activate_extension();
   }
 
 
   public function test_disable_extension__success()
   {
-    $this->_ee->campaigner_model->expectOnce('disable_extension');
+    $this->_model->expectOnce('disable_extension');
     $this->_subject->disable_extension();
   }
 
 
   public function test_save_settings__success()
   {
-    $model      = $this->_ee->campaigner_model;
-    $session    = $this->_ee->session;
+    $model    = $this->_model;
+    $session  = $this->_ee->session;
 
     $model->expectOnce('save_extension_settings', array($this->_settings));
     $session->expectOnce('set_flashdata', array('message_success', '*'));
@@ -99,8 +101,8 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test_save_settings__failure()
   {
-    $model      = $this->_ee->campaigner_model;
-    $session    = $this->_ee->session;
+    $model    = $this->_model;
+    $session  = $this->_ee->session;
 
     $session->expectOnce('set_flashdata', array('message_failure', '*'));
     $model->throwOn('save_extension_settings', new Campaigner_exception('EXCEPTION'));
@@ -110,14 +112,13 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test_update_extension__update_required()
   {
-    $model = $this->_ee->campaigner_model;
+    $model = $this->_model;
 
     $installed_version = '1.1.0';
     $model->expectOnce('update_extension', array($installed_version, $this->_package_version));
     $model->setReturnValue('update_extension', TRUE);
 
-    $this->assertIdentical(
-      TRUE,
+    $this->assertIdentical(TRUE,
       $this->_subject->update_extension($installed_version)
     );
   }
@@ -125,7 +126,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test_update_extension__no_update_required()
   {
-    $model = $this->_ee->campaigner_model;
+    $model = $this->_model;
 
     $installed_version = '1.1.0';       // Can be anything.
     $model->setReturnValue('update_extension', FALSE);
@@ -140,7 +141,6 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   public function xtest_display_error__success()
   {
     $loader         = $this->_ee->load;
-
     $error_code     = 100;
     $error_message  = 'ERROR';
     $view_data      = 'API error message.';
@@ -229,7 +229,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     // Shortcuts.
     $loader = $this->_ee->load;
-    $model = $this->_ee->campaigner_model;
+    $model = $this->_model;
 
     // Dummy values.
     $exception = new Campaigner_exception('Invalid API key', 100);
@@ -262,7 +262,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       array('request')
     );
 
-    $model    = $this->_ee->campaigner_model;
+    $model    = $this->_model;
     $list_id  = 'abc123';
 
     $fields = array(
@@ -318,7 +318,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       array('request')
     );
 
-    $model    = $this->_ee->campaigner_model;
+    $model    = $this->_model;
     $list_id  = 'abc123';
     $fields   = array();
 
@@ -360,7 +360,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       array('request')
     );
 
-    $model    = $this->_ee->campaigner_model;
+    $model    = $this->_model;
     $fields   = array();
 
     // Retrieve the AJAX-supplied list ID.
@@ -401,7 +401,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       array('request')
     );
 
-    $model = $this->_ee->campaigner_model;
+    $model = $this->_model;
     $list_id  = 'abc123';
     $fields   = array();
 
@@ -447,7 +447,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     // Shortcuts.
     $loader = $this->_ee->load;
-    $model  = $this->_ee->campaigner_model;
+    $model  = $this->_model;
 
     // Dummy values.
     $lists                  = array();
@@ -490,7 +490,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     // Shortcuts.
     $loader = $this->_ee->load;
-    $model = $this->_ee->campaigner_model;
+    $model = $this->_model;
 
     // Dummy values.
     $exception = new Campaigner_exception('Invalid API key', 100);
@@ -516,7 +516,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__subscribe_member__success()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -561,7 +561,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__subscribe_member__member_as_subscriber_returns_false()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -597,7 +597,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__subscribe_member__invalid_member_id()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 0;
@@ -619,7 +619,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__subscribe_member__exception()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -656,7 +656,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   {
       // Shortcuts.
       $extensions = $this->_ee->extensions;
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -710,7 +710,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   {
       // Shortcuts.
       $extensions = $this->_ee->extensions;
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -749,7 +749,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__unsubscribe_member__success()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -818,7 +818,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__unsubscribe_member__should_be_subscribed_to_all_mailing_lists()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -867,7 +867,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   public function test__unsubscribe_member__invalid_member_id()
   {
       // Shortcuts.
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id  = 0;
@@ -891,7 +891,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   public function test__unsubscribe_member__unknown_member()
   {
       // Shortcuts.
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id      = 10;
@@ -917,7 +917,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   public function test__unsubscribe_member__no_mailing_lists()
   {
       // Shortcuts.
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $email          = 'me@here.com';
@@ -944,7 +944,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__unsubscribe_member__exception()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
