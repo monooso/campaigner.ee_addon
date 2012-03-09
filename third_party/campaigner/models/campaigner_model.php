@@ -17,16 +17,6 @@ require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
 require_once PATH_THIRD .'campaigner/classes/campaigner_trigger_field.php';
 require_once PATH_THIRD .'campaigner/helpers/EI_number_helper.php';
 require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper.php';
-
-/**
- * NOTE:
- * The Campaign Monitor API classes don't check whether a global variable has
- * already been declared before (re)declaring it. This causes problems with
- * mocks, when running the full test suite.
- *
- * It's not a high priority, just worthy of a note.
- */
-
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_clients.php';
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_general.php';
 require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_lists.php';
