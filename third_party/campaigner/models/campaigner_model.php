@@ -509,29 +509,28 @@ class Campaigner_model extends CI_Model {
    * and mailing list.
    *
    * @access  public
-   * @param   int|string      $member_id      The member ID.
-   * @param   string          $list_id        The list to which the member is
-   *                                          being subscribed.
+   * @param   Array                     $member_data    Member data array.
+   * @param   Campaigner_mailing_list   $list_id        The target mailing list.
    * @return  Campaigner_subscriber|FALSE
    */
-  public function get_member_as_subscriber($member_id, $list_id)
+  public function get_member_as_subscriber(Array $member_data,
+    Campaigner_mailing_list $list
+  )
   {
-    if ( ! $member_data = $this->get_member_by_id($member_id)
-        OR ! $list = $this->get_mailing_list_by_id($list_id))
-    {
-      return FALSE;
-    }
-
-    if ( ! $this->member_should_be_subscribed_to_mailing_list(
-      $member_data, $list))
+    // At the bare minimum, we need an email and screen name.
+    if ( ! array_key_exists('email', $member_data)
+      OR ! array_key_exists('screen_name', $member_data)
+      OR ! $member_data['email']
+      OR ! $member_data['screen_name']
+    )
     {
       return FALSE;
     }
 
     // Create the basic subscriber object.
     $subscriber = new Campaigner_subscriber(array(
-      'email'     => $member_data['email'],
-      'name'      => utf8_decode($member_data['screen_name'])
+      'email' => $member_data['email'],
+      'name'  => utf8_decode($member_data['screen_name'])
     ));
 
     // Add the custom field data.
@@ -539,17 +538,19 @@ class Campaigner_model extends CI_Model {
     {
       foreach ($custom_fields AS $custom_field)
       {
-        if (array_key_exists($custom_field->get_member_field_id(), $member_data))
+        if ( ! isset($member_data[$custom_field->get_member_field_id()]))
         {
-          $subscriber->add_custom_data(
-            new Campaigner_subscriber_custom_data(array(
-              'key'   => $custom_field->get_cm_key(),
-              'value' => utf8_decode(
-                $member_data[$custom_field->get_member_field_id()]
-              )
-            ))
-          );
+          continue;
         }
+
+        $subscriber->add_custom_data(
+          new Campaigner_subscriber_custom_data(array(
+            'key'   => $custom_field->get_cm_key(),
+            'value' => utf8_decode(
+              $member_data[$custom_field->get_member_field_id()]
+            )
+          ))
+        );
       }
     }
 
@@ -575,22 +576,75 @@ class Campaigner_model extends CI_Model {
       return $member_data;
     }
 
-    // Construct the query.
-    $db_member = $this->EE->db
-      ->select(
-        'members.email, members.group_id, members.location, members.member_id,
-        members.occupation, members.screen_name, members.url, members.username,
-        member_data.*')
-      ->join('member_data', 'member_data.member_id = members.member_id', 'inner')
-      ->get_where('members', array('members.member_id' => $member_id), 1);
+    /**
+     * Retrieve the member fields. We do all of this up-front, because the CI 
+     * Active Record class doesn't handle "overlapping" queries.
+     */
 
-    // Retrieve the member data.
-    if ($db_member->num_rows())
+    $default_fields = $this->get_trigger_fields__default_member();
+    $custom_fields  = $this->get_trigger_fields__custom_member();
+    $zoo_fields     = $this->get_trigger_fields__zoo_visitor();
+
+    // We also need to retrieve the Zoo Visitor 'Member Account' field ID.
+    $sql = 'SELECT'
+      .' CONCAT("field_id_", field_id) AS field_id'
+      .' FROM ' .$this->EE->db->dbprefix('channel_fields')
+      .' WHERE field_type = ?'
+      .' AND site_id = ?'
+      .' LIMIT 1';
+
+    $db_result = $this->EE->db->query($sql,
+      array('zoo_visitor', $this->get_site_id()));
+
+    if ( ! $db_result->num_rows())
     {
-      $member_data = $db_member->row_array();
+      return $member_data;
     }
 
-    return $member_data;
+    $zv_field_id = $db_result->row()->field_id;
+
+    /**
+     * Start building the query.
+     */
+
+    // Default fields.
+    foreach ($default_fields AS $m_field)
+    {
+      $this->EE->db->select('members.' .$m_field->get_id());
+    }
+
+    // Custom fields.
+    if ($custom_fields)
+    {
+      $this->EE->db->join('member_data',
+        'member_data.member_id = members.member_id', 'inner');
+
+      foreach ($custom_fields AS $m_field)
+      {
+        $this->EE->db->select('member_data.' .$m_field->get_id());
+      }
+    }
+
+    // Zoo Visitor fields.
+    if ($zoo_fields)
+    {
+      $this->EE->db->join('channel_data',
+        'channel_data.' .$zv_field_id .' = members.member_id',
+        'inner');
+
+      foreach ($zoo_fields AS $m_field)
+      {
+        $this->EE->db->select('channel_data.' .$m_field->get_id());
+      }
+    }
+
+    // Run the query.
+    $db_result = $this->EE->db->get_where('members',
+      array('members.member_id' => $member_id), 1);
+
+    return $db_result->num_rows()
+      ? $db_result->row_array()
+      : $member_data;
   }
 
 
@@ -615,9 +669,8 @@ class Campaigner_model extends CI_Model {
     foreach ($lists AS $list)
     {
       if ($this->member_should_be_subscribed_to_mailing_list(
-        $member_data,
-        $list
-      ))
+        $member_data, $list)
+      )
       {
         $subscribe_lists[] = $list;
       }
@@ -797,6 +850,11 @@ class Campaigner_model extends CI_Model {
     // ExpressionEngine hard-codes these member fields, so we must do the same.
     return array(
       $group_id_field,
+      new Campaigner_trigger_field(array(
+        'id'      => 'email',
+        'label'   => $this->EE->lang->line('mbr_email'),
+        'type'    => 'text'
+      )),
       new Campaigner_trigger_field(array(
         'id'      => 'location',
         'label'   => $this->EE->lang->line('mbr_location'),
@@ -992,10 +1050,9 @@ class Campaigner_model extends CI_Model {
    * trigger field.
    *
    * @access  public
-   * @param   array                     $member_data    The member data, as
-   *                                                    returned from
-   *                                                    'get_member_by_id'.
-   * @param   Campaigner_mailing_list   $list           The mailing list.
+   * @param   array     $member_data    The member data, as returned from 
+   *                                    'get_member_by_id'.
+   * @param   Campaigner_mailing_list   $list     The mailing list.
    * @return  bool
    */
   public function member_should_be_subscribed_to_mailing_list(

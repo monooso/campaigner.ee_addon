@@ -379,79 +379,24 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test__get_member_by_id__success()
+  /**
+   * @TODO : proper tests for get_member_by_id.
+   */
+
+  public function test__get_member_by_id__returns_empty_array_if_passed_invalid_member_id()
   {
-    // Shortcuts.
-    $db = $this->EE->db;
-
-    // Dummy values.
-    $member_id  = 10;
-    $db_result  = $this->_get_mock('db_query');
-    $db_row     = array(
-        'email'         => 'billy.bob@chickslovehicks.com',
-        'group_id'      => '8',
-        'location'      => 'Hicksville',
-        'member_id'     => '10',
-        'occupation'    => 'Hick',
-        'screen_name'   => 'Billy Bob',
-        'url'           => 'http://example.com/',
-        'username'      => 'Billy Bob',
-        'm_field_id_1'  => 'No',
-        'm_field_id_2'  => 'Yes'
-    );
-
-    // Expectations.
-    $select_fields = 'members.email, members.group_id,
-      members.location, members.member_id, members.occupation,
-      members.screen_name, members.url, members.username, member_data.*';
-
-    $db->expectOnce(
-      'select',
-      array(new EqualWithoutWhitespaceExpectation($select_fields))
-    );
-
-    $db->expectOnce('join', array(
-      'member_data',
-      'member_data.member_id = members.member_id', 'inner')
-    );
-
-    $db->expectOnce(
-      'get_where',
-      array('members', array('members.member_id' => $member_id), 1)
-    );
-
-    $db_result->expectOnce('num_rows');
-    $db_result->expectOnce('row_array');
-
-    // Returns values.
-    $db->setReturnReference('get_where', $db_result);
-    $db_result->setReturnValue('num_rows', 1);
-    $db_result->setReturnValue('row_array', $db_row);
-
-    // Tests.
-    $this->assertIdentical(
-      $db_row,
-      $this->_subject->get_member_by_id($member_id)
-    );
-  }
-
-
-  public function test__get_member_by_id__no_member()
-  {
-    $db_result = $this->_get_mock('db_query');
-    $db_result->expectNever('row_array');
-
-    $this->EE->db->setReturnReference('get_where', $db_result);
-    $db_result->setReturnValue('num_rows', 0);
-
-    $this->assertIdentical(array(), $this->_subject->get_member_by_id(10));
-  }
-
-
-  public function test__get_member_by_id__invalid_member()
-  {
+    $this->EE->db->expectNever('select');
+    $this->EE->db->expectNever('where');
+    $this->EE->db->expectNever('get');
     $this->EE->db->expectNever('get_where');
-    $this->_subject->get_member_by_id(NULL);
+
+    $s = $this->_subject;
+  
+    $this->assertIdentical(array(), $s->get_member_by_id(0));
+    $this->assertIdentical(array(), $s->get_member_by_id('Invalid'));
+    $this->assertIdentical(array(), $s->get_member_by_id(NULL));
+    $this->assertIdentical(array(), $s->get_member_by_id(array()));
+    $this->assertIdentical(array(), $s->get_member_by_id(new StdClass()));
   }
 
 
@@ -701,6 +646,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
           ))
         ),
         'type' => 'select'
+      )),
+      new Campaigner_trigger_field(array(
+        'id'    => 'email',
+        'label' => $dummy_label,
+        'type'  => 'text'
       )),
       new Campaigner_trigger_field(array(
         'id'    => 'location',
@@ -1590,217 +1540,85 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test__get_member_as_subscriber__success()
+  public function test__get_member_as_subscriber__fails_if_member_data_does_not_include_email()
   {
-      // Shortcuts.
-      $db = $this->EE->db;
+    $list = new Campaigner_mailing_list();
 
-      // Dummy values.
-      $list_id    = 'abcdefgh12345678';
-      $member_id  = 20;
-      $name       = 'John Doe';
-      $email      = 'john@doe.com';
-
-      /**
-       * The method calls other methods for most of the heavy lifting.
-       * Don't really want to be writing a massive test covering multiple
-       * methods, so we do the bare minimum.
-       *
-       * For reference, the methods called are:
-       * - get_member_by_id
-       * - get_mailing_list_by_id
-       */
-
-      // get_member_by_id
-      $member_result = $this->_get_mock('db_query');
-      $member_row = array(
-          'email'         => $email,
-          'group_id'      => '8',
-          'location'      => 'Hicksville',
-          'member_id'     => '10',
-          'occupation'    => 'Hick',
-          'screen_name'   => $name,
-          'url'           => 'http://example.com/',
-          'username'      => $name,
-          'm_field_id_1'  => 'Auburn',
-          'm_field_id_10' => 'y'
-      );
-
-      $db->setReturnReferenceAt(0, 'get_where', $member_result);
-      $member_result->setReturnValue('num_rows', 1);
-      $member_result->setReturnValue('row_array', $member_row);
-
-      // get_mailing_list_by_id
-      $list_result = $this->_get_mock('db_query');
-      $fields_data = array();
-
-      for ($count = 1; $count <= 5; $count++)
-      {
-          $fields_data[] = array('member_field_id' => 'm_field_id_' .$count, 'cm_key' => 'cm_key_' .$count);
-      }
-
-      $list_row = array(
-          'custom_fields'     => serialize($fields_data),
-          'list_id'           => $list_id,
-          'site_id'           => '1',
-          'trigger_field'     => 'm_field_id_10',
-          'trigger_value'     => 'y'
-      );
-
-      $db->setReturnReferenceAt(1, 'get_where', $list_result);
-      $list_result->setReturnValue('num_rows', 1);
-      $list_result->setReturnValue('row_array', $list_row);
-
-      // Tests.
-      $subscriber = new Campaigner_subscriber(array(
-          'email'         => $email,
-          'name'          => $name,
-          'custom_data'   => array(
-              new Campaigner_subscriber_custom_data(array(
-                  'key'   => 'cm_key_1',
-                  'value' => 'Auburn'
-              ))
-          )
-      ));
-
-      $this->assertIdentical($subscriber, $this->_subject->get_member_as_subscriber($member_id, $list_id));
+    $member_data = array(
+      'activity'    => 'looking for',
+      'email'       => '',
+      'screen_name' => 'Jimmy Jazz'
+    );
+  
+    $this->assertIdentical(FALSE,
+      $this->_subject->get_member_as_subscriber($member_data, $list));
   }
 
 
-  public function test__get_member_as_subscriber__trigger_does_not_match()
+  public function test__get_member_as_subscriber__fails_if_member_data_does_not_include_name()
   {
-      // Shortcuts.
-      $db = $this->EE->db;
+    $list = new Campaigner_mailing_list();
 
-      // Dummy values.
-      $list_id    = 'abcdefgh12345678';
-      $member_id  = 20;
-      $name       = 'John Doe';
-      $email      = 'john@doe.com';
-
-      // get_member_by_id
-      $member_result = $this->_get_mock('db_query');
-      $member_row = array(
-          'email'         => $email,
-          'group_id'      => '8',
-          'location'      => 'Hicksville',
-          'member_id'     => '10',
-          'occupation'    => 'Hick',
-          'screen_name'   => $name,
-          'url'           => 'http://example.com/',
-          'username'      => $name,
-          'm_field_id_1'  => 'Auburn',
-          'm_field_id_10' => 'n'              // The non-matching trigger.
-      );
-
-      $db->setReturnReferenceAt(0, 'get_where', $member_result);
-      $member_result->setReturnValue('num_rows', 1);
-      $member_result->setReturnValue('row_array', $member_row);
-
-      // get_mailing_list_by_id
-      $list_result = $this->_get_mock('db_query');
-      $fields_data = array();
-
-      for ($count = 1; $count <= 5; $count++)
-      {
-          $fields_data[] = array('member_field_id' => 'm_field_id_' .$count, 'cm_key' => 'cm_key_' .$count);
-      }
-
-      $list_row = array(
-          'custom_fields'     => serialize($fields_data),
-          'list_id'           => $list_id,
-          'site_id'           => '1',
-          'trigger_field'     => 'm_field_id_10',
-          'trigger_value'     => 'y'
-      );
-
-      $db->setReturnReferenceAt(1, 'get_where', $list_result);
-      $list_result->setReturnValue('num_rows', 1);
-      $list_result->setReturnValue('row_array', $list_row);
-
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->get_member_as_subscriber($member_id, $list_id));
+    $member_data = array(
+      'activity'    => 'looking for',
+      'email'       => 'jimmy@jazz.com',
+      'screen_name' => ''
+    );
+  
+    $this->assertIdentical(FALSE,
+      $this->_subject->get_member_as_subscriber($member_data, $list));
   }
 
 
-  public function test__get_member_as_subscriber__unknown_member()
+  public function test__get_member_as_subscriber__works_with_custom_fields()
   {
-      // Shortcuts.
-      $db = $this->EE->db;
+    $list = new Campaigner_mailing_list(array(
+      'list_id'       => '123',
+      'list_name'     => 'Example List',
+      'trigger_field' => 'm_field_id_10',
+      'trigger_value' => 'y'
+    ));
 
-      // Dummy values.
-      $list_id    = 'abcdefgh12345678';
-      $member_id  = 20;
+    $list->add_custom_field(new Campaigner_custom_field(array(
+      'cm_key'          => 'cm_key_12345',
+      'label'           => 'Gender',
+      'member_field_id' => 'm_field_id_10'
+    )));
 
-      // get_member_by_id
-      $member_result = $this->_get_mock('db_query');
+    $list->add_custom_field(new Campaigner_custom_field(array(
+      'cm_key'          => 'cm_key_234567',
+      'label'           => 'Favourite Colour',
+      'member_field_id' => 'm_field_id_20'
+    )));
 
-      $db->setReturnReferenceAt(0, 'get_where', $member_result);
-      $member_result->setReturnValue('num_rows', 0);
+    $list->add_custom_field(new Campaigner_custom_field(array(
+      'cm_key'          => 'cm_key_345678',
+      'label'           => 'Preferred Artist',
+      'member_field_id' => 'field_id_30'
+    )));
 
-      // get_mailing_list_by_id
-      $list_result = $this->_get_mock('db_query');
-      $fields_data = array();
+    // NOTE: the member data does not include m_field_id_10.
+    $member_data = array(
+      'activity'      => 'looking for',
+      'email'         => 'jimmy@jazz.com',
+      'screen_name'   => 'Jimmy Jazz',
+      'm_field_id_20' => 'Green',
+      'field_id_30'   => 'Bob Dylan'
+    );
 
-      for ($count = 1; $count <= 5; $count++)
-      {
-          $fields_data[] = array('member_field_id' => 'm_field_id_' .$count, 'cm_key' => 'cm_key_' .$count);
-      }
+    $expected_result = new Campaigner_subscriber(array(
+      'email' => $member_data['email'],
+      'name'  => $member_data['screen_name']
+    ));
 
-      $list_row = array(
-          'custom_fields'     => serialize($fields_data),
-          'list_id'           => $list_id,
-          'site_id'           => '1',
-          'trigger_field'     => 'm_field_id_10',
-          'trigger_value'     => 'y'
-      );
-
-      $db->setReturnReferenceAt(1, 'get_where', $list_result);
-      $list_result->setReturnValue('num_rows', 1);
-      $list_result->setReturnValue('row_array', $list_row);
-
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->get_member_as_subscriber($member_id, $list_id));
-  }
-
-
-  public function test__get_member_as_subscriber__unknown_list()
-  {
-      // Shortcuts.
-      $db = $this->EE->db;
-
-      // Dummy values.
-      $email      = 'me@here.com';
-      $list_id    = 'abcdefgh12345678';
-      $member_id  = 20;
-      $name       = 'Adam Adamson';
-
-      // get_member_by_id
-      $member_result = $this->_get_mock('db_query');
-      $member_row = array(
-          'email'         => $email,
-          'group_id'      => '8',
-          'location'      => 'Hicksville',
-          'member_id'     => '10',
-          'occupation'    => 'Hick',
-          'screen_name'   => $name,
-          'url'           => 'http://example.com/',
-          'username'      => $name,
-          'm_field_id_1'  => 'Auburn',
-          'm_field_id_10' => 'y'
-      );
-
-      $db->setReturnReferenceAt(0, 'get_where', $member_result);
-      $member_result->setReturnValue('num_rows', 1);
-      $member_result->setReturnValue('row_array', $member_row);
-
-      // get_mailing_list_by_id
-      $list_result = $this->_get_mock('db_query');
-      $db->setReturnReferenceAt(1, 'get_where', $list_result);
-      $list_result->setReturnValue('num_rows', 0);
-
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->get_member_as_subscriber($member_id, $list_id));
+    $expected_result->add_custom_data(new Campaigner_subscriber_custom_data(
+      array('key' => 'cm_key_234567', 'value' => 'Green')));
+  
+    $expected_result->add_custom_data(new Campaigner_subscriber_custom_data(
+      array('key' => 'cm_key_345678', 'value' => 'Bob Dylan')));
+  
+    $this->assertIdentical($expected_result,
+      $this->_subject->get_member_as_subscriber($member_data, $list));
   }
 
 
