@@ -755,6 +755,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
     $fields = array(
       'channel_fields.field_id',
+      'channel_fields.field_label',
       'channel_fields.field_list_items',
       'channel_fields.field_name',
       'channel_fields.field_type'
@@ -790,18 +791,21 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $db_rows = array(
       (object) array(
         'field_id'          => '10',
+        'field_label'       => 'Date of Birth',
         'field_list_items'  => '',
         'field_name'        => 'dob',
         'field_type'        => 'date'
       ),
       (object) array(
         'field_id'          => '20',
+        'field_label'       => 'City',
         'field_list_items'  => '',
         'field_name'        => 'city',
         'field_type'        => 'text'
       ),
       (object) array(
         'field_id'          => '30',
+        'field_label'       => 'Country',
         'field_list_items'  => "Canada\nUSA",
         'field_name'        => 'country',
         'field_type'        => 'select'
@@ -815,16 +819,19 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $expected_result = array(
       new Campaigner_trigger_field(array(
         'id'      => 'field_id_' .$db_rows[0]->field_id,
+        'label'   => $db_rows[0]->field_label,
         'options' => array(),
         'type'    => $db_rows[0]->field_type
       )),
       new Campaigner_trigger_field(array(
         'id'      => 'field_id_' .$db_rows[1]->field_id,
+        'label'   => $db_rows[1]->field_label,
         'options' => array(),
         'type'    => $db_rows[1]->field_type
       )),
       new Campaigner_trigger_field(array(
         'id'      => 'field_id_' .$db_rows[2]->field_id,
+        'label'   => $db_rows[2]->field_label,
         'options' => array(
           new Campaigner_trigger_field_option(array(
             'id' => 'Canada', 'label' => 'Canada')),

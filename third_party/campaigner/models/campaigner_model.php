@@ -843,6 +843,7 @@ class Campaigner_model extends CI_Model {
 
     $query_fields = array(
       'channel_fields.field_id',
+      'channel_fields.field_label',
       'channel_fields.field_list_items',
       'channel_fields.field_name',
       'channel_fields.field_type'
@@ -869,6 +870,7 @@ class Campaigner_model extends CI_Model {
     {
       $field = new Campaigner_trigger_field(array(
         'id'      => 'field_id_' .$db_row->field_id,
+        'label'   => $db_row->field_label,
         'options' => array(),
         'type'    => $db_row->field_type
       ));
