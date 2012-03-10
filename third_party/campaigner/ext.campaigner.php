@@ -660,12 +660,15 @@ class Campaigner_ext {
     ));
 
     // Prepare the member fields.
-    $member_fields = $this->_model->get_member_fields();
     $js_member_fields = array();
+    $member_fields    = $this->_get_member_fields();
 
-    foreach ($member_fields AS $member_field)
+    foreach ($member_fields AS $m_field_group => $m_fields)
     {
-      $js_member_fields[$member_field->get_id()] = $member_field->to_array();
+      foreach ($m_fields AS $m_field)
+      {
+        $js_member_fields[$m_field->get_id()] = $m_field->to_array();
+      }
     }
 
     $this->EE->javascript->set_global('campaigner.memberFields',
