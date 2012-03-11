@@ -751,7 +751,7 @@ class Campaigner_model extends CI_Model {
    */
   public function get_support_url()
   {
-    return 'http://support.experienceinternet.co.uk/discussions/campaigner/';
+    return 'mailto:support@experienceinternet.co.uk?subject=Campaigner Support';
   }
 
 
