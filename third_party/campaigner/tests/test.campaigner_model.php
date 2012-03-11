@@ -506,7 +506,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
   public function test__get_support_url__success()
   {
-    $pattern = '#^http://support.experienceinternet.co.uk/#';
+    $pattern = '#^mailto\:[a-z_\-]+@experienceinternet\.co\.uk#';
     $this->assertPattern($pattern, $this->_subject->get_support_url());
   }
 
