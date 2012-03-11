@@ -110,9 +110,7 @@ class Campaigner_ext {
   public function display_settings()
   {
     // If this isn't an AJAX request, just display the "base" settings form.
-    if ( ! isset($_SERVER['HTTP_X_REQUESTED_WITH'])
-      OR strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest'
-    )
+    if ( ! $this->EE->input->is_ajax_request())
     {
       return $this->_display_base_settings();
     }
@@ -372,8 +370,8 @@ class Campaigner_ext {
    * Handles the `cartthrob_create_member` hook.
    *
    * @access  public
-   * @param   array    $member_data    The member data.
-   * @param   object    $cartthrob    A reference to the CartThrob object.
+   * @param   array     $member_data    The member data.
+   * @param   object    $cartthrob      A reference to the CartThrob object.
    * @return  void
    */
   public function on_cartthrob_create_member(Array $member_data, &$cartthrob)

@@ -143,9 +143,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_clients__success()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
-
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_clients', array('request'));
 
     $clients    = array();
@@ -162,9 +160,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_clients__exception()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
-
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_clients', array('request'));
 
     $exception = new Campaigner_exception('Invalid API key', 100);
@@ -185,8 +181,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_custom_fields__works_with_custom_campaign_monitor_fields_and_default_custom_and_zoo_member_fields()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
     $list_id = 'abc123';
@@ -295,8 +290,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_custom_fields__works_with_custom_campaign_monitor_fields_and_only_default_member_fields()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
     $list_id = 'abc123';
@@ -369,9 +363,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_custom_fields__works_with_no_custom_fields()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
-
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
     $list_id  = 'abc123';
@@ -408,9 +400,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_custom_fields__handles_missing_list_id()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
-
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
     $fields = array();
@@ -446,9 +436,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_custom_fields__handles_api_exception()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
-
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
     $list_id  = 'abc123';
@@ -487,9 +475,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_mailing_lists__works_with_default_custom_and_zoo_visitor_member_fields()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
-
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
 
     // Dummy values.
@@ -579,9 +565,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_mailing_lists__works_with_no_custom_member_fields()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
-
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
 
     // Dummy values.
@@ -655,9 +639,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_mailing_lists__works_with_no_zoo_visitor_member_fields()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
-
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
 
     // Dummy values.
@@ -731,9 +713,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__display_mailing_lists__exception()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
-
+    $this->EE->input->returns('is_ajax_request', TRUE);
     $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
 
     // Dummy values.
