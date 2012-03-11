@@ -9,22 +9,23 @@
  */
 
 require_once PATH_THIRD .'campaigner/ext.campaigner.php';
+require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector.php';
 require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
-require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_cm_api_connector.php';
-require_once PATH_THIRD .'campaigner/tests/mocks/mock.campaigner_model.php';
+require_once PATH_THIRD .'campaigner/models/campaigner_model.php';
 
 class Test_campaigner_ext extends Testee_unit_test_case {
-    
+
   private $_installed_extension_version;
+  private $_model;
   private $_package_version;
   private $_settings;
   private $_subject;
-  
-  
+
+
   /* --------------------------------------------------------------
    * PUBLIC METHODS
    * ------------------------------------------------------------ */
-  
+
   /**
    * Runs before each test.
    *
@@ -35,15 +36,16 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   {
     parent::setUp();
 
-    Mock::generate('Mock_campaigner_model', 'Mock_model');
-    $this->_ee->campaigner_model = new Mock_model();
 
-    Mock::generate('Mock_campaigner_cm_api_connector', 'Mock_api_connector');
-    $this->_connector = new Mock_api_connector();
-    
-    /**
-     * Dummy return values. Called from subject constructor.
-     */
+    // Generate the mock model.
+    Mock::generate('Campaigner_model', get_class($this) .'_mock_model');
+    $this->EE->campaigner_model = $this->_model = $this->_get_mock('model');
+
+    // Generate the mock API connector.
+    Mock::generate('Campaigner_cm_api_connector',
+      get_class($this) .'_mock_connector');
+
+    $this->_connector = $this->_get_mock('connector');
 
     $this->_settings = new Campaigner_settings(array(
       'api_key'   => 'API_KEY',
@@ -53,217 +55,136 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->_installed_version   = '1.0.0';
     $this->_package_version     = '1.0.0';
 
-    $model = $this->_ee->campaigner_model;
-    
-    $model->setReturnReference('get_api_connector', $this->_connector);
-    $model->setReturnReference('get_extension_settings', $this->_settings);
-    $model->setReturnReference('update_extension_settings_from_input', $this->_settings);
-    $model->setReturnValue('get_installed_extension_version', $this->_installed_version);
-    $model->setReturnValue('get_package_version', $this->_package_version);
-    
+    // Called from the constructor.
+    $this->_model->returnsByReference('get_api_connector', $this->_connector);
+
+    $this->_model->returnsByReference('get_extension_settings',
+      $this->_settings);
+
+    $this->_model->returnsByReference('update_extension_settings_from_input',
+      $this->_settings);
+
+    $this->_model->returns('get_installed_extension_version',
+      $this->_installed_version);
+
+    $this->_model->returns('get_package_version', $this->_package_version);
+
     // Test subject.
     $this->_subject = new Campaigner_ext();
   }
 
-  
-  
+
+
   /* --------------------------------------------------------------
    * TEST METHODS
    * ------------------------------------------------------------ */
-  
+
   public function test_activate_extension__success()
   {
-    $this->_ee->campaigner_model->expectOnce('activate_extension');
+    $this->_model->expectOnce('activate_extension');
     $this->_subject->activate_extension();
   }
-  
-  
+
+
   public function test_disable_extension__success()
   {
-    $this->_ee->campaigner_model->expectOnce('disable_extension');
+    $this->_model->expectOnce('disable_extension');
     $this->_subject->disable_extension();
   }
-  
-  
+
+
   public function test_save_settings__success()
   {
-    $model      = $this->_ee->campaigner_model;
-    $session    = $this->_ee->session;
-    
-    $model->expectOnce('save_extension_settings', array($this->_settings));
-    $session->expectOnce('set_flashdata', array('message_success', '*'));
-    
+    $this->_model->expectOnce('save_extension_settings',
+      array($this->_settings));
+
+    $this->EE->session->expectOnce('set_flashdata',
+      array('message_success', '*'));
+
     $this->_subject->save_settings();
   }
-  
-  
+
+
   public function test_save_settings__failure()
   {
-    $model      = $this->_ee->campaigner_model;
-    $session    = $this->_ee->session;
-    
-    $session->expectOnce('set_flashdata', array('message_failure', '*'));
-    $model->throwOn('save_extension_settings', new Campaigner_exception('EXCEPTION'));
+    $this->EE->session->expectOnce('set_flashdata',
+      array('message_failure', '*'));
+
+    $this->_model->throwOn('save_extension_settings',
+      new Campaigner_exception('EXCEPTION'));
+
     $this->_subject->save_settings();
   }
-  
-  
+
+
   public function test_update_extension__update_required()
   {
-    $model = $this->_ee->campaigner_model;
-
     $installed_version = '1.1.0';
-    $model->expectOnce('update_extension', array($installed_version, $this->_package_version));
-    $model->setReturnValue('update_extension', TRUE);
-    
-    $this->assertIdentical(
-      TRUE,
-      $this->_subject->update_extension($installed_version)
-    );
+
+    $this->_model->expectOnce('update_extension',
+      array($installed_version, $this->_package_version));
+
+    $this->_model->returns('update_extension', TRUE);
+
+    $this->assertIdentical(TRUE,
+      $this->_subject->update_extension($installed_version));
   }
-  
-  
+
+
   public function test_update_extension__no_update_required()
   {
-    $model = $this->_ee->campaigner_model;
-    
     $installed_version = '1.1.0';       // Can be anything.
-    $model->setReturnValue('update_extension', FALSE);
-    
-    $this->assertIdentical(
-      FALSE,
-      $this->_subject->update_extension($installed_version)
-    );
+    $this->_model->returns('update_extension', FALSE);
+
+    $this->assertIdentical(FALSE,
+      $this->_subject->update_extension($installed_version));
   }
 
 
-  public function xtest_display_error__success()
-  {
-    $loader         = $this->_ee->load;
-
-    $error_code     = 100;
-    $error_message  = 'ERROR';
-    $view_data      = 'API error message.';
-    $view_vars      = array('error_code' => $error_code, 'error_message' => $error_message);
-
-    $loader->expectOnce('view', array('_error', $view_vars, TRUE));
-    $loader->setReturnValue('view', $view_data, array('_error', $view_vars, TRUE));
-
-    $this->_subject->display_error($error_message, $error_code);
-  }
-
-
-  public function xtest_display_error__unknown_error()
-  {
-      // Shortcuts.
-      $lang   = $this->_ee->lang;
-      $loader = $this->_ee->load;
-
-      // Dummy values.
-      $error_message  = 'ERROR';
-      $view_data      = 'API error message.';
-      $view_vars      = array('error_code' => '', 'error_message' => $error_message);
-
-      /**
-       * Expectations.
-       *
-       * NOTE:
-       * The lang::line method is called in the constructor, which scuppers attempts to
-       * set the expected call count here. Probably a glaring "bad design" signal, but
-       * tough titties. Instead we are more explicit with the return value (setting the
-       * required parameters), so we can be confident that the lang::line method was
-       * called.
-       */
-      
-      $loader->expectOnce('view', array('_error', $view_vars, TRUE));
-      
-      // Return values.
-      $lang->setReturnValue('line', $error_message, array('error_unknown'));
-      $loader->setReturnValue('view', $view_data, array('_error', $view_vars, TRUE));
-
-      // Tests.
-      $this->_subject->display_error();
-  }
-  
-  
   public function test__display_clients__success()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_clients', array('request'));
 
-    $this->_ee->input->setReturnValue(
-      'get',
-      'get_clients',
-      array('request')
-    );
-
-    // Shortcuts.
-    $loader = $this->_ee->load;
-    
-    // Dummy values.
     $clients    = array();
     $view_vars  = array('clients' => $clients, 'settings' => $this->_settings);
-    
-    // Expectations.
+
     $this->_connector->expectOnce('get_clients');
-    $loader->expectOnce('view', array('_clients', $view_vars, TRUE));
-    
-    // Return values.
-    $this->_connector->setReturnValue('get_clients', $clients);
-    
-    // Tests.
+    $this->_connector->returns('get_clients', $clients);
+
+    $this->EE->load->expectOnce('view', array('_clients', $view_vars, TRUE));
+
     $this->_subject->display_settings();
   }
-  
-  
+
+
   public function test__display_clients__exception()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_clients', array('request'));
 
-    $this->_ee->input->setReturnValue(
-      'get',
-      'get_clients',
-      array('request')
-    );
-
-    // Shortcuts.
-    $loader = $this->_ee->load;
-    $model = $this->_ee->campaigner_model;
-    
-    // Dummy values.
     $exception = new Campaigner_exception('Invalid API key', 100);
     $view_vars = array(
         'error_code'    => $exception->getCode(),
         'error_message' => $exception->getMessage()
     );
-    
-    // Expectations.
+
     $this->_connector->expectOnce('get_clients');
-    $model->expectOnce('log_error', array('*'));
-    $loader->expectOnce('view', array('_error', $view_vars, TRUE));
-    
-    // Return values.
     $this->_connector->throwOn('get_clients', $exception);
-    
-    // Tests.
+
+    $this->_model->expectOnce('log_error', array('*'));
+    $this->EE->load->expectOnce('view', array('_error', $view_vars, TRUE));
+
     $this->_subject->display_settings();
   }
 
 
-  public function test__display_custom_fields__has_custom_fields()
+  public function test__display_custom_fields__works_with_custom_campaign_monitor_fields_and_default_custom_and_zoo_member_fields()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
-    $this->_ee->input->setReturnValue(
-      'get',
-      'get_custom_fields',
-      array('request')
-    );
-
-    $model    = $this->_ee->campaigner_model;
-    $list_id  = 'abc123';
+    $list_id = 'abc123';
 
     $fields = array(
       new Campaigner_custom_field(array(
@@ -279,62 +200,190 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     );
 
     // Retrieve the AJAX-supplied list ID.
-    $this->_ee->input->expectOnce('get_post', array('list_id'));
-    $this->_ee->input->setReturnValue('get_post', $list_id, array('list_id'));
+    $this->EE->input->expectOnce('get_post', array('list_id'));
+    $this->EE->input->returns('get_post', $list_id, array('list_id'));
 
     // Retrieve the custom list fields from the API.
     $this->_connector->expectOnce('get_list_fields', array($list_id));
-    $this->_connector->setReturnValue('get_list_fields', $fields);
+    $this->_connector->returns('get_list_fields', $fields);
 
     // @todo Test restoration of saved custom field settings.
 
-    // Retrieve the member fields. Don't really care about this.
-    $model->setReturnValue('get_member_fields', array());
+    $lbl_custom_fields  = 'Custom Member Fields';
+    $lbl_default_fields = 'Standard Member Fields';
+    $lbl_zoo_fields     = 'Zoo Visitor Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
+    );
+
+    $custom_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'm_field_id_10',
+        'label' => 'Profile', 'type' => 'textarea')),
+      new Campaigner_trigger_field(array('id' => 'm_field_id_20',
+        'label' => 'Favourite Colour', 'type' => 'text'))
+    );
+
+    $zoo_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'field_id_10',
+        'label' => 'Age', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'field_id_20',
+        'label' => 'Gender', 'type' => 'radio'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      ),
+      $lbl_custom_fields => array(
+        'm_field_id_10' => 'Profile',
+        'm_field_id_20' => 'Favourite Colour'
+      ),
+      $lbl_zoo_fields => array(
+        'field_id_10' => 'Age',
+        'field_id_20' => 'Gender'
+      )
+    );
+
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->EE->lang->returns('line', $lbl_custom_fields,
+      array('lbl_custom_member'));
+
+    $this->EE->lang->returns('line', $lbl_zoo_fields,
+      array('lbl_zoo_visitor'));
+
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member',
+      $custom_member_fields);
+
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor',
+      $zoo_member_fields);
 
     // Load the view.
-    $this->_ee->load->expectOnce('view', array(
+    $this->EE->load->expectOnce('view', array(
       '_custom_fields',
       array(
         'custom_fields' => $fields,
         'list_id'       => $list_id,
-        'member_fields' => array(),
-        'member_fields_dd_data' => array()
+        'member_fields' => array_merge($default_member_fields,
+          $custom_member_fields, $zoo_member_fields),
+
+        'member_fields_dd_data' => $dd_data,
       ),
       TRUE
     ));
-  
+
     $this->_subject->display_settings();
   }
 
 
-  public function test__display_custom_fields__no_custom_fields()
+  public function test__display_custom_fields__works_with_custom_campaign_monitor_fields_and_only_default_member_fields()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
-    $this->_ee->input->setReturnValue(
-      'get',
-      'get_custom_fields',
-      array('request')
+    $list_id = 'abc123';
+
+    $fields = array(
+      new Campaigner_custom_field(array(
+        'cm_key'  => 'xyz987',
+        'label'   => 'Age',
+        'member_field_id' => 'm_field_id_10'
+      )),
+      new Campaigner_custom_field(array(
+        'cm_key'  => 'klm666',
+        'label'   => 'Occupation',
+        'member_field_id' => 'm_field_id_20'
+      ))
     );
 
-    $model    = $this->_ee->campaigner_model;
+    // Retrieve the AJAX-supplied list ID.
+    $this->EE->input->expectOnce('get_post', array('list_id'));
+    $this->EE->input->returns('get_post', $list_id, array('list_id'));
+
+    // Retrieve the custom list fields from the API.
+    $this->_connector->expectOnce('get_list_fields', array($list_id));
+    $this->_connector->returns('get_list_fields', $fields);
+
+    $lbl_default_fields = 'Standard Member Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      )
+    );
+
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member', array());
+
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor', array());
+
+    // Load the view.
+    $this->EE->load->expectOnce('view', array(
+      '_custom_fields',
+      array(
+        'custom_fields'         => $fields,
+        'list_id'               => $list_id,
+        'member_fields'         => $default_member_fields,
+        'member_fields_dd_data' => $dd_data,
+      ),
+      TRUE
+    ));
+
+    $this->_subject->display_settings();
+  }
+
+
+  public function test__display_custom_fields__works_with_no_custom_fields()
+  {
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_custom_fields', array('request'));
+
     $list_id  = 'abc123';
     $fields   = array();
 
     // Retrieve the AJAX-supplied list ID.
-    $this->_ee->input->expectOnce('get_post', array('list_id'));
-    $this->_ee->input->setReturnValue('get_post', $list_id, array('list_id'));
+    $this->EE->input->expectOnce('get_post', array('list_id'));
+    $this->EE->input->returns('get_post', $list_id, array('list_id'));
 
     // Retrieve the custom list fields from the API.
     $this->_connector->expectOnce('get_list_fields', array($list_id));
-    $this->_connector->setReturnValue('get_list_fields', $fields);
+    $this->_connector->returns('get_list_fields', $fields);
 
     // Retrieve the member fields. Don't really care about this.
-    $model->setReturnValue('get_member_fields', array());
+    $this->_model->expectNever('get_member_fields__custom_member');
+    $this->_model->expectNever('get_member_fields__default_member');
+    $this->_model->expectNever('get_member_fields__zoo_visitor');
 
     // Load the view.
-    $this->_ee->load->expectOnce('view', array(
+    $this->EE->load->expectOnce('view', array(
       '_custom_fields',
       array(
         'custom_fields' => $fields,
@@ -344,36 +393,31 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       ),
       TRUE
     ));
-  
+
     $this->_subject->display_settings();
   }
 
 
-  public function test__display_custom_fields__missing_list_id()
+  public function test__display_custom_fields__handles_missing_list_id()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
-    $this->_ee->input->setReturnValue(
-      'get',
-      'get_custom_fields',
-      array('request')
-    );
-
-    $model    = $this->_ee->campaigner_model;
-    $fields   = array();
+    $fields = array();
 
     // Retrieve the AJAX-supplied list ID.
-    $this->_ee->input->expectOnce('get_post', array('list_id'));
-    $this->_ee->input->setReturnValue('get_post', FALSE, array('list_id'));
+    $this->EE->input->expectOnce('get_post', array('list_id'));
+    $this->EE->input->returns('get_post', FALSE, array('list_id'));
 
     // Should never get this far.
     $this->_connector->expectNever('get_list_fields');
-    $model->expectNever('get_member_fields');
+    $this->_model->expectNever('get_member_fields__custom_member');
+    $this->_model->expectNever('get_member_fields__default_member');
+    $this->_model->expectNever('get_member_fields__zoo_visitor');
 
     // Log the error, and display the error view.
     $error_message = 'Oh noes!';
-    $this->_ee->lang->setReturnValue('line', $error_message);
+    $this->EE->lang->returns('line', $error_message);
 
     /**
      * NOTE:
@@ -381,33 +425,26 @@ class Test_campaigner_ext extends Testee_unit_test_case {
      * due to the exception being created in a different file.
      */
 
-    $model->expectOnce('log_error');
+    $this->_model->expectOnce('log_error');
 
-    $this->_ee->load->expectOnce('view', array(
-      '_custom_fields_error', array(), TRUE));
-  
+    $this->EE->load->expectOnce('view',
+      array('_custom_fields_error', array(), TRUE));
+
     $this->_subject->display_settings();
   }
-  
-  
-  public function test__display_custom_fields__api_exception()
+
+
+  public function test__display_custom_fields__handles_api_exception()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_custom_fields', array('request'));
 
-    $this->_ee->input->setReturnValue(
-      'get',
-      'get_custom_fields',
-      array('request')
-    );
-
-    $model = $this->_ee->campaigner_model;
     $list_id  = 'abc123';
     $fields   = array();
 
     // Retrieve the AJAX-supplied list ID.
-    $this->_ee->input->expectOnce('get_post', array('list_id'));
-    $this->_ee->input->setReturnValue('get_post', $list_id, array('list_id'));
+    $this->EE->input->expectOnce('get_post', array('list_id'));
+    $this->EE->input->returns('get_post', $list_id, array('list_id'));
 
     // Retrieve the custom list fields from the API.
     $api_exception = new Campaigner_exception('Oh noes!', 666);
@@ -416,7 +453,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->_connector->throwOn('get_list_fields', $api_exception);
 
     // Should never get this far.
-    $model->expectNever('get_member_fields');
+    $this->_model->expectNever('get_member_fields__custom_member');
+    $this->_model->expectNever('get_member_fields__default_member');
+    $this->_model->expectNever('get_member_fields__zoo_visitor');
 
     /**
      * NOTE:
@@ -425,331 +464,495 @@ class Test_campaigner_ext extends Testee_unit_test_case {
      * Nice.
      */
 
-    $model->expectOnce('log_error');
+    $this->_model->expectOnce('log_error');
 
-    $this->_ee->load->expectOnce('view', array(
-      '_custom_fields_error', array(), TRUE));
+    $this->EE->load->expectOnce('view',
+      array('_custom_fields_error', array(), TRUE));
 
     $this->_subject->display_settings();
   }
 
 
-  public function test__display_mailing_lists__success()
+  public function test__display_mailing_lists__works_with_default_custom_and_zoo_visitor_member_fields()
   {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
 
-    $this->_ee->input->setReturnValue(
-      'get',
-      'get_mailing_lists',
-      array('request')
-    );
-
-    // Shortcuts.
-    $loader = $this->_ee->load;
-    $model  = $this->_ee->campaigner_model;
-    
     // Dummy values.
-    $lists                  = array();
-    $member_fields          = array();
-    $member_fields_dd_data  = array();
-    
-    $view_vars = array(
-        'mailing_lists'         => $lists,
-        'member_fields'         => $member_fields,
-        'member_fields_dd_data' => $member_fields_dd_data,
-        'settings'              => $this->_settings
+    $lists = array();
+
+    $lbl_custom_fields  = 'Custom Member Fields';
+    $lbl_default_fields = 'Standard Member Fields';
+    $lbl_zoo_fields     = 'Zoo Visitor Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
     );
-    
-    // Expectations.
+
+    $custom_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'm_field_id_10',
+        'label' => 'Profile', 'type' => 'textarea')),
+      new Campaigner_trigger_field(array('id' => 'm_field_id_20',
+        'label' => 'Favourite Colour', 'type' => 'text'))
+    );
+
+    $zoo_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'field_id_10',
+        'label' => 'Age', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'field_id_20',
+        'label' => 'Gender', 'type' => 'radio'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      ),
+      $lbl_custom_fields => array(
+        'm_field_id_10' => 'Profile',
+        'm_field_id_20' => 'Favourite Colour'
+      ),
+      $lbl_zoo_fields => array(
+        'field_id_10' => 'Age',
+        'field_id_20' => 'Gender'
+      )
+    );
+
+    $view_vars = array(
+      'mailing_lists' => $lists,
+      'member_fields' => array_merge($default_member_fields,
+        $custom_member_fields, $zoo_member_fields),
+
+      'member_fields_dd_data' => $dd_data,
+      'settings'              => $this->_settings
+    );
+
     $this->_connector->expectOnce('get_client_lists',
       array($this->_settings->get_client_id()));
 
-    $loader->expectOnce('view', array('_mailing_lists', $view_vars, TRUE));
-    $model->expectOnce('get_member_fields');
-    
-    // Return values.
-    $this->_connector->setReturnValue('get_client_lists', $lists);
-    $model->setReturnValue('get_member_fields', $member_fields);
-    
-    // Tests.
+    $this->_connector->returns('get_client_lists', $lists);
+
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->EE->lang->returns('line', $lbl_custom_fields,
+      array('lbl_custom_member'));
+
+    $this->EE->lang->returns('line', $lbl_zoo_fields,
+      array('lbl_zoo_visitor'));
+
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member',
+      $custom_member_fields);
+
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor',
+      $zoo_member_fields);
+
+    $this->EE->load->expectOnce('view',
+      array('_mailing_lists', $view_vars, TRUE));
+
     $this->_subject->display_settings();
   }
-  
-  
-  public function test__display_mailing_lists__exception()
-  {
-    // AJAX request.
-    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'xmlhttprequest';
 
-    $this->_ee->input->setReturnValue(
-      'get',
-      'get_mailing_lists',
-      array('request')
+
+  public function test__display_mailing_lists__works_with_no_custom_member_fields()
+  {
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
+
+    // Dummy values.
+    $lists = array();
+
+    $lbl_default_fields = 'Standard Member Fields';
+    $lbl_zoo_fields     = 'Zoo Visitor Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
     );
 
-    // Shortcuts.
-    $loader = $this->_ee->load;
-    $model = $this->_ee->campaigner_model;
-    
+    $zoo_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'field_id_10',
+        'label' => 'Age', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'field_id_20',
+        'label' => 'Gender', 'type' => 'radio'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      ),
+      $lbl_zoo_fields => array(
+        'field_id_10' => 'Age',
+        'field_id_20' => 'Gender'
+      )
+    );
+
+    $view_vars = array(
+      'mailing_lists' => $lists,
+      'member_fields' => array_merge($default_member_fields,
+        $zoo_member_fields),
+
+      'member_fields_dd_data' => $dd_data,
+      'settings'              => $this->_settings
+    );
+
+    $this->_connector->expectOnce('get_client_lists',
+      array($this->_settings->get_client_id()));
+
+    $this->_connector->returns('get_client_lists', $lists);
+
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->EE->lang->returns('line', $lbl_zoo_fields,
+      array('lbl_zoo_visitor'));
+
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member', array());
+
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor',
+      $zoo_member_fields);
+
+    $this->EE->load->expectOnce('view',
+      array('_mailing_lists', $view_vars, TRUE));
+
+    $this->_subject->display_settings();
+  }
+
+
+  public function test__display_mailing_lists__works_with_no_zoo_visitor_member_fields()
+  {
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
+
+    // Dummy values.
+    $lists = array();
+
+    $lbl_custom_fields  = 'Custom Member Fields';
+    $lbl_default_fields = 'Standard Member Fields';
+
+    $default_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'screen_name',
+        'label' => 'Screen Name', 'type' => 'text')),
+      new Campaigner_trigger_field(array('id' => 'location',
+        'label' => 'Location', 'type' => 'text'))
+    );
+
+    $custom_member_fields = array(
+      new Campaigner_trigger_field(array('id' => 'm_field_id_10',
+        'label' => 'Profile', 'type' => 'textarea')),
+      new Campaigner_trigger_field(array('id' => 'm_field_id_20',
+        'label' => 'Favourite Colour', 'type' => 'text'))
+    );
+
+    $dd_data = array(
+      $lbl_default_fields => array(
+        'screen_name' => 'Screen Name',
+        'location'    => 'Location'
+      ),
+      $lbl_custom_fields => array(
+        'm_field_id_10' => 'Profile',
+        'm_field_id_20' => 'Favourite Colour'
+      )
+    );
+
+    $view_vars = array(
+      'mailing_lists' => $lists,
+      'member_fields' => array_merge($default_member_fields,
+        $custom_member_fields),
+
+      'member_fields_dd_data' => $dd_data,
+      'settings'              => $this->_settings
+    );
+
+    $this->_connector->expectOnce('get_client_lists',
+      array($this->_settings->get_client_id()));
+
+    $this->_connector->returns('get_client_lists', $lists);
+
+    $this->EE->lang->returns('line', $lbl_default_fields,
+      array('lbl_default_member'));
+
+    $this->EE->lang->returns('line', $lbl_custom_fields,
+      array('lbl_custom_member'));
+
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
+      $default_member_fields);
+
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member',
+      $custom_member_fields);
+
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor', array());
+
+    $this->EE->load->expectOnce('view',
+      array('_mailing_lists', $view_vars, TRUE));
+
+    $this->_subject->display_settings();
+  }
+
+
+  public function test__display_mailing_lists__exception()
+  {
+    $this->EE->input->returns('is_ajax_request', TRUE);
+    $this->EE->input->returns('get', 'get_mailing_lists', array('request'));
+
     // Dummy values.
     $exception = new Campaigner_exception('Invalid API key', 100);
     $view_vars = array(
-        'error_code'    => $exception->getCode(),
-        'error_message' => $exception->getMessage()
+      'error_code'    => $exception->getCode(),
+      'error_message' => $exception->getMessage()
     );
-    
-    // Return values.
-    $this->_connector->throwOn('get_client_lists', $exception);
-    
-    // Expectations.
+
     $this->_connector->expectOnce('get_client_lists',
       array($this->_settings->get_client_id()));
 
-    $model->expectOnce('log_error', array('*'));
-    $loader->expectOnce('view', array('_error', $view_vars, TRUE));
+    $this->_connector->throwOn('get_client_lists', $exception);
 
-    // Tests.
+    $this->_model->expectNever('get_member_fields__custom_member');
+    $this->_model->expectNever('get_member_fields__default_member');
+    $this->_model->expectNever('get_member_fields__zoo_visitor');
+
+    $this->_model->expectOnce('log_error', array('*'));
+    $this->EE->load->expectOnce('view', array('_error', $view_vars, TRUE));
+
     $this->_subject->display_settings();
   }
 
 
-  public function test__subscribe_member__success()
+  public function test__subscribe_member__fails_with_invalid_member_id_and_logs_error()
   {
-      $model = $this->_ee->campaigner_model;
+    $this->_model->expectNever('get_member_by_id');
+    $this->_model->expectCallCount('log_error', 5, array('*', 3));
+  
+    $s = $this->_subject;
 
-      // Dummy values.
-      $member_id = 10;
-      $member_subscribe_lists = array(
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'abc123',
-              'list_name' => 'LIST A'
-          )),
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'cde456',
-              'list_name' => 'LIST B'
-          ))
-      );
-
-      $subscriber = new Campaigner_subscriber(array(
-          'email' => 'me@here.com',
-          'name'  => 'John Doe'
-      ));
-
-      // Expectations.
-      $model->expectOnce('get_member_subscribe_lists', array($member_id));
-      $model->expectCallCount('get_member_as_subscriber', count($member_subscribe_lists));
-      $this->_connector->expectCallCount('add_list_subscriber', count($member_subscribe_lists));
-
-      $count = 0;
-      foreach ($member_subscribe_lists AS $list)
-      {
-          $model->expectAt($count, 'get_member_as_subscriber', array($member_id, $list->get_list_id()));
-          $this->_connector->expectAt($count, 'add_list_subscriber', array($list->get_list_id(), $subscriber, FALSE));
-
-          $count++;
-      }
-
-      // Return values.
-      $model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
-      $model->setReturnValue('get_member_as_subscriber', $subscriber);
-
-      // Tests.
-      $this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
+    $this->assertIdentical(FALSE, $s->subscribe_member(0));
+    $this->assertIdentical(FALSE, $s->subscribe_member('Invalid'));
+    $this->assertIdentical(FALSE, $s->subscribe_member(NULL));
+    $this->assertIdentical(FALSE, $s->subscribe_member(array()));
+    $this->assertIdentical(FALSE, $s->subscribe_member(new StdClass()));
   }
 
 
-  public function test__subscribe_member__member_as_subscriber_returns_false()
+  public function test__subscribe_member__fails_if_member_data_cannot_be_retrieved()
   {
-      $model = $this->_ee->campaigner_model;
+    $member_id = 123;
 
-      // Dummy values.
-      $member_id = 10;
-      $member_subscribe_lists = array(
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'abc123',
-              'list_name' => 'LIST A'
-          )),
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'cde456',
-              'list_name' => 'LIST B'
-          ))
-      );
+    $this->_model->expectOnce('get_member_by_id', array($member_id));
+    $this->_model->returns('get_member_by_id', array());
 
-      $subscriber = new Campaigner_subscriber(array(
-          'email' => 'me@here.com',
-          'name'  => 'John Doe'
-      ));
+    $this->_model->expectOnce('log_error', array('*', 3));
 
-      // Expectations.
-      $model->expectOnce('get_member_subscribe_lists', array($member_id));
-      $model->expectCallCount('get_member_as_subscriber', count($member_subscribe_lists));
-      $this->_connector->expectNever('add_list_subscriber');
-
-      // Return values.
-      $model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
-      $model->setReturnValue('get_member_as_subscriber', FALSE);
-
-      // Tests.
-      $this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
+    $this->_model->expectNever('get_all_mailing_lists');
+    $this->_model->expectNever('get_member_subscribe_lists');
+  
+    $this->assertIdentical(FALSE,
+      $this->_subject->subscribe_member($member_id));
   }
 
 
-  public function test__subscribe_member__invalid_member_id()
+  public function test__subscribe_member__correctly_requests_member_subscribe_lists_from_model()
   {
-      $model = $this->_ee->campaigner_model;
+    $all_lists = array(new Campaigner_mailing_list(array('list_id' => 'a')));
+    $member_id = 123;
 
-      // Dummy values.
-      $member_id = 0;
-      $message = 'Invalid member ID.';
+    $member_data = array(
+      'email'       => 'charles.chaplin@talkies.com',
+      'member_id'   => $member_id,
+      'screen_name' => 'Charles Chaplin'
+    );
 
-      // Expectations.
-      $model->expectOnce('log_error', array('*', 3));
-      $model->expectNever('get_member_subscribe_lists');
-      $model->expectNever('get_member_as_subscriber');
-      $this->_connector->expectNever('add_list_subscriber');
+    $this->_model->expectNever('log_error');
 
-      // Return values.
-      $this->_ee->lang->setReturnValue('line', $message, array('error_missing_or_invalid_member_id'));
+    $this->_model->expectOnce('get_member_by_id', array($member_id));
+    $this->_model->returns('get_member_by_id', $member_data);
 
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
+    $this->_model->expectOnce('get_all_mailing_lists');
+    $this->_model->returns('get_all_mailing_lists', $all_lists);
+
+    $this->_model->expectOnce('get_member_subscribe_lists',
+      array($member_data, $all_lists));
+
+    $this->_model->returns('get_member_subscribe_lists', array());
+  
+    $this->assertIdentical(TRUE,
+      $this->_subject->subscribe_member($member_id));
   }
 
 
-  public function test__subscribe_member__exception()
+  public function test__subscribe_member__correctly_processes_member_subscribe_lists()
   {
-      $model = $this->_ee->campaigner_model;
+    $all_lists = array(
+      new Campaigner_mailing_list(array('list_id' => 'a')),
+      new Campaigner_mailing_list(array('list_id' => 'b')),
+      new Campaigner_mailing_list(array('list_id' => 'c'))
+    );
 
-      // Dummy values.
-      $member_id = 10;
-      $member_subscribe_lists = array(
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'abc123',
-              'list_name' => 'LIST A'
-          )),
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'cde456',
-              'list_name' => 'LIST B'
-          ))
-      );
+    $force        = TRUE;
+    $member_lists = array_slice($all_lists, 1);
+    $member_id    = 123;
 
-      $subscriber = new Campaigner_subscriber(array(
-          'email' => 'me@here.com',
-          'name'  => 'John Doe'
-      ));
+    $member_data = array(
+      'email'       => 'charles.chaplin@talkies.com',
+      'member_id'   => $member_id,
+      'screen_name' => 'Charles Chaplin'
+    );
 
-      // Expectations.
-      $this->_connector->throwOn('add_list_subscriber', new Campaigner_exception('Error'));
-      $model->expectOnce('log_error', array('*', 3));
+    $subscriber = new Campaigner_subscriber();
 
-      // Return values.
-      $model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
-      $model->setReturnValue('get_member_as_subscriber', $subscriber);
+    $this->_model->expectNever('log_error');
 
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
+    $this->_model->expectOnce('get_member_by_id');
+    $this->_model->returns('get_member_by_id', $member_data);
+
+    $this->_model->expectOnce('get_all_mailing_lists');
+    $this->_model->returns('get_all_mailing_lists', $all_lists);
+
+    $this->_model->expectOnce('get_member_subscribe_lists');
+    $this->_model->returns('get_member_subscribe_lists', $member_lists);
+  
+    // Process the member lists.
+    $this->_model->expectCallCount('get_member_as_subscriber', 2);
+    $this->_model->returns('get_member_as_subscriber', $subscriber);
+
+    $this->_model->expectAt(0, 'get_member_as_subscriber',
+      array($member_data, $member_lists[0]));
+
+    $this->_model->expectAt(1, 'get_member_as_subscriber',
+      array($member_data, $member_lists[1]));
+
+    $this->_connector->expectCallCount('add_list_subscriber', 2);
+
+    $this->_connector->expectAt(0, 'add_list_subscriber',
+      array('b', $subscriber, $force));
+
+    $this->_connector->expectAt(1, 'add_list_subscriber',
+      array('c', $subscriber, $force));
+
+    $this->assertIdentical(TRUE,
+      $this->_subject->subscribe_member($member_id, $force));
   }
 
 
-  public function test__subscribe_member__extension_hook()
+  public function test__subscribe_member__calls_extension_hook_and_honors_end_script()
   {
-      // Shortcuts.
-      $extensions = $this->_ee->extensions;
-      $model = $this->_ee->campaigner_model;
+    $all_lists    = array(new Campaigner_mailing_list(array('list_id' => 'a')));
+    $member_lists = $all_lists;
+    $member_id    = 123;
 
-      // Dummy values.
-      $member_id = 10;
-      $member_subscribe_lists = array(
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'abc123',
-              'list_name' => 'LIST A'
-          )),
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'cde456',
-              'list_name' => 'LIST B'
-          ))
-      );
+    $member_data = array(
+      'email'       => 'charles.chaplin@talkies.com',
+      'member_id'   => $member_id,
+      'screen_name' => 'Charles Chaplin'
+    );
 
-      $pre_subscriber = new Campaigner_subscriber(array(
-          'email' => 'me@here.com',
-          'name'  => 'John Doe'
-      ));
+    $subscriber = new Campaigner_subscriber();
 
-      $post_subscriber = new Campaigner_subscriber(array(
-          'email' => 'you@there.com',
-          'name'  => 'Jane Doe'
-      ));
+    $this->_model->expectNever('log_error');
 
-      // Expectations.
-      $extensions->expectCallCount('active_hook', count($member_subscribe_lists), array('campaigner_subscribe_start'));
-      $this->_connector->expectCallCount('add_list_subscriber', count($member_subscribe_lists));
+    $this->_model->expectOnce('get_member_by_id');
+    $this->_model->returns('get_member_by_id', $member_data);
 
-      $count = 0;
+    $this->_model->expectOnce('get_all_mailing_lists');
+    $this->_model->returns('get_all_mailing_lists', $all_lists);
 
-      foreach ($member_subscribe_lists AS $list)
-      {
-          $this->_connector->expectAt($count, 'add_list_subscriber', array($list->get_list_id(), $post_subscriber, FALSE));
-          $count++;
-      }
+    $this->_model->expectOnce('get_member_subscribe_lists');
+    $this->_model->returns('get_member_subscribe_lists', $member_lists);
+  
+    // Process the member lists.
+    $this->_model->expectOnce('get_member_as_subscriber');
+    $this->_model->returns('get_member_as_subscriber', $subscriber);
 
-      // Return values.
-      $extensions->setReturnValue('active_hook', TRUE, array('campaigner_subscribe_start'));
-      $extensions->setReturnValue('call', $post_subscriber, array('campaigner_subscribe_start', $member_id, $pre_subscriber));
-      $extensions->setReturnValue('__get', FALSE, array('end_script'));
+    $this->EE->extensions->expectOnce('active_hook',
+      array('campaigner_subscribe_start'));
 
-      $model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
-      $model->setReturnValue('get_member_as_subscriber', $pre_subscriber);
+    $this->EE->extensions->returns('active_hook', TRUE,
+      array('campaigner_subscribe_start'));
 
-      // Tests.
-      $this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
+    $this->EE->extensions->expectOnce('call',
+      array('campaigner_subscribe_start', $member_id, $subscriber));
+
+    // Set the 'end script' trigger.
+    $this->EE->extensions->end_script = TRUE;
+
+    // Should never get this far.
+    $this->_connector->expectNever('add_list_subscriber');
+
+    $this->assertIdentical(FALSE,
+      $this->_subject->subscribe_member($member_id));
   }
 
 
-  public function test__subscribe_member__extension_hook_end_script()
+  public function test__subscribe_member__handles_connector_exception()
   {
-      // Shortcuts.
-      $extensions = $this->_ee->extensions;
-      $model = $this->_ee->campaigner_model;
+    $all_lists    = array(new Campaigner_mailing_list(array('list_id' => 'a')));
+    $member_lists = $all_lists;
+    $member_id    = 123;
 
-      // Dummy values.
-      $member_id = 10;
-      $member_subscribe_lists = array(
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'abc123',
-              'list_name' => 'LIST A'
-          )),
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'cde456',
-              'list_name' => 'LIST B'
-          ))
-      );
+    $member_data = array(
+      'email'       => 'charles.chaplin@talkies.com',
+      'member_id'   => $member_id,
+      'screen_name' => 'Charles Chaplin'
+    );
 
-      $subscriber = new Campaigner_subscriber(array(
-          'email' => 'me@here.com',
-          'name'  => 'John Doe'
-      ));
+    $subscriber = new Campaigner_subscriber();
 
-      // Expectations.
-      $extensions->expectCallCount('active_hook', 1);
-      $this->_connector->expectNever('add_list_subscriber');
+    $this->_model->expectOnce('get_member_by_id');
+    $this->_model->returns('get_member_by_id', $member_data);
 
-      // Return values.
-      $extensions->setReturnValue('active_hook', TRUE, array('campaigner_subscribe_start'));
-      $extensions->setReturnValue('call', $subscriber, array('campaigner_subscribe_start', $member_id, $subscriber));
-      $extensions->setReturnValue('__get', TRUE, array('end_script'));
+    $this->_model->expectOnce('get_all_mailing_lists');
+    $this->_model->returns('get_all_mailing_lists', $all_lists);
 
-      $model->setReturnValue('get_member_subscribe_lists', $member_subscribe_lists);
-      $model->setReturnValue('get_member_as_subscriber', $subscriber);
+    $this->_model->expectOnce('get_member_subscribe_lists');
+    $this->_model->returns('get_member_subscribe_lists', $member_lists);
+  
+    // Process the member lists.
+    $this->_model->expectOnce('get_member_as_subscriber');
+    $this->_model->returns('get_member_as_subscriber', $subscriber);
 
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
+    // Throw the exception.
+    $exception = new Campaigner_exception('EPIC FAIL!');
+
+    $this->_connector->throwOn('add_list_subscriber', $exception);
+
+    /**
+     * STUPID:
+     * SimpleTest has a fit if we specify the Exception instance as an 
+     * expectation. Probably something to do with the EE superglobal and levels 
+     * of nesting, it usually is. Whatever, it's dumb, and a ball-ache, and I 
+     * really can't be arsed fixing other people's code right now.
+     */
+
+    $this->_model->expectOnce('log_error', array('*', 3));
+
+    $this->assertIdentical(FALSE,
+      $this->_subject->subscribe_member($member_id));
   }
 
 
   public function test__unsubscribe_member__success()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -771,7 +974,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       );
 
       $model->expectOnce('get_all_mailing_lists');
-      $model->setReturnValue('get_all_mailing_lists', $mailing_lists);
+      $model->returns('get_all_mailing_lists', $mailing_lists);
 
       // Retrieve the member information.
       $email = 'me@here.com';
@@ -782,11 +985,11 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       );
 
       $model->expectOnce('get_member_by_id', array($member_id));
-      $model->setReturnValue('get_member_by_id', $member_data);   
+      $model->returns('get_member_by_id', $member_data);   
 
       // For each mailing list, determine if the member should be subscribed.
       $model->expectCallCount('member_should_be_subscribed_to_mailing_list', count($mailing_lists));
-      $model->setReturnValue('member_should_be_subscribed_to_mailing_list', FALSE);
+      $model->returns('member_should_be_subscribed_to_mailing_list', FALSE);
 
       // For each mailing list, determine if the member is subscribed.
       $this->_connector->expectCallCount('get_is_subscribed', count($mailing_lists));
@@ -800,7 +1003,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
           $is_subscribed = (bool) $count % 2;
 
           $this->_connector->expectAt($count, 'get_is_subscribed', array($mailing_list->get_list_id(), $email));
-          $this->_connector->setReturnValueAt($count, 'get_is_subscribed', $is_subscribed);
+          $this->_connector->returnsAt($count, 'get_is_subscribed', $is_subscribed);
 
           if ($is_subscribed)
           {
@@ -810,7 +1013,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
           $count++;
       }
-      
+
       // Run the tests.
       $this->assertIdentical(TRUE, $this->_subject->unsubscribe_member($member_id));
   }
@@ -818,7 +1021,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__unsubscribe_member__should_be_subscribed_to_all_mailing_lists()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -840,7 +1043,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       );
 
       $model->expectOnce('get_all_mailing_lists');
-      $model->setReturnValue('get_all_mailing_lists', $mailing_lists);
+      $model->returns('get_all_mailing_lists', $mailing_lists);
 
       // Retrieve the member information.
       $email = 'me@here.com';
@@ -851,10 +1054,10 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       );
 
       $model->expectOnce('get_member_by_id', array($member_id));
-      $model->setReturnValue('get_member_by_id', $member_data);   
+      $model->returns('get_member_by_id', $member_data);   
 
       $model->expectCallCount('member_should_be_subscribed_to_mailing_list', count($mailing_lists));
-      $model->setReturnValue('member_should_be_subscribed_to_mailing_list', TRUE);
+      $model->returns('member_should_be_subscribed_to_mailing_list', TRUE);
 
       $this->_connector->expectNever('get_is_subscribed');
       $this->_connector->expectNever('remove_list_subscriber');
@@ -867,14 +1070,14 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   public function test__unsubscribe_member__invalid_member_id()
   {
       // Shortcuts.
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id  = 0;
       $message    = 'Invalid member ID.';
 
       // Expectations and return values.
-      $this->_ee->lang->setReturnValue('line', $message, array('error_missing_or_invalid_member_id'));
+      $this->EE->lang->returns('line', $message, array('error_missing_or_invalid_member_id'));
       $model->expectOnce('log_error', array('*', 3));
 
       $model->expectNever('get_all_mailing_lists');
@@ -891,7 +1094,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   public function test__unsubscribe_member__unknown_member()
   {
       // Shortcuts.
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id      = 10;
@@ -899,11 +1102,11 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       $message        = 'Unknown member';
 
       // Expectations and return values.
-      $this->_ee->lang->setReturnValue('line', $message, array('error_unknown_member'));
+      $this->EE->lang->returns('line', $message, array('error_unknown_member'));
 
       $model->expectOnce('log_error', array('*', 3));
       $model->expectOnce('get_member_by_id');
-      $model->setReturnValue('get_member_by_id', $member_data);
+      $model->returns('get_member_by_id', $member_data);
 
       $model->expectNever('get_all_mailing_lists');
       $this->_connector->expectNever('get_is_subscribed');
@@ -912,12 +1115,12 @@ class Test_campaigner_ext extends Testee_unit_test_case {
       // Run the tests.
       $this->assertIdentical(FALSE, $this->_subject->unsubscribe_member($member_id));
   }
-      
-  
+
+
   public function test__unsubscribe_member__no_mailing_lists()
   {
       // Shortcuts.
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $email          = 'me@here.com';
@@ -929,10 +1132,10 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
       // Expectations and return values.
       $model->expectOnce('get_member_by_id');
-      $model->setReturnValue('get_member_by_id', $member_data);
+      $model->returns('get_member_by_id', $member_data);
 
       $model->expectOnce('get_all_mailing_lists');
-      $model->setReturnValue('get_all_mailing_lists', array());
+      $model->returns('get_all_mailing_lists', array());
 
       $this->_connector->expectNever('get_is_subscribed');
       $this->_connector->expectNever('remove_list_subscriber');
@@ -944,7 +1147,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
   public function test__unsubscribe_member__exception()
   {
-      $model = $this->_ee->campaigner_model;
+      $model = $this->_model;
 
       // Dummy values.
       $member_id = 10;
@@ -965,7 +1168,7 @@ class Test_campaigner_ext extends Testee_unit_test_case {
           ))
       );
 
-      $model->setReturnValue('get_all_mailing_lists', $mailing_lists);
+      $model->returns('get_all_mailing_lists', $mailing_lists);
 
       // Retrieve the member information.
       $email = 'me@here.com';
@@ -975,12 +1178,12 @@ class Test_campaigner_ext extends Testee_unit_test_case {
           'member_id' => $member_id
       );
 
-      $model->setReturnValue('get_member_by_id', $member_data);   
+      $model->returns('get_member_by_id', $member_data);   
 
       // For each mailing list, determine if the member is subscribed.
       $connector_exception = new Campaigner_exception('Error');
 
-      $this->_connector->setReturnValue('get_is_subscribed', TRUE);
+      $this->_connector->returns('get_is_subscribed', TRUE);
       $this->_connector->throwOn('remove_list_subscriber', $connector_exception);
 
       /**
@@ -993,10 +1196,11 @@ class Test_campaigner_ext extends Testee_unit_test_case {
        */
 
       $model->expectOnce('log_error', array('*', 3));
-      
+
       // Run the tests.
       $this->assertIdentical(FALSE, $this->_subject->unsubscribe_member($member_id));
   }
+
 
 }
 
