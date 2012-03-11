@@ -9,18 +9,19 @@
  * @version         : 4.3.0
  */
 
-require_once PATH_THIRD .'campaigner/classes/campaigner_cm_api_connector.php';
-require_once PATH_THIRD .'campaigner/classes/campaigner_exception.php';
-require_once PATH_THIRD .'campaigner/classes/campaigner_mailing_list.php';
-require_once PATH_THIRD .'campaigner/classes/campaigner_settings.php';
-require_once PATH_THIRD .'campaigner/classes/campaigner_subscriber.php';
-require_once PATH_THIRD .'campaigner/classes/campaigner_trigger_field.php';
-require_once PATH_THIRD .'campaigner/helpers/EI_number_helper.php';
-require_once PATH_THIRD .'campaigner/helpers/EI_sanitize_helper.php';
-require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_clients.php';
-require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_general.php';
-require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_lists.php';
-require_once PATH_THIRD .'campaigner/libraries/createsend-php/csrest_subscribers.php';
+require_once dirname(__FILE__) .'/../config.php';
+require_once dirname(__FILE__) .'/../classes/campaigner_cm_api_connector.php';
+require_once dirname(__FILE__) .'/../classes/campaigner_exception.php';
+require_once dirname(__FILE__) .'/../classes/campaigner_mailing_list.php';
+require_once dirname(__FILE__) .'/../classes/campaigner_settings.php';
+require_once dirname(__FILE__) .'/../classes/campaigner_subscriber.php';
+require_once dirname(__FILE__) .'/../classes/campaigner_trigger_field.php';
+require_once dirname(__FILE__) .'/../helpers/EI_number_helper.php';
+require_once dirname(__FILE__) .'/../helpers/EI_sanitize_helper.php';
+require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_clients.php';
+require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_general.php';
+require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_lists.php';
+require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_subscribers.php';
 
 class Campaigner_model extends CI_Model {
 
@@ -63,12 +64,23 @@ class Campaigner_model extends CI_Model {
       include_once PATH_THIRD .'omnilog/classes/omnilogger.php';
     }
 
-    $this->_namespace = $namespace ? strtolower($namespace) : 'experience';
+    $this->_namespace = $namespace
+      ? strtolower($namespace)
+      : 'experience';
+
+    /**
+     * Constants defined in the NSM Add-on Updater config.php file, so we don't 
+     * have the package name and version defined in multiple locations.
+     */
 
     $this->_package_name = $package_name
-      ? strtolower($package_name) : 'campaigner';
+      ? strtolower($package_name)
+      : strtolower(CAMPAIGNER_NAME);
 
-    $this->_package_version = $package_version ? $package_version : '4.3.0';
+    $this->_package_version = $package_version
+      ? $package_version
+      : CAMPAIGNER_VERSION;
+
     $this->_extension_class = $this->get_package_name() .'_ext';
 
     // Initialise the add-on cache.
