@@ -263,16 +263,16 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->EE->lang->returns('line', $lbl_zoo_fields,
       array('lbl_zoo_visitor'));
 
-    $this->_model->expectOnce('get_trigger_fields__default_member');
-    $this->_model->returns('get_trigger_fields__default_member',
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
       $default_member_fields);
 
-    $this->_model->expectOnce('get_trigger_fields__custom_member');
-    $this->_model->returns('get_trigger_fields__custom_member',
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member',
       $custom_member_fields);
 
-    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
-    $this->_model->returns('get_trigger_fields__zoo_visitor',
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor',
       $zoo_member_fields);
 
     // Load the view.
@@ -341,15 +341,15 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->EE->lang->returns('line', $lbl_default_fields,
       array('lbl_default_member'));
 
-    $this->_model->expectOnce('get_trigger_fields__default_member');
-    $this->_model->returns('get_trigger_fields__default_member',
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
       $default_member_fields);
 
-    $this->_model->expectOnce('get_trigger_fields__custom_member');
-    $this->_model->returns('get_trigger_fields__custom_member', array());
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member', array());
 
-    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
-    $this->_model->returns('get_trigger_fields__zoo_visitor', array());
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor', array());
 
     // Load the view.
     $this->EE->load->expectOnce('view', array(
@@ -386,9 +386,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->_connector->returns('get_list_fields', $fields);
 
     // Retrieve the member fields. Don't really care about this.
-    $this->_model->expectNever('get_trigger_fields__custom_member');
-    $this->_model->expectNever('get_trigger_fields__default_member');
-    $this->_model->expectNever('get_trigger_fields__zoo_visitor');
+    $this->_model->expectNever('get_member_fields__custom_member');
+    $this->_model->expectNever('get_member_fields__default_member');
+    $this->_model->expectNever('get_member_fields__zoo_visitor');
 
     // Load the view.
     $this->EE->load->expectOnce('view', array(
@@ -421,9 +421,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     // Should never get this far.
     $this->_connector->expectNever('get_list_fields');
-    $this->_model->expectNever('get_trigger_fields__custom_member');
-    $this->_model->expectNever('get_trigger_fields__default_member');
-    $this->_model->expectNever('get_trigger_fields__zoo_visitor');
+    $this->_model->expectNever('get_member_fields__custom_member');
+    $this->_model->expectNever('get_member_fields__default_member');
+    $this->_model->expectNever('get_member_fields__zoo_visitor');
 
     // Log the error, and display the error view.
     $error_message = 'Oh noes!';
@@ -465,9 +465,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->_connector->throwOn('get_list_fields', $api_exception);
 
     // Should never get this far.
-    $this->_model->expectNever('get_trigger_fields__custom_member');
-    $this->_model->expectNever('get_trigger_fields__default_member');
-    $this->_model->expectNever('get_trigger_fields__zoo_visitor');
+    $this->_model->expectNever('get_member_fields__custom_member');
+    $this->_model->expectNever('get_member_fields__default_member');
+    $this->_model->expectNever('get_member_fields__zoo_visitor');
 
     /**
      * NOTE:
@@ -558,16 +558,16 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->EE->lang->returns('line', $lbl_zoo_fields,
       array('lbl_zoo_visitor'));
 
-    $this->_model->expectOnce('get_trigger_fields__default_member');
-    $this->_model->returns('get_trigger_fields__default_member',
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
       $default_member_fields);
 
-    $this->_model->expectOnce('get_trigger_fields__custom_member');
-    $this->_model->returns('get_trigger_fields__custom_member',
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member',
       $custom_member_fields);
 
-    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
-    $this->_model->returns('get_trigger_fields__zoo_visitor',
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor',
       $zoo_member_fields);
 
     $this->EE->load->expectOnce('view',
@@ -635,15 +635,15 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->EE->lang->returns('line', $lbl_zoo_fields,
       array('lbl_zoo_visitor'));
 
-    $this->_model->expectOnce('get_trigger_fields__default_member');
-    $this->_model->returns('get_trigger_fields__default_member',
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
       $default_member_fields);
 
-    $this->_model->expectOnce('get_trigger_fields__custom_member');
-    $this->_model->returns('get_trigger_fields__custom_member', array());
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member', array());
 
-    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
-    $this->_model->returns('get_trigger_fields__zoo_visitor',
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor',
       $zoo_member_fields);
 
     $this->EE->load->expectOnce('view',
@@ -711,16 +711,16 @@ class Test_campaigner_ext extends Testee_unit_test_case {
     $this->EE->lang->returns('line', $lbl_custom_fields,
       array('lbl_custom_member'));
 
-    $this->_model->expectOnce('get_trigger_fields__default_member');
-    $this->_model->returns('get_trigger_fields__default_member',
+    $this->_model->expectOnce('get_member_fields__default_member');
+    $this->_model->returns('get_member_fields__default_member',
       $default_member_fields);
 
-    $this->_model->expectOnce('get_trigger_fields__custom_member');
-    $this->_model->returns('get_trigger_fields__custom_member',
+    $this->_model->expectOnce('get_member_fields__custom_member');
+    $this->_model->returns('get_member_fields__custom_member',
       $custom_member_fields);
 
-    $this->_model->expectOnce('get_trigger_fields__zoo_visitor');
-    $this->_model->returns('get_trigger_fields__zoo_visitor', array());
+    $this->_model->expectOnce('get_member_fields__zoo_visitor');
+    $this->_model->returns('get_member_fields__zoo_visitor', array());
 
     $this->EE->load->expectOnce('view',
       array('_mailing_lists', $view_vars, TRUE));
@@ -748,9 +748,9 @@ class Test_campaigner_ext extends Testee_unit_test_case {
 
     $this->_connector->throwOn('get_client_lists', $exception);
 
-    $this->_model->expectNever('get_trigger_fields__custom_member');
-    $this->_model->expectNever('get_trigger_fields__default_member');
-    $this->_model->expectNever('get_trigger_fields__zoo_visitor');
+    $this->_model->expectNever('get_member_fields__custom_member');
+    $this->_model->expectNever('get_member_fields__default_member');
+    $this->_model->expectNever('get_member_fields__zoo_visitor');
 
     $this->_model->expectOnce('log_error', array('*'));
     $this->EE->load->expectOnce('view', array('_error', $view_vars, TRUE));

@@ -911,14 +911,14 @@ class Campaigner_ext {
     $fields = array();
 
     $fields['default_member']
-      = $this->_model->get_trigger_fields__default_member();
+      = $this->_model->get_member_fields__default_member();
 
-    if ($custom_fields = $this->_model->get_trigger_fields__custom_member())
+    if ($custom_fields = $this->_model->get_member_fields__custom_member())
     {
       $fields['custom_member'] = $custom_fields;
     }
 
-    if ($zoo_fields = $this->_model->get_trigger_fields__zoo_visitor())
+    if ($zoo_fields = $this->_model->get_member_fields__zoo_visitor())
     {
       $fields['zoo_visitor'] = $zoo_fields;
     }

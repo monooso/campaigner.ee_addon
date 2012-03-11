@@ -525,7 +525,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
   }
 
 
-  public function test__get_trigger_fields__custom_member__returns_an_array_of_trigger_fields()
+  public function test__get_member_fields__custom_member__returns_an_array_of_trigger_fields()
   {
     $db_result = $this->_get_mock('db_query');
     $db_rows = array(
@@ -587,11 +587,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
     );
 
     $this->assertIdentical($expected_result,
-      $this->_subject->get_trigger_fields__custom_member());
+      $this->_subject->get_member_fields__custom_member());
   }
 
 
-  public function test__get_trigger_fields__custom_member__returns_empty_array_if_no_custom_member_fields_exist()
+  public function test__get_member_fields__custom_member__returns_empty_array_if_no_custom_member_fields_exist()
   {
     $db_result = $this->_get_mock('db_query');
     $db_rows = array();
@@ -604,11 +604,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $db_result->returns('result', $db_rows);
 
     $this->assertIdentical(array(),
-      $this->_subject->get_trigger_fields__custom_member());
+      $this->_subject->get_member_fields__custom_member());
   }
 
 
-  public function test__get_trigger_fields__default_member__returns_an_array_of_trigger_fields()
+  public function test__get_member_fields__default_member__returns_an_array_of_trigger_fields()
   {
     $dummy_label = 'Label';
     $this->EE->lang->setReturnValue('line', $dummy_label);
@@ -680,11 +680,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
     );
 
     $this->assertIdentical($expected_result,
-      $this->_subject->get_trigger_fields__default_member());
+      $this->_subject->get_member_fields__default_member());
   }
 
 
-  public function test__get_trigger_fields__zoo_visitor__returns_an_empty_array_if_zoo_visitor_not_installed()
+  public function test__get_member_fields__zoo_visitor__returns_an_empty_array_if_zoo_visitor_not_installed()
   {
     // Set the cache.
     $this->EE->session->cache[$this->_namespace][$this->_package_name]
@@ -693,11 +693,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $this->EE->db->expectNever('get_where');
   
     $this->assertIdentical(array(),
-      $this->_subject->get_trigger_fields__zoo_visitor());
+      $this->_subject->get_member_fields__zoo_visitor());
   }
 
 
-  public function test__get_trigger_fields__zoo_visitor__returns_an_array_of_campaigner_trigger_fields()
+  public function test__get_member_fields__zoo_visitor__returns_an_array_of_campaigner_trigger_fields()
   {
     // Set the cache.
     $this->EE->session->cache[$this->_namespace][$this->_package_name]
@@ -794,11 +794,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
     // Run the tests.
     $this->assertIdentical($expected_result,
-      $this->_subject->get_trigger_fields__zoo_visitor());
+      $this->_subject->get_member_fields__zoo_visitor());
   }
 
 
-  public function test__get_trigger_fields__zoo_visitor__returns_an_empty_array_if_no_member_fields_are_found()
+  public function test__get_member_fields__zoo_visitor__returns_an_empty_array_if_no_member_fields_are_found()
   {
     // Set the cache.
     $this->EE->session->cache[$this->_namespace][$this->_package_name]
@@ -818,7 +818,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
 
     // Run the tests.
     $this->assertIdentical(array(),
-      $this->_subject->get_trigger_fields__zoo_visitor());
+      $this->_subject->get_member_fields__zoo_visitor());
   }
 
 
