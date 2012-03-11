@@ -759,236 +759,214 @@ class Test_campaigner_ext extends Testee_unit_test_case {
   }
 
 
-  public function test__subscribe_member__success()
+  public function test__subscribe_member__fails_with_invalid_member_id_and_logs_error()
   {
-    $member_id = 10;
-    $member_subscribe_lists = array(
-      new Campaigner_mailing_list(array(
-        'list_id'   => 'abc123',
-        'list_name' => 'LIST A'
-      )),
-      new Campaigner_mailing_list(array(
-        'list_id'   => 'cde456',
-        'list_name' => 'LIST B'
-      ))
+    $this->_model->expectNever('get_member_by_id');
+    $this->_model->expectCallCount('log_error', 5, array('*', 3));
+  
+    $s = $this->_subject;
+
+    $this->assertIdentical(FALSE, $s->subscribe_member(0));
+    $this->assertIdentical(FALSE, $s->subscribe_member('Invalid'));
+    $this->assertIdentical(FALSE, $s->subscribe_member(NULL));
+    $this->assertIdentical(FALSE, $s->subscribe_member(array()));
+    $this->assertIdentical(FALSE, $s->subscribe_member(new StdClass()));
+  }
+
+
+  public function test__subscribe_member__fails_if_member_data_cannot_be_retrieved()
+  {
+    $member_id = 123;
+
+    $this->_model->expectOnce('get_member_by_id', array($member_id));
+    $this->_model->returns('get_member_by_id', array());
+
+    $this->_model->expectOnce('log_error', array('*', 3));
+
+    $this->_model->expectNever('get_all_mailing_lists');
+    $this->_model->expectNever('get_member_subscribe_lists');
+  
+    $this->assertIdentical(FALSE,
+      $this->_subject->subscribe_member($member_id));
+  }
+
+
+  public function test__subscribe_member__correctly_requests_member_subscribe_lists_from_model()
+  {
+    $all_lists = array(new Campaigner_mailing_list(array('list_id' => 'a')));
+    $member_id = 123;
+
+    $member_data = array(
+      'email'       => 'charles.chaplin@talkies.com',
+      'member_id'   => $member_id,
+      'screen_name' => 'Charles Chaplin'
     );
 
-    $subscriber = new Campaigner_subscriber(array(
-      'email' => 'me@here.com',
-      'name'  => 'John Doe'
-    ));
+    $this->_model->expectNever('log_error');
 
-    $this->_model->expectOnce('get_member_subscribe_lists', array($member_id));
-    $this->_model->returns('get_member_subscribe_lists',
-      $member_subscribe_lists);
+    $this->_model->expectOnce('get_member_by_id', array($member_id));
+    $this->_model->returns('get_member_by_id', $member_data);
 
-    $this->_model->expectCallCount('get_member_as_subscriber',
-      count($member_subscribe_lists));
+    $this->_model->expectOnce('get_all_mailing_lists');
+    $this->_model->returns('get_all_mailing_lists', $all_lists);
 
+    $this->_model->expectOnce('get_member_subscribe_lists',
+      array($member_data, $all_lists));
+
+    $this->_model->returns('get_member_subscribe_lists', array());
+  
+    $this->assertIdentical(TRUE,
+      $this->_subject->subscribe_member($member_id));
+  }
+
+
+  public function test__subscribe_member__correctly_processes_member_subscribe_lists()
+  {
+    $all_lists = array(
+      new Campaigner_mailing_list(array('list_id' => 'a')),
+      new Campaigner_mailing_list(array('list_id' => 'b')),
+      new Campaigner_mailing_list(array('list_id' => 'c'))
+    );
+
+    $force        = TRUE;
+    $member_lists = array_slice($all_lists, 1);
+    $member_id    = 123;
+
+    $member_data = array(
+      'email'       => 'charles.chaplin@talkies.com',
+      'member_id'   => $member_id,
+      'screen_name' => 'Charles Chaplin'
+    );
+
+    $subscriber = new Campaigner_subscriber();
+
+    $this->_model->expectNever('log_error');
+
+    $this->_model->expectOnce('get_member_by_id');
+    $this->_model->returns('get_member_by_id', $member_data);
+
+    $this->_model->expectOnce('get_all_mailing_lists');
+    $this->_model->returns('get_all_mailing_lists', $all_lists);
+
+    $this->_model->expectOnce('get_member_subscribe_lists');
+    $this->_model->returns('get_member_subscribe_lists', $member_lists);
+  
+    // Process the member lists.
+    $this->_model->expectCallCount('get_member_as_subscriber', 2);
     $this->_model->returns('get_member_as_subscriber', $subscriber);
 
-    $this->_connector->expectCallCount('add_list_subscriber',
-      count($member_subscribe_lists));
+    $this->_model->expectAt(0, 'get_member_as_subscriber',
+      array($member_data, $member_lists[0]));
 
-    $count = 0;
-    foreach ($member_subscribe_lists AS $list)
-    {
-      $this->_model->expectAt($count, 'get_member_as_subscriber',
-        array($member_id, $list->get_list_id()));
+    $this->_model->expectAt(1, 'get_member_as_subscriber',
+      array($member_data, $member_lists[1]));
 
-      $this->_connector->expectAt($count, 'add_list_subscriber',
-        array($list->get_list_id(), $subscriber, FALSE));
+    $this->_connector->expectCallCount('add_list_subscriber', 2);
 
-      $count++;
-    }
+    $this->_connector->expectAt(0, 'add_list_subscriber',
+      array('b', $subscriber, $force));
 
-    $this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
+    $this->_connector->expectAt(1, 'add_list_subscriber',
+      array('c', $subscriber, $force));
+
+    $this->assertIdentical(TRUE,
+      $this->_subject->subscribe_member($member_id, $force));
   }
 
 
-  public function test__subscribe_member__member_as_subscriber_returns_false()
+  public function test__subscribe_member__calls_extension_hook_and_honors_end_script()
   {
-    $member_id = 10;
-    $member_subscribe_lists = array(
-      new Campaigner_mailing_list(array(
-        'list_id'   => 'abc123',
-        'list_name' => 'LIST A'
-      )),
-      new Campaigner_mailing_list(array(
-        'list_id'   => 'cde456',
-        'list_name' => 'LIST B'
-      ))
+    $all_lists    = array(new Campaigner_mailing_list(array('list_id' => 'a')));
+    $member_lists = $all_lists;
+    $member_id    = 123;
+
+    $member_data = array(
+      'email'       => 'charles.chaplin@talkies.com',
+      'member_id'   => $member_id,
+      'screen_name' => 'Charles Chaplin'
     );
 
-    $subscriber = new Campaigner_subscriber(array(
-      'email' => 'me@here.com',
-      'name'  => 'John Doe'
-    ));
+    $subscriber = new Campaigner_subscriber();
 
-    $this->_model->expectOnce('get_member_subscribe_lists', array($member_id));
-    $this->_model->returns('get_member_subscribe_lists',
-      $member_subscribe_lists);
+    $this->_model->expectNever('log_error');
 
-    $this->_model->expectCallCount('get_member_as_subscriber',
-      count($member_subscribe_lists));
+    $this->_model->expectOnce('get_member_by_id');
+    $this->_model->returns('get_member_by_id', $member_data);
 
-    $this->_model->returns('get_member_as_subscriber', FALSE);
+    $this->_model->expectOnce('get_all_mailing_lists');
+    $this->_model->returns('get_all_mailing_lists', $all_lists);
 
+    $this->_model->expectOnce('get_member_subscribe_lists');
+    $this->_model->returns('get_member_subscribe_lists', $member_lists);
+  
+    // Process the member lists.
+    $this->_model->expectOnce('get_member_as_subscriber');
+    $this->_model->returns('get_member_as_subscriber', $subscriber);
+
+    $this->EE->extensions->expectOnce('active_hook',
+      array('campaigner_subscribe_start'));
+
+    $this->EE->extensions->returns('active_hook', TRUE,
+      array('campaigner_subscribe_start'));
+
+    $this->EE->extensions->expectOnce('call',
+      array('campaigner_subscribe_start', $member_id, $subscriber));
+
+    // Set the 'end script' trigger.
+    $this->EE->extensions->end_script = TRUE;
+
+    // Should never get this far.
     $this->_connector->expectNever('add_list_subscriber');
 
-    $this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
+    $this->assertIdentical(FALSE,
+      $this->_subject->subscribe_member($member_id));
   }
 
 
-  public function test__subscribe_member__invalid_member_id()
+  public function test__subscribe_member__handles_connector_exception()
   {
-      $model = $this->_model;
+    $all_lists    = array(new Campaigner_mailing_list(array('list_id' => 'a')));
+    $member_lists = $all_lists;
+    $member_id    = 123;
 
-      // Dummy values.
-      $member_id = 0;
-      $message = 'Invalid member ID.';
-
-      // Expectations.
-      $model->expectOnce('log_error', array('*', 3));
-      $model->expectNever('get_member_subscribe_lists');
-      $model->expectNever('get_member_as_subscriber');
-      $this->_connector->expectNever('add_list_subscriber');
-
-      // Return values.
-      $this->EE->lang->returns('line', $message, array('error_missing_or_invalid_member_id'));
-
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
-  }
-
-
-  public function test__subscribe_member__exception()
-  {
-      $model = $this->_model;
-
-      // Dummy values.
-      $member_id = 10;
-      $member_subscribe_lists = array(
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'abc123',
-              'list_name' => 'LIST A'
-          )),
-          new Campaigner_mailing_list(array(
-              'list_id'   => 'cde456',
-              'list_name' => 'LIST B'
-          ))
-      );
-
-      $subscriber = new Campaigner_subscriber(array(
-          'email' => 'me@here.com',
-          'name'  => 'John Doe'
-      ));
-
-      // Expectations.
-      $this->_connector->throwOn('add_list_subscriber', new Campaigner_exception('Error'));
-      $model->expectOnce('log_error', array('*', 3));
-
-      // Return values.
-      $model->returns('get_member_subscribe_lists', $member_subscribe_lists);
-      $model->returns('get_member_as_subscriber', $subscriber);
-
-      // Tests.
-      $this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
-  }
-
-
-  public function test__subscribe_member__extension_hook()
-  {
-    // Shortcuts.
-    $extensions = $this->EE->extensions;
-    $model = $this->_model;
-
-    // Dummy values.
-    $member_id = 10;
-    $member_subscribe_lists = array(
-        new Campaigner_mailing_list(array(
-            'list_id'   => 'abc123',
-            'list_name' => 'LIST A'
-        )),
-        new Campaigner_mailing_list(array(
-            'list_id'   => 'cde456',
-            'list_name' => 'LIST B'
-        ))
+    $member_data = array(
+      'email'       => 'charles.chaplin@talkies.com',
+      'member_id'   => $member_id,
+      'screen_name' => 'Charles Chaplin'
     );
 
-    $pre_subscriber = new Campaigner_subscriber(array(
-        'email' => 'me@here.com',
-        'name'  => 'John Doe'
-    ));
+    $subscriber = new Campaigner_subscriber();
 
-    $post_subscriber = new Campaigner_subscriber(array(
-        'email' => 'you@there.com',
-        'name'  => 'Jane Doe'
-    ));
+    $this->_model->expectOnce('get_member_by_id');
+    $this->_model->returns('get_member_by_id', $member_data);
 
-    // Expectations.
-    $extensions->expectCallCount('active_hook', count($member_subscribe_lists), array('campaigner_subscribe_start'));
-    $this->_connector->expectCallCount('add_list_subscriber', count($member_subscribe_lists));
+    $this->_model->expectOnce('get_all_mailing_lists');
+    $this->_model->returns('get_all_mailing_lists', $all_lists);
 
-    $count = 0;
+    $this->_model->expectOnce('get_member_subscribe_lists');
+    $this->_model->returns('get_member_subscribe_lists', $member_lists);
+  
+    // Process the member lists.
+    $this->_model->expectOnce('get_member_as_subscriber');
+    $this->_model->returns('get_member_as_subscriber', $subscriber);
 
-    foreach ($member_subscribe_lists AS $list)
-    {
-      $this->_connector->expectAt($count, 'add_list_subscriber', array($list->get_list_id(), $post_subscriber, FALSE));
-      $count++;
-    }
+    // Throw the exception.
+    $exception = new Campaigner_exception('EPIC FAIL!');
 
-    // Return values.
-    $extensions->end_script = FALSE;
-    $extensions->returns('active_hook', TRUE, array('campaigner_subscribe_start'));
-    $extensions->returns('call', $post_subscriber, array('campaigner_subscribe_start', $member_id, $pre_subscriber));
+    $this->_connector->throwOn('add_list_subscriber', $exception);
 
-    $model->returns('get_member_subscribe_lists', $member_subscribe_lists);
-    $model->returns('get_member_as_subscriber', $pre_subscriber);
+    /**
+     * STUPID:
+     * SimpleTest has a fit if we specify the Exception instance as an 
+     * expectation. Probably something to do with the EE superglobal and levels 
+     * of nesting, it usually is. Whatever, it's dumb, and a ball-ache, and I 
+     * really can't be arsed fixing other people's code right now.
+     */
 
-    // Tests.
-    $this->assertIdentical(TRUE, $this->_subject->subscribe_member($member_id));
-  }
+    $this->_model->expectOnce('log_error', array('*', 3));
 
-
-  public function test__subscribe_member__extension_hook_end_script()
-  {
-    // Shortcuts.
-    $extensions = $this->EE->extensions;
-    $model = $this->_model;
-
-    // Dummy values.
-    $member_id = 10;
-    $member_subscribe_lists = array(
-        new Campaigner_mailing_list(array(
-            'list_id'   => 'abc123',
-            'list_name' => 'LIST A'
-        )),
-        new Campaigner_mailing_list(array(
-            'list_id'   => 'cde456',
-            'list_name' => 'LIST B'
-        ))
-    );
-
-    $subscriber = new Campaigner_subscriber(array(
-        'email' => 'me@here.com',
-        'name'  => 'John Doe'
-    ));
-
-    // Expectations.
-    $extensions->expectCallCount('active_hook', 1);
-    $this->_connector->expectNever('add_list_subscriber');
-
-    // Return values.
-    $extensions->end_script = TRUE;
-    $extensions->returns('active_hook', TRUE, array('campaigner_subscribe_start'));
-    $extensions->returns('call', $subscriber, array('campaigner_subscribe_start', $member_id, $subscriber));
-
-    $model->returns('get_member_subscribe_lists', $member_subscribe_lists);
-    $model->returns('get_member_as_subscriber', $subscriber);
-
-    // Tests.
-    $this->assertIdentical(FALSE, $this->_subject->subscribe_member($member_id));
+    $this->assertIdentical(FALSE,
+      $this->_subject->subscribe_member($member_id));
   }
 
 

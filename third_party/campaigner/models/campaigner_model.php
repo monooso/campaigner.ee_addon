@@ -653,21 +653,21 @@ class Campaigner_model extends CI_Model {
    * should be subscribed.
    *
    * @access  public
-   * @param   int|string      $member_id      The member ID.
+   * @param   array     $member_data    Associative array of member data.
+   * @param   array     $lists          Array of Campaigner_mailing_list.
    * @return  array
    */
-  public function get_member_subscribe_lists($member_id)
+  public function get_member_subscribe_lists(Array $member_data, Array $lists)
   {
-    if ( ! ($member_data = $this->get_member_by_id($member_id))
-      OR ! ($lists = $this->get_all_mailing_lists()))
-    {
-      return array();
-    }
-
     $subscribe_lists = array();
 
     foreach ($lists AS $list)
     {
+      if ( ! $list instanceof Campaigner_mailing_list)
+      {
+        continue;
+      }
+
       if ($this->member_should_be_subscribed_to_mailing_list(
         $member_data, $list)
       )

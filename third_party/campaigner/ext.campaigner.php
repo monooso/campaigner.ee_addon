@@ -226,33 +226,46 @@ class Campaigner_ext {
       return FALSE;
     }
 
+    // Retrieve the member data.
+    if ( ! $member_data = $this->_model->get_member_by_id($member_id))
+    {
+      $log_message = $this->EE->lang->line('error_unknown_member')
+        .' ' .__METHOD__ .' (' .__LINE__ .')';
+
+      $this->_model->log_error(new Campaigner_exception($log_message), 3);
+      return FALSE;
+    }
+
     // Retrieve the mailing lists to which the member should be subscribed.
-    $lists = $this->_model->get_member_subscribe_lists($member_id);
+    $lists = $this->_model->get_member_subscribe_lists($member_data,
+      $this->_model->get_all_mailing_lists());
 
     foreach ($lists AS $list)
     {
       try
       {
-        if ($subscriber = $this->_model->get_member_as_subscriber(
-          $member_id, $list->get_list_id())
+        if ( ! $subscriber = $this->_model->get_member_as_subscriber(
+          $member_data, $list)
         )
         {
-          if ($this->EE->extensions->active_hook('campaigner_subscribe_start')
-            === TRUE
-          )
-          {
-            $subscriber = $this->EE->extensions->call(
-              'campaigner_subscribe_start', $member_id, $subscriber);
-
-            if ($this->EE->extensions->end_script === TRUE)
-            {
-              return FALSE;
-            }
-          }
-
-          $this->_connector->add_list_subscriber(
-            $list->get_list_id(), $subscriber, $force_resubscribe);
+          continue;
         }
+
+        if ($this->EE->extensions->active_hook(
+          'campaigner_subscribe_start') === TRUE
+        )
+        {
+          $subscriber = $this->EE->extensions->call(
+            'campaigner_subscribe_start', $member_id, $subscriber);
+
+          if ($this->EE->extensions->end_script === TRUE)
+          {
+            return FALSE;
+          }
+        }
+
+        $this->_connector->add_list_subscriber(
+          $list->get_list_id(), $subscriber, $force_resubscribe);
       }
       catch (Campaigner_exception $e)
       {
