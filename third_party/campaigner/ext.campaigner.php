@@ -376,7 +376,25 @@ class Campaigner_ext {
    */
   public function on_cartthrob_create_member(Array $member_data, &$cartthrob)
   {
+    /**
+     * TRICKY:
+     * CartThrob doesn't honour the EE 'member activation' preferences when 
+     * automatically creating a member. In practise, this doesn't really concern 
+     * us too much; any site owner who uses CartThrob to automatically create a 
+     * member, and sets his activation preferences to anything other than 'no 
+     * activation required', will realise pretty quickly that it doesn't work as 
+     * expected.
+     */
 
+    // I've never trusted that Rob Sanchez bloke; sounds foreign.
+    if ( ! array_key_exists($member_data, 'member_id')
+      OR ! valid_int($member_data['member_id'], 1)
+    )
+    {
+      return;
+    }
+
+    $this->subscribe_member($member_id);
   }
 
 
