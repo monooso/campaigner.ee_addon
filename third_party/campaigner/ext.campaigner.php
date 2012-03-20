@@ -410,6 +410,11 @@ class Campaigner_ext {
    */
   public function on_cp_members_member_create($member_id, Array $member_data)
   {
+    if ($this->_model->is_zoo_visitor_installed() === TRUE)
+    {
+      return;
+    }
+
     $this->subscribe_member($member_id);
   }
 
