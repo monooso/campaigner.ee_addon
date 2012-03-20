@@ -172,7 +172,7 @@ class Campaigner_model extends CI_Model {
   public function activate_extension_register_hooks()
   {
     $hooks = array(
-      'cartthrob_create_member',
+      'cartthrob_on_authorize',
       'cp_members_member_create',
       'cp_members_validate_members',
       'member_member_register',
@@ -1291,13 +1291,13 @@ class Campaigner_model extends CI_Model {
     }
 
     // Version 4.4.0 adds support for CartThrob.
-    if (version_compare($installed_version, '4.4.0', '<'))
+    if (version_compare($installed_version, '4.4.0b1', '<'))
     {
       $this->EE->db->insert('extensions', array(
         'class'     => $this->get_extension_class(),
         'enabled'   => 'y',
-        'hook'      => 'cartthrob_create_member',
-        'method'    => 'on_cartthrob_create_member',
+        'hook'      => 'cartthrob_on_authorize',
+        'method'    => 'on_cartthrob_on_authorize',
         'priority'  => 5,
         'settings'  => '',
         'version'   => $package_version

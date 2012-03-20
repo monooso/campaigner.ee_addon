@@ -367,28 +367,20 @@ class Campaigner_ext {
    * ------------------------------------------------------------ */
 
   /**
-   * Handles the `cartthrob_create_member` hook.
+   * Handles the `cartthrob_on_authorize` hook.
    *
    * @access  public
-   * @param   array     $member_data    The member data.
-   * @param   object    $cartthrob      A reference to the CartThrob object.
    * @return  void
    */
-  public function on_cartthrob_create_member(Array $member_data, &$cartthrob)
+  public function on_cartthrob_on_authorize()
   {
     /**
-     * TRICKY:
-     * CartThrob doesn't honour the EE 'member activation' preferences when 
-     * automatically creating a member. In practise, this doesn't really concern 
-     * us too much; any site owner who uses CartThrob to automatically create a 
-     * member, and sets his activation preferences to anything other than 'no 
-     * activation required', will realise pretty quickly that it doesn't work as 
-     * expected.
+     * Retrieve the member ID from the CartThrob object. Many thanks to Rob 
+     * Sanchez for pointing me to this, I'd never have found it otherwise.
      */
 
-    // I've never trusted that Rob Sanchez bloke; sounds foreign.
-    if ( ! array_key_exists($member_data, 'member_id')
-      OR ! valid_int($member_data['member_id'], 1)
+    if ( ! $member_id = $this->EE->cartthrob->cart->order('create_user')
+      OR ! valid_int($member_id, 1)
     )
     {
       return;
