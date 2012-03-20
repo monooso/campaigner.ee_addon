@@ -451,7 +451,17 @@ class Campaigner_ext {
    */
   public function on_member_member_register(Array $member_data, $member_id)
   {
-    if ($this->EE->config->item('req_mbr_activation') != 'none')
+    /**
+     * TRICKY:
+     * The Zoo Visitor module calls this hook, in addition to its own 
+     * zoo_visitor_register_end hook. If ZV is installed, we ignore this hook,
+     * because it performs additional tasks between this hook, and the custom ZV 
+     * hook.
+     */
+
+    if ($this->EE->config->item('req_mbr_activation') != 'none'
+      OR $this->_model->is_zoo_visitor_installed() === TRUE
+    )
     {
       return;
     }
