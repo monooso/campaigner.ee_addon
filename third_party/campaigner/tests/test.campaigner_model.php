@@ -139,11 +139,11 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $version    = $this->_subject->get_package_version();
 
     $hooks = array(
+      'cartthrob_create_member',
       'cp_members_member_create',
       'cp_members_validate_members',
       'member_member_register',
       'member_register_validate_members',
-      'membrr_subscribe',
       'user_edit_end',
       'user_register_end',
       'zoo_visitor_cp_register_end',

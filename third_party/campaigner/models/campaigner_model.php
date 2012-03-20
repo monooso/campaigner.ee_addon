@@ -177,7 +177,6 @@ class Campaigner_model extends CI_Model {
       'cp_members_validate_members',
       'member_member_register',
       'member_register_validate_members',
-      'membrr_subscribe',
       'user_edit_end',
       'user_register_end',
       'zoo_visitor_cp_register_end',
@@ -1258,8 +1257,8 @@ class Campaigner_model extends CI_Model {
       return FALSE;
     }
 
-    // Version 4.0.
-    if (version_compare($installed_version, '4.0', '<'))
+    // Version 4.0.0
+    if (version_compare($installed_version, '4.0.0', '<'))
     {
       $this->EE->db->update(
         'extensions',
@@ -1268,7 +1267,7 @@ class Campaigner_model extends CI_Model {
       );
     }
 
-    // Version 4.1.
+    // Version 4.1.0
     if (version_compare($installed_version, '4.1.0', '<'))
     {
       $this->EE->db->query('ALTER TABLE exp_campaigner_mailing_lists
@@ -1278,7 +1277,7 @@ class Campaigner_model extends CI_Model {
         ADD PRIMARY KEY (list_id, site_id)');
     }
 
-    // Version 4.2 adds support for Zoo Visitor.
+    // Version 4.2.0 adds support for Zoo Visitor.
     if (version_compare($installed_version, '4.2.0', '<'))
     {
       $hooks = array(
@@ -1307,31 +1306,18 @@ class Campaigner_model extends CI_Model {
       }
     }
 
-    // Version 4.4.0 adds support for CartThrob and Membrr.
+    // Version 4.4.0 adds support for CartThrob.
     if (version_compare($installed_version, '4.4.0', '<'))
     {
-      $hooks = array(
-        'cartthrob_create_member',
-        'membrr_subscribe'
-      );
-
-      $hook_data = array(
+      $this->EE->db->insert('extensions', array(
         'class'     => $this->get_extension_class(),
         'enabled'   => 'y',
-        'hook'      => '',
-        'method'    => '',
+        'hook'      => 'cartthrob_create_member',
+        'method'    => 'on_cartthrob_create_member',
         'priority'  => 5,
         'settings'  => '',
         'version'   => $package_version
-      );
-
-      foreach ($hooks AS $hook)
-      {
-        $hook_data['hook'] = $hook;
-        $hook_data['method'] = 'on_' .$hook;
-
-        $this->EE->db->insert('extensions', $hook_data);
-      }
+      ));
     }
 
     // Update the extension version in the database.
