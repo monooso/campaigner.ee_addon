@@ -376,7 +376,25 @@ class Campaigner_ext {
    */
   public function on_cartthrob_create_member(Array $member_data, &$cartthrob)
   {
+    /**
+     * TRICKY:
+     * CartThrob doesn't honour the EE 'member activation' preferences when 
+     * automatically creating a member. In practise, this doesn't really concern 
+     * us too much; any site owner who uses CartThrob to automatically create a 
+     * member, and sets his activation preferences to anything other than 'no 
+     * activation required', will realise pretty quickly that it doesn't work as 
+     * expected.
+     */
 
+    // I've never trusted that Rob Sanchez bloke; sounds foreign.
+    if ( ! array_key_exists($member_data, 'member_id')
+      OR ! valid_int($member_data['member_id'], 1)
+    )
+    {
+      return;
+    }
+
+    $this->subscribe_member($member_id);
   }
 
 
@@ -433,19 +451,6 @@ class Campaigner_ext {
    */
   public function on_member_member_register(Array $member_data, $member_id)
   {
-    /**
-     * TRICKY:
-     * The BrilliantRetail module calls this hook what automatically creating a 
-     * member during the checkout process.
-     *
-     * Unfortunately, BR doesn't honour the "member activation" preference, so 
-     * the following check could result in the BR-created member not being
-     * subscribed to Campaign Monitor.
-     *
-     * There's nothing we can do about this, as there's no way to identify the 
-     * new member as having been created by BR. Hence this long winded note.
-     */
-
     if ($this->EE->config->item('req_mbr_activation') != 'none')
     {
       return;
@@ -472,24 +477,6 @@ class Campaigner_ext {
       return;
     }
 
-    $this->subscribe_member($member_id);
-  }
-
-
-  /**
-   * Handles the `membrr_subscribe` hook.
-   *
-   * @access  public
-   * @param   int     $member_id          The member ID.
-   * @param   int     $subscription_id    The subscription ID.
-   * @param   int     $plan_id            The plan ID.
-   * @param   string  $end_date           The plan end date.
-   * @return  void
-   */
-  public function on_membrr_subscribe($member_id, $subscription_id,
-    $plan_id, $end_date
-  )
-  {
     $this->subscribe_member($member_id);
   }
 
