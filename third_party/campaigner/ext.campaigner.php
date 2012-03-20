@@ -566,7 +566,7 @@ class Campaigner_ext {
   )
   {
     $this->unsubscribe_member($member_id);
-    $this->subscribe_member($member_id);
+    $this->subscribe_member($member_id, TRUE);
   }
 
 
@@ -583,7 +583,7 @@ class Campaigner_ext {
   )
   {
     $this->unsubscribe_member($member_id);
-    $this->subscribe_member($member_id);
+    $this->subscribe_member($member_id, TRUE);
   }
 
 
