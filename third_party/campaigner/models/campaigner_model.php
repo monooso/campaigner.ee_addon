@@ -172,6 +172,7 @@ class Campaigner_model extends CI_Model {
   public function activate_extension_register_hooks()
   {
     $hooks = array(
+      'cartthrob_create_member',
       'cp_members_member_create',
       'cp_members_validate_members',
       'member_member_register',
