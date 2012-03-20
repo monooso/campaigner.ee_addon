@@ -597,27 +597,6 @@ class Campaigner_model extends CI_Model {
     $custom_fields  = $this->get_member_fields__custom_member();
     $zoo_fields     = $this->get_member_fields__zoo_visitor();
 
-    // Retrieve the Zoo Visitor 'Member Account' field ID.
-    if ($this->is_zoo_visitor_installed())
-    {
-      $sql = 'SELECT'
-        .' CONCAT("field_id_", field_id) AS field_id'
-        .' FROM ' .$this->EE->db->dbprefix('channel_fields')
-        .' WHERE field_type = ?'
-        .' AND site_id = ?'
-        .' LIMIT 1';
-
-      $db_result = $this->EE->db->query($sql,
-        array('zoo_visitor', $this->get_site_id()));
-
-      if ( ! $db_result->num_rows())
-      {
-        return $member_data;
-      }
-
-      $zv_field_id = $db_result->row()->field_id;
-    }
-
     /**
      * Start building the query.
      */
@@ -643,9 +622,11 @@ class Campaigner_model extends CI_Model {
     // Zoo Visitor fields.
     if ($this->is_zoo_visitor_installed() && $zoo_fields)
     {
+      $this->EE->db->join('channel_titles',
+        'channel_titles.author_id = members.member_id', 'inner');
+
       $this->EE->db->join('channel_data',
-        'channel_data.' .$zv_field_id .' = members.member_id',
-        'inner');
+        'channel_data.entry_id = channel_titles.entry_id', 'inner');
 
       foreach ($zoo_fields AS $m_field)
       {
