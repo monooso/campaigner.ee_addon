@@ -3,10 +3,9 @@
 /**
  * Campaigner add-on model.
  *
- * @author          : Stephen Lewis <addons@experienceinternet.co.uk>
- * @copyright       : Experience Internet
- * @package         : Campaigner
- * @version         : 4.3.0
+ * @author          Stephen Lewis (http://github.com/experience/)
+ * @copyright       Experience Internet
+ * @package         Campaigner
  */
 
 require_once dirname(__FILE__) .'/../config.php';
@@ -186,7 +185,7 @@ class Campaigner_model extends CI_Model {
     );
 
     $hook_data = array(
-      'class'     => $this->get_extension_class(),
+      'class'     => ucfirst($this->get_extension_class()),
       'enabled'   => 'y',
       'hook'      => '',
       'method'    => '',
@@ -1236,19 +1235,20 @@ class Campaigner_model extends CI_Model {
    */
   public function update_extension($installed_version = '', $package_version = '')
   {
-    if ( ! $installed_version OR version_compare($installed_version, $package_version, '>='))
+    if ( ! $installed_version
+      OR version_compare($installed_version, $package_version, '>=')
+    )
     {
       return FALSE;
     }
 
+    $class = ucfirst($this->get_extension_class());
+
     // Version 4.0.0
     if (version_compare($installed_version, '4.0.0', '<'))
     {
-      $this->EE->db->update(
-        'extensions',
-        array('priority' => 5),
-        array('class' => $this->get_extension_class())
-      );
+      $this->EE->db->update('extensions', array('priority' => 5),
+        array('class' => $class));
     }
 
     // Version 4.1.0
@@ -1272,7 +1272,7 @@ class Campaigner_model extends CI_Model {
       );
 
       $hook_data = array(
-        'class'     => $this->get_extension_class(),
+        'class'     => $class,
         'enabled'   => 'y',
         'hook'      => '',
         'method'    => '',
@@ -1294,7 +1294,7 @@ class Campaigner_model extends CI_Model {
     if (version_compare($installed_version, '4.4.0b1', '<'))
     {
       $this->EE->db->insert('extensions', array(
-        'class'     => $this->get_extension_class(),
+        'class'     => $class,
         'enabled'   => 'y',
         'hook'      => 'cartthrob_on_authorize',
         'method'    => 'on_cartthrob_on_authorize',
@@ -1308,7 +1308,7 @@ class Campaigner_model extends CI_Model {
     $this->EE->db->update(
       'extensions',
       array('version' => $package_version),
-      array('class' => $this->get_extension_class())
+      array('class' => $class)
     );
   }
 
