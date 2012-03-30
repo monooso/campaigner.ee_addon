@@ -12,7 +12,7 @@
 if ( ! defined('CAMPAIGNER_NAME'))
 {
   define('CAMPAIGNER_NAME', 'Campaigner');
-  define('CAMPAIGNER_VERSION', '4.4.0b2');
+  define('CAMPAIGNER_VERSION', '4.4.0b3');
 }
 
 $config['name']     = CAMPAIGNER_NAME;

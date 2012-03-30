@@ -86,6 +86,7 @@ $lang = array(
 /* --------------------------------------------------------------
  * MEMBER FIELDS
  * ------------------------------------------------------------ */
+'mbr_email'         => 'Email',
 'mbr_group_id'      => 'Group ID',
 'mbr_location'      => 'Location',
 'mbr_occupation'    => 'Occupation',
