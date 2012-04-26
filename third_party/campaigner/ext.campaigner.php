@@ -412,9 +412,7 @@ class Campaigner_ext {
 
 
   /**
-   * Handles the `cp_members_validate_members` hook. Used when the membership
-   * preferences are set to "Manual activation by an administrator"
-   * (i.e. req_mbr_activation = 'manual').
+   * Handles the `cp_members_validate_members` hook.
    *
    * @see     http://expressionengine.com/developers/extension_hooks/cp_members_validate_members/
    * @access  public
@@ -422,8 +420,14 @@ class Campaigner_ext {
    */
   public function on_cp_members_validate_members()
   {
-    if ($this->EE->config->item('req_mbr_activation') != 'manual'
-      OR ! ($member_ids = $this->EE->input->post('toggle')))
+    /**
+     * NOTE:
+     * We no longer check that the 'require member activation' preference is set 
+     * to 'manual', as Admin may conceivably wish to manually activate a Member 
+     * who has neglected to activate his Membership via email.
+     */
+
+    if ( ! $member_ids = $this->EE->input->post('toggle'))
     {
       return;
     }
