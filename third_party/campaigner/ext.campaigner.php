@@ -493,6 +493,28 @@ class Campaigner_ext {
 
 
   /**
+   * Handles the `membrr_subscribe` hook.
+   *
+   * @access  public
+   * @param   int|string  $member_id  The member ID.
+   * @param   int|string  $sub_id     The Membrr subscription ID.
+   * @param   int|string  $plan_id    The Membrr plan ID.
+   * @param   string      $end_date   The subscription end date.
+   * @return  void
+   */
+  public function on_membrr_subscribe($member_id, $sub_id, $plan_id, $end_date)
+  {
+    /**
+     * The Member may have been created previously, so we need to update 
+     * subscriptions.
+     */
+
+    $this->unsubscribe_member($member_id);
+    $this->subscribe_member($member_id, TRUE);
+  }
+
+
+  /**
    * Handles the `user_edit_end` hook.
    *
    * @see     http://www.solspace.com/docs/detail/user_user_edit_end/
