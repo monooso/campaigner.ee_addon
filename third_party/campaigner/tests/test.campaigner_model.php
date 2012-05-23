@@ -135,15 +135,16 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $db = $this->EE->db;
 
     // Dummy data.
-    $class      = $this->_subject->get_extension_class();
+    $class      = ucfirst($this->_subject->get_extension_class());
     $version    = $this->_subject->get_package_version();
 
     $hooks = array(
-      'cartthrob_create_member',
+      'cartthrob_on_authorize',
       'cp_members_member_create',
       'cp_members_validate_members',
       'member_member_register',
       'member_register_validate_members',
+      'membrr_subscribe',
       'user_edit_end',
       'user_register_end',
       'zoo_visitor_cp_register_end',
@@ -956,12 +957,13 @@ class Test_campaigner_model extends Testee_unit_test_case {
   {
     $db = $this->EE->db;
 
+    $class              = ucfirst($this->_subject->get_extension_class());
     $installed_version  = '4.0.0';
     $package_version    = '4.1.0';
 
     // Update the extension version number in the database.
     $data = array('version' => $package_version);
-    $criteria = array('class' => $this->_subject->get_extension_class());
+    $criteria = array('class' => $class);
 
     $db->expectOnce('update', array('extensions', $data, $criteria));
 
@@ -1050,9 +1052,10 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $db = $this->EE->db;
 
     // Dummy values.
+    $class              = ucfirst($this->_subject->get_extension_class());
     $installed_version  = '3.0.0';
     $package_version    = '4.0.0';
-    $criteria           = array('class' => $this->_subject->get_extension_class());
+    $criteria           = array('class' => $class);
     $data               = array('priority' => 5);
 
     $db->expectCallCount('update', 2);
@@ -1091,7 +1094,7 @@ class Test_campaigner_model extends Testee_unit_test_case {
     $package_version    = '4.2.0';
 
     $hook_data = array(
-      'class'     => $this->_subject->get_extension_class(),
+      'class'     => ucfirst($this->_subject->get_extension_class()),
       'enabled'   => 'y',
       'hook'      => '',
       'method'    => '',
@@ -1125,6 +1128,53 @@ class Test_campaigner_model extends Testee_unit_test_case {
       ));
     }
 
+    $this->_subject->update_extension($installed_version, $package_version);
+  }
+
+
+  public function test__update_extension__upgrade_to_version_4_4()
+  {
+    $db = $this->EE->db;
+
+    $installed_version  = '4.3.0';
+    $package_version    = '4.4.0';
+
+    $hook_data = array(
+      'class'     => ucfirst($this->_subject->get_extension_class()),
+      'enabled'   => 'y',
+      'hook'      => 'cartthrob_on_authorize',
+      'method'    => 'on_cartthrob_on_authorize',
+      'priority'  => 5,
+      'settings'  => '',
+      'version'   => $package_version
+    );
+
+    // Only testing the first 'insert' statement, as later updates may also run.
+    $this->EE->db->expectAtLeastOnce('insert');
+    $this->EE->db->expectAt(0, 'insert', array('extensions', $hook_data));
+
+    $this->_subject->update_extension($installed_version, $package_version);
+  }
+
+
+  public function test__update_extension__upgrade_to_version_4_5()
+  {
+    $db = $this->EE->db;
+
+    $installed_version  = '4.4.0';
+    $package_version    = '4.5.0';
+
+    $hook_data = array(
+      'class'     => ucfirst($this->_subject->get_extension_class()),
+      'enabled'   => 'y',
+      'hook'      => 'membrr_subscribe',
+      'method'    => 'on_membrr_subscribe',
+      'priority'  => 5,
+      'settings'  => '',
+      'version'   => $package_version
+    );
+
+    $this->EE->db->expectOnce('insert', array('extensions', $hook_data));
     $this->_subject->update_extension($installed_version, $package_version);
   }
 

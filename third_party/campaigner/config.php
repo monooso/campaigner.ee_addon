@@ -6,13 +6,13 @@
  * @author          Stephen Lewis (http://github.com/experience/)
  * @copyright       Experience Internet
  * @package         Campaigner
- * @version         4.4.0
+ * @version         4.5.0b1
  */
 
 if ( ! defined('CAMPAIGNER_NAME'))
 {
   define('CAMPAIGNER_NAME', 'Campaigner');
-  define('CAMPAIGNER_VERSION', '4.4.0');
+  define('CAMPAIGNER_VERSION', '4.5.0b1');
 }
 
 $config['name']     = CAMPAIGNER_NAME;

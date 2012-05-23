@@ -176,6 +176,7 @@ class Campaigner_model extends CI_Model {
       'cp_members_validate_members',
       'member_member_register',
       'member_register_validate_members',
+      'membrr_subscribe',
       'user_edit_end',
       'user_register_end',
       'zoo_visitor_cp_register_end',
@@ -1298,6 +1299,20 @@ class Campaigner_model extends CI_Model {
         'enabled'   => 'y',
         'hook'      => 'cartthrob_on_authorize',
         'method'    => 'on_cartthrob_on_authorize',
+        'priority'  => 5,
+        'settings'  => '',
+        'version'   => $package_version
+      ));
+    }
+
+    // Version 4.5.0 adds support for Membrr.
+    if (version_compare($installed_version, '4.5.0b1', '<'))
+    {
+      $this->EE->db->insert('extensions', array(
+        'class'     => $class,
+        'enabled'   => 'y',
+        'hook'      => 'membrr_subscribe',
+        'method'    => 'on_membrr_subscribe',
         'priority'  => 5,
         'settings'  => '',
         'version'   => $package_version
