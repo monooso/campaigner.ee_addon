@@ -17,10 +17,27 @@ require_once dirname(__FILE__) .'/../classes/campaigner_subscriber.php';
 require_once dirname(__FILE__) .'/../classes/campaigner_trigger_field.php';
 require_once dirname(__FILE__) .'/../helpers/EI_number_helper.php';
 require_once dirname(__FILE__) .'/../helpers/EI_sanitize_helper.php';
-require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_clients.php';
-require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_general.php';
-require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_lists.php';
-require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_subscribers.php';
+
+// There may be other add-ons using the CreateSend library classes.
+if ( ! class_exists('CS_REST_Clients'))
+{
+  require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_clients.php';
+}
+
+if ( ! class_exists('CS_REST_General'))
+{
+  require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_general.php';
+}
+
+if ( ! class_exists('CS_REST_Lists'))
+{
+  require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_lists.php';
+}
+
+if ( ! class_exists('CS_REST_Subscribers'))
+{
+  require_once dirname(__FILE__) .'/../libraries/createsend-php/csrest_subscribers.php';
+}
 
 class Campaigner_model extends CI_Model {
 
