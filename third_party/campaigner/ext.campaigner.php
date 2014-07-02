@@ -703,7 +703,7 @@ class Campaigner_ext {
     }
 
     $this->EE->javascript->set_global('campaigner.memberFields',
-      $this->EE->javascript->generate_json($js_member_fields));
+      json_encode($js_member_fields));
 
     $this->EE->javascript->set_global('campaigner.ajaxUrl',
       str_replace(AMP, '&', BASE)
